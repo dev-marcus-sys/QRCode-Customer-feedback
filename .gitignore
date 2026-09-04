@@ -30,3 +30,7 @@ deploy/*.zip
 
 # IDE project data
 .codebuddy/
+
+# Vite build temp
+vite.config.ts.timestamp-*.mjs
+*.timestamp-*.mjs
