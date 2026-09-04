@@ -1,0 +1,27 @@
+{
+  "name": "qr-feedback-backend",
+  "version": "1.0.0",
+  "description": "QRCode 客戶意見反饋系統 F-001~F-003 技術骨架（Express + SQLite）",
+  "private": true,
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^11.3.0",
+    "dotenv": "^16.4.5",
+    "exceljs": "^4.4.0",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "supertest": "^6.3.4"
+  }
+}
