@@ -1,0 +1,287 @@
+2026-09-04T06:30:59.775Z [INFO] [static] serving frontend dist at C:\Users\606610\CodeBuddy\QRCode 客戶意見反饋\frontend\dist
+2026-09-04T06:30:59.796Z [INFO] [server] QRCode 客戶意見反饋骨架已啟動 http://localhost:3100/api/v1
+2026-09-04T06:30:59.801Z [INFO] [scheduler] SLA 掃描定時器已啟動（每 60000ms）
+2026-09-04T06:30:59.806Z [WARN] [scheduler] 週報定時器停用（WEEKLY_REPORT_CHECK_MS 為 0/未設定）
+2026-09-04T06:31:06.106Z [INFO] [http] POST /api/v1/auth/login
+2026-09-04T06:31:33.857Z [INFO] [http] POST /api/v1/auth/login
+2026-09-04T06:31:33.890Z [INFO] [http] GET /api/v1/dashboard/summary?range=thisMonth
+2026-09-04T06:31:33.909Z [INFO] [http] GET /api/v1/dashboard/summary?range=custom&from=2026-08-01&to=2026-08-31
+2026-09-04T06:31:33.918Z [INFO] [http] GET /api/v1/dashboard/trend?from=2025-09-01&to=2026-08-31
+2026-09-04T06:31:33.926Z [INFO] [http] GET /api/v1/dashboard/distribution?range=thisMonth
+2026-09-04T06:31:33.933Z [INFO] [http] GET /api/v1/dashboard/handlers?range=thisMonth
+2026-09-04T06:31:33.940Z [INFO] [http] GET /api/v1/dashboard/anomalies
+2026-09-04T06:31:33.947Z [INFO] [http] GET /api/v1/dashboard/export?range=thisMonth
+2026-09-04T06:31:33.956Z [INFO] [http] POST /api/v1/dashboard/weekly-report/run
+2026-09-04T06:31:33.962Z [INFO] [notification] EMAIL_QUEUE template=weekly_report recipient=admin@***
+2026-09-04T06:31:33.963Z [INFO] [notification] EMAIL_QUEUE template=weekly_report recipient=ccsup@***
+2026-09-04T06:31:33.964Z [INFO] [notification] EMAIL_QUEUE template=weekly_report recipient=cwcsup@***
+2026-09-04T06:31:33.964Z [INFO] [notification] EMAIL_QUEUE template=weekly_report recipient=yprsup@***
+2026-09-04T06:31:33.964Z [INFO] [notification] EMAIL_QUEUE template=weekly_report recipient=chngsup@***
+2026-09-04T06:31:33.965Z [INFO] [notification] EMAIL_QUEUE template=weekly_report recipient=dahfsup@***
+2026-09-04T06:31:33.965Z [INFO] [weeklyReport] WEEKLY_REPORT 2026-08-24~2026-08-30 recipients=6 emailQueued=6
+2026-09-04T06:31:33.970Z [INFO] [http] GET /api/v1/dashboard/weekly-report/list
+2026-09-04T06:31:33.976Z [INFO] [http] GET /api/v1/config
+2026-09-04T06:31:33.983Z [INFO] [http] PUT /api/v1/config/sla.closure_days
+2026-09-04T06:31:33.992Z [INFO] [http] PUT /api/v1/config/sla.closure_days
+2026-09-04T06:31:33.999Z [INFO] [http] PUT /api/v1/config/sla.closure_days
+2026-09-04T06:31:34.004Z [INFO] [http] GET /api/v1/config/audit?key=sla.closure_days
+2026-09-04T06:31:34.011Z [INFO] [http] POST /api/v1/auth/login
+2026-09-04T06:31:34.020Z [INFO] [http] GET /api/v1/dashboard/summary?range=thisMonth
+2026-09-04T06:31:34.026Z [INFO] [http] GET /api/v1/config
+2026-09-04T06:31:34.032Z [INFO] [http] PUT /api/v1/config/sla.closure_days
+2026-09-04T06:31:34.038Z [INFO] [http] POST /api/v1/auth/login
+2026-09-04T06:31:34.048Z [INFO] [http] GET /api/v1/dashboard/summary?range=thisMonth
+2026-09-04T06:31:34.052Z [INFO] [http] GET /api/v1/config
+2026-09-04T06:31:52.460Z [INFO] [http] POST /api/v1/auth/login
+2026-09-04T06:31:52.586Z [INFO] [http] GET /api/v1/dashboard/summary?range=thisMonth
+2026-09-04T06:31:52.594Z [INFO] [http] GET /api/v1/dashboard/summary?range=custom&from=2026-08-01&to=2026-08-31
+2026-09-04T06:31:52.601Z [INFO] [http] GET /api/v1/dashboard/trend?from=2025-09-01&to=2026-08-31
+2026-09-04T06:31:52.606Z [INFO] [http] GET /api/v1/dashboard/distribution?range=thisMonth
+2026-09-04T06:31:52.613Z [INFO] [http] GET /api/v1/dashboard/handlers?range=thisMonth
+2026-09-04T06:31:52.618Z [INFO] [http] GET /api/v1/dashboard/anomalies
+2026-09-04T06:31:52.625Z [INFO] [http] GET /api/v1/dashboard/export?range=thisMonth
+2026-09-04T06:31:52.633Z [INFO] [http] POST /api/v1/dashboard/weekly-report/run
+2026-09-04T06:31:52.639Z [INFO] [http] GET /api/v1/dashboard/weekly-report/list
+2026-09-04T06:31:52.645Z [INFO] [http] GET /api/v1/config
+2026-09-04T06:31:52.651Z [INFO] [http] PUT /api/v1/config/sla.closure_days
+2026-09-04T06:31:52.658Z [INFO] [http] PUT /api/v1/config/sla.closure_days
+2026-09-04T06:31:52.665Z [INFO] [http] PUT /api/v1/config/sla.closure_days
+2026-09-04T06:31:52.729Z [INFO] [http] GET /api/v1/config/audit?key=sla.closure_days
+2026-09-04T06:31:52.735Z [INFO] [http] POST /api/v1/auth/login
+2026-09-04T06:31:52.738Z [INFO] [http] POST /api/v1/auth/login
+2026-09-04T06:31:59.819Z [INFO] [notification] EMAIL_QUEUE template=notif_escalation recipient=chngsup@***
+2026-09-04T06:31:59.852Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=1 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T06:32:09.670Z [INFO] [http] POST /api/v1/auth/login
+2026-09-04T06:32:09.694Z [INFO] [http] POST /api/v1/auth/login
+2026-09-04T06:32:09.707Z [INFO] [http] POST /api/v1/auth/login
+2026-09-04T06:32:09.719Z [INFO] [http] POST /api/v1/auth/login
+2026-09-04T06:32:09.730Z [INFO] [http] GET /api/v1/config/audit?key=sla.closure_days
+2026-09-04T06:32:15.510Z [INFO] [http] POST /api/v1/auth/login
+2026-09-04T06:32:15.533Z [INFO] [http] GET /api/v1/dashboard/summary?range=thisMonth
+2026-09-04T06:32:15.540Z [INFO] [http] GET /api/v1/dashboard/summary?range=custom&from=2026-08-01&to=2026-08-31
+2026-09-04T06:32:15.547Z [INFO] [http] GET /api/v1/dashboard/trend?from=2025-09-01&to=2026-08-31
+2026-09-04T06:32:15.552Z [INFO] [http] GET /api/v1/dashboard/distribution?range=thisMonth
+2026-09-04T06:32:15.558Z [INFO] [http] GET /api/v1/dashboard/handlers?range=thisMonth
+2026-09-04T06:32:15.565Z [INFO] [http] GET /api/v1/dashboard/anomalies
+2026-09-04T06:32:15.570Z [INFO] [http] GET /api/v1/dashboard/export?range=thisMonth
+2026-09-04T06:32:15.579Z [INFO] [http] POST /api/v1/dashboard/weekly-report/run
+2026-09-04T06:32:15.585Z [INFO] [http] GET /api/v1/dashboard/weekly-report/list
+2026-09-04T06:32:15.590Z [INFO] [http] GET /api/v1/config
+2026-09-04T06:32:15.597Z [INFO] [http] PUT /api/v1/config/sla.closure_days
+2026-09-04T06:32:15.603Z [INFO] [http] PUT /api/v1/config/sla.closure_days
+2026-09-04T06:32:15.610Z [INFO] [http] PUT /api/v1/config/sla.closure_days
+2026-09-04T06:32:15.615Z [INFO] [http] GET /api/v1/config/audit?key=sla.closure_days
+2026-09-04T06:32:15.620Z [INFO] [http] POST /api/v1/auth/login
+2026-09-04T06:32:15.623Z [INFO] [http] POST /api/v1/auth/login
+2026-09-04T06:32:59.826Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T06:33:42.905Z [INFO] [http] POST /api/v1/auth/login
+2026-09-04T06:33:42.926Z [INFO] [http] GET /api/v1/dashboard/summary?range=thisMonth
+2026-09-04T06:33:42.933Z [INFO] [http] GET /api/v1/dashboard/summary?range=custom&from=2026-08-01&to=2026-08-31
+2026-09-04T06:33:42.940Z [INFO] [http] GET /api/v1/dashboard/trend?from=2025-09-01&to=2026-08-31
+2026-09-04T06:33:42.946Z [INFO] [http] GET /api/v1/dashboard/distribution?range=thisMonth
+2026-09-04T06:33:42.952Z [INFO] [http] GET /api/v1/dashboard/handlers?range=thisMonth
+2026-09-04T06:33:42.958Z [INFO] [http] GET /api/v1/dashboard/anomalies
+2026-09-04T06:33:42.963Z [INFO] [http] GET /api/v1/dashboard/export?range=thisMonth
+2026-09-04T06:33:42.971Z [INFO] [http] POST /api/v1/dashboard/weekly-report/run
+2026-09-04T06:33:42.977Z [INFO] [http] GET /api/v1/dashboard/weekly-report/list
+2026-09-04T06:33:42.982Z [INFO] [http] GET /api/v1/config
+2026-09-04T06:33:42.989Z [INFO] [http] PUT /api/v1/config/sla.closure_days
+2026-09-04T06:33:42.995Z [INFO] [http] PUT /api/v1/config/sla.closure_days
+2026-09-04T06:33:43.002Z [INFO] [http] PUT /api/v1/config/sla.closure_days
+2026-09-04T06:33:43.007Z [INFO] [http] GET /api/v1/config/audit?key=sla.closure_days
+2026-09-04T06:33:59.839Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T06:34:32.543Z [INFO] [http] POST /api/v1/auth/login
+2026-09-04T06:34:32.562Z [INFO] [http] GET /api/v1/config
+2026-09-04T06:34:32.569Z [INFO] [http] PUT /api/v1/config/sla.closure_days
+2026-09-04T06:34:32.577Z [INFO] [http] PUT /api/v1/config/sla.closure_days
+2026-09-04T06:34:32.583Z [INFO] [http] PUT /api/v1/config/sla.closure_days
+2026-09-04T06:34:32.589Z [INFO] [http] GET /api/v1/config/audit?key=sla.closure_days
+2026-09-04T06:34:32.594Z [INFO] [http] GET /api/v1/config/audit
+2026-09-04T06:34:59.835Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T06:35:49.610Z [INFO] [http] POST /api/v1/auth/login
+2026-09-04T06:35:49.631Z [INFO] [http] GET /api/v1/dashboard/summary?range=thisMonth
+2026-09-04T06:35:49.640Z [INFO] [http] GET /api/v1/dashboard/summary?range=custom&from=2026-08-01&to=2026-08-31
+2026-09-04T06:35:49.646Z [INFO] [http] GET /api/v1/dashboard/trend?from=2025-09-01&to=2026-08-31
+2026-09-04T06:35:49.652Z [INFO] [http] GET /api/v1/dashboard/distribution?range=thisMonth
+2026-09-04T06:35:49.659Z [INFO] [http] GET /api/v1/dashboard/handlers?range=thisMonth
+2026-09-04T06:35:49.665Z [INFO] [http] GET /api/v1/dashboard/anomalies
+2026-09-04T06:35:49.671Z [INFO] [http] GET /api/v1/dashboard/export?range=thisMonth
+2026-09-04T06:35:49.679Z [INFO] [http] POST /api/v1/dashboard/weekly-report/run
+2026-09-04T06:35:49.687Z [INFO] [http] GET /api/v1/dashboard/weekly-report/list
+2026-09-04T06:35:49.693Z [INFO] [http] GET /api/v1/config
+2026-09-04T06:35:49.699Z [INFO] [http] PUT /api/v1/config/sla.closure_days
+2026-09-04T06:35:49.707Z [INFO] [http] PUT /api/v1/config/sla.closure_days
+2026-09-04T06:35:49.713Z [INFO] [http] PUT /api/v1/config/sla.closure_days
+2026-09-04T06:35:49.720Z [INFO] [http] GET /api/v1/config/audit?key=sla.closure_days
+2026-09-04T06:35:59.850Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T06:36:59.858Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T06:37:59.872Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T06:38:59.882Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T06:39:59.887Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T06:40:59.896Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T06:41:59.907Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T06:42:59.912Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T06:43:59.987Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T06:45:00.007Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T06:46:00.027Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T06:47:00.041Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T06:48:00.054Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T06:49:00.051Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T06:50:00.055Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T06:51:00.062Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T06:52:00.074Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T06:53:00.081Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T06:54:00.222Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T06:55:00.271Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T06:56:00.261Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T06:57:00.255Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T06:58:00.260Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T06:59:00.272Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:00:00.362Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:01:00.486Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:02:00.489Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:03:00.521Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:04:00.564Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:05:00.591Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:06:00.602Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:07:00.635Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:08:00.649Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:09:00.682Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:10:00.687Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:11:00.689Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:12:00.703Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:13:00.749Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:14:00.756Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:15:00.825Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:16:00.767Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:17:00.806Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:18:00.825Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:19:00.845Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:20:00.879Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:21:00.887Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:22:00.890Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:23:00.906Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:24:00.939Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:25:00.947Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:26:00.956Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:27:00.961Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:28:00.970Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:29:01.221Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:30:01.227Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:31:01.233Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:32:01.241Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:33:01.250Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:34:01.263Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:35:01.271Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:36:01.273Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:37:01.275Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:38:01.287Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:39:01.295Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:40:01.380Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:41:01.393Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:42:01.418Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:43:01.429Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:44:01.481Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:45:01.488Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:46:01.575Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:47:01.584Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:48:01.668Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:49:01.698Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:50:01.822Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:51:02.030Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:52:02.085Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:53:02.167Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:54:02.226Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:55:02.256Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:56:02.269Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:57:02.280Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:58:02.479Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T07:59:02.493Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:00:02.509Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:01:02.517Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:02:02.519Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:03:02.533Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:04:02.584Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:05:02.601Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:06:02.603Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:07:02.603Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:08:02.604Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:09:02.628Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:10:02.638Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:11:02.649Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:12:02.656Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:13:02.676Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:14:02.688Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:15:02.697Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:16:02.706Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:17:02.720Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:18:02.736Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:19:02.747Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:20:02.762Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:21:02.775Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:22:02.782Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:23:02.798Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:24:02.807Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:25:02.815Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:26:02.876Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:27:02.882Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:28:02.895Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:29:02.912Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:30:02.919Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:31:02.928Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:32:02.943Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:33:02.946Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:34:02.959Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:35:02.965Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:36:02.974Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:37:02.977Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:38:02.989Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:39:03.000Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:40:03.012Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:41:03.013Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:42:03.019Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:43:03.036Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:44:03.058Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:45:03.050Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:46:03.080Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:47:03.090Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:48:04.087Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:49:03.110Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:50:03.117Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:51:03.144Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:52:03.154Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:53:03.166Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:54:03.178Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:55:03.192Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:56:03.202Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:57:03.208Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:58:03.223Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T08:59:03.232Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T09:00:03.238Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T09:01:03.238Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T09:02:03.251Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T09:03:03.306Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T09:04:03.316Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T09:05:03.325Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T09:06:03.330Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T09:07:03.340Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T09:08:03.354Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T09:09:03.367Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T09:10:03.370Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T09:11:03.383Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T09:12:03.397Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T09:13:03.402Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T09:14:03.434Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T09:15:03.442Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T09:16:03.470Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T09:17:03.567Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T09:18:03.622Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T09:19:03.636Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T09:20:03.639Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T09:21:03.656Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T09:22:03.666Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T09:23:03.686Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T09:24:03.684Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T09:25:03.690Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T09:26:03.697Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T09:27:03.707Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0

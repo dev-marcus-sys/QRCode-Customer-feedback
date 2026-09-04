@@ -1,0 +1,345 @@
+
+> qr-feedback-backend@1.0.0 dev
+> node --watch src/server.js
+
+Restarting 'src/server.js'
+Restarting 'src/server.js'
+2026-09-04T07:55:58.967Z [INFO] [static] serving frontend dist at C:\Users\606610\CodeBuddy\QRCode 客戶意見反饋\frontend\dist
+node:events:496
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: listen EADDRINUSE: address already in use :::3000
+    at Server.setupListenHandle [as _listen2] (node:net:1937:16)
+    at listenInCluster (node:net:1994:12)
+    at Server.listen (node:net:2099:7)
+    at Function.listen (C:\Users\606610\CodeBuddy\QRCode 客戶意見反饋\backend\node_modules\express\lib\application.js:635:24)
+    at Object.<anonymous> (C:\Users\606610\CodeBuddy\QRCode 客戶意見反饋\backend\src\server.js:13:5)
+    at Module._compile (node:internal/modules/cjs/loader:1554:14)
+    at Object..js (node:internal/modules/cjs/loader:1706:10)
+    at Module.load (node:internal/modules/cjs/loader:1289:32)
+    at Function._load (node:internal/modules/cjs/loader:1108:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:220:24)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:170:5)
+    at node:internal/main/run_main_module:36:49
+Emitted 'error' event on Server instance at:
+    at emitErrorNT (node:net:1973:8)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 3000
+}
+
+Node.js v22.14.0
+Failed running 'src/server.js'
+Restarting 'src/server.js'
+2026-09-04T07:56:01.507Z [INFO] [static] serving frontend dist at C:\Users\606610\CodeBuddy\QRCode 客戶意見反饋\frontend\dist
+node:events:496
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: listen EADDRINUSE: address already in use :::3000
+    at Server.setupListenHandle [as _listen2] (node:net:1937:16)
+    at listenInCluster (node:net:1994:12)
+    at Server.listen (node:net:2099:7)
+    at Function.listen (C:\Users\606610\CodeBuddy\QRCode 客戶意見反饋\backend\node_modules\express\lib\application.js:635:24)
+    at Object.<anonymous> (C:\Users\606610\CodeBuddy\QRCode 客戶意見反饋\backend\src\server.js:13:5)
+    at Module._compile (node:internal/modules/cjs/loader:1554:14)
+    at Object..js (node:internal/modules/cjs/loader:1706:10)
+    at Module.load (node:internal/modules/cjs/loader:1289:32)
+    at Function._load (node:internal/modules/cjs/loader:1108:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:220:24)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:170:5)
+    at node:internal/main/run_main_module:36:49
+Emitted 'error' event on Server instance at:
+    at emitErrorNT (node:net:1973:8)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 3000
+}
+
+Node.js v22.14.0
+Failed running 'src/server.js'
+Restarting 'src/server.js'
+Restarting 'src/server.js'
+Restarting 'src/server.js'
+Waiting for graceful termination...
+Gracefully restarted 'src/server.js'
+2026-09-04T08:26:02.218Z [INFO] [static] serving frontend dist at C:\Users\606610\CodeBuddy\QRCode 客戶意見反饋\frontend\dist
+2026-09-04T08:26:02.226Z [INFO] [server] QRCode 客戶意見反饋骨架已啟動 http://localhost:3000/api/v1
+2026-09-04T08:26:02.226Z [INFO] [scheduler] SLA 掃描定時器已啟動（每 60000ms）
+2026-09-04T08:26:02.227Z [WARN] [scheduler] 週報定時器停用（WEEKLY_REPORT_CHECK_MS 為 0/未設定）
+Restarting 'src/server.js'
+2026-09-04T08:26:07.932Z [INFO] [static] serving frontend dist at C:\Users\606610\CodeBuddy\QRCode 客戶意見反饋\frontend\dist
+node:events:496
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: listen EADDRINUSE: address already in use :::3000
+    at Server.setupListenHandle [as _listen2] (node:net:1937:16)
+    at listenInCluster (node:net:1994:12)
+    at Server.listen (node:net:2099:7)
+    at Function.listen (C:\Users\606610\CodeBuddy\QRCode 客戶意見反饋\backend\node_modules\express\lib\application.js:635:24)
+    at Object.<anonymous> (C:\Users\606610\CodeBuddy\QRCode 客戶意見反饋\backend\src\server.js:13:5)
+    at Module._compile (node:internal/modules/cjs/loader:1554:14)
+    at Object..js (node:internal/modules/cjs/loader:1706:10)
+    at Module.load (node:internal/modules/cjs/loader:1289:32)
+    at Function._load (node:internal/modules/cjs/loader:1108:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:220:24)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:170:5)
+    at node:internal/main/run_main_module:36:49
+Emitted 'error' event on Server instance at:
+    at emitErrorNT (node:net:1973:8)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 3000
+}
+
+Node.js v22.14.0
+Failed running 'src/server.js'
+Restarting 'src/server.js'
+Restarting 'src/server.js'
+2026-09-04T09:21:38.489Z [INFO] [static] serving frontend dist at C:\Users\606610\CodeBuddy\QRCode 客戶意見反饋\frontend\dist
+2026-09-04T09:21:38.496Z [INFO] [server] QRCode 客戶意見反饋骨架已啟動 http://localhost:3000/api/v1
+2026-09-04T09:21:38.496Z [INFO] [scheduler] SLA 掃描定時器已啟動（每 60000ms）
+2026-09-04T09:21:38.496Z [WARN] [scheduler] 週報定時器停用（WEEKLY_REPORT_CHECK_MS 為 0/未設定）
+Restarting 'src/server.js'
+2026-09-04T09:21:40.795Z [INFO] [static] serving frontend dist at C:\Users\606610\CodeBuddy\QRCode 客戶意見反饋\frontend\dist
+2026-09-04T09:21:40.802Z [INFO] [server] QRCode 客戶意見反饋骨架已啟動 http://localhost:3000/api/v1
+2026-09-04T09:21:40.802Z [INFO] [scheduler] SLA 掃描定時器已啟動（每 60000ms）
+2026-09-04T09:21:40.802Z [WARN] [scheduler] 週報定時器停用（WEEKLY_REPORT_CHECK_MS 為 0/未設定）
+2026-09-04T09:21:43.033Z [INFO] [http] GET /api/v1/qr/overview
+2026-09-04T09:21:43.050Z [INFO] [http] GET /api/v1/qr/overview
+2026-09-04T09:21:43.431Z [INFO] [http] GET /api/v1/qr/7/image?format=png&size=220
+2026-09-04T09:21:43.471Z [INFO] [http] GET /api/v1/qr/6/image?format=png&size=220
+2026-09-04T09:21:43.492Z [INFO] [http] GET /api/v1/qr/8/image?format=png&size=220
+2026-09-04T09:21:43.504Z [INFO] [http] GET /api/v1/qr/2/image?format=png&size=220
+2026-09-04T09:21:45.235Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:21:45.562Z [INFO] [http] GET /api/v1/cases?sortBy=createdAt&sortDir=desc&page=1&pageSize=20
+2026-09-04T09:21:45.576Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:21:45.899Z [INFO] [http] GET /api/v1/cases?sortBy=createdAt&sortDir=desc&page=1&pageSize=20
+2026-09-04T09:21:46.296Z [INFO] [http] GET /api/v1/qr/overview
+2026-09-04T09:21:46.561Z [INFO] [http] GET /api/v1/qr/overview
+2026-09-04T09:21:58.592Z [INFO] [http] POST /api/v1/qr/generate
+2026-09-04T09:21:58.597Z [INFO] [qr] QR_GENERATE 9 CHNG by admin
+2026-09-04T09:21:58.934Z [INFO] [http] GET /api/v1/qr/overview
+2026-09-04T09:21:59.183Z [INFO] [http] GET /api/v1/qr/9/image?format=png&size=220
+2026-09-04T09:22:15.040Z [INFO] [http] GET /?estate=CHNG
+2026-09-04T09:22:15.113Z [INFO] [http] GET /assets/index-BrTCdClv.js
+2026-09-04T09:22:16.980Z [INFO] [http] GET /api/v1/form/meta?estate=CHNG&lang=zh-Hant
+2026-09-04T09:22:17.648Z [INFO] [http] GET /logo.png
+2026-09-04T09:22:17.669Z [INFO] [http] GET /favicon.ico
+2026-09-04T09:22:34.656Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:22:34.986Z [INFO] [http] GET /api/v1/cases?sortBy=createdAt&sortDir=desc&page=1&pageSize=20
+2026-09-04T09:22:34.992Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:22:34.996Z [INFO] [http] GET /api/v1/cases?sortBy=createdAt&sortDir=desc&page=1&pageSize=20
+2026-09-04T09:22:36.911Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:22:36.921Z [INFO] [http] GET /api/v1/surveys/stats
+2026-09-04T09:22:37.173Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:22:37.249Z [INFO] [http] GET /api/v1/surveys/stats
+2026-09-04T09:22:39.878Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:22:40.193Z [INFO] [http] GET /api/v1/cases?sortBy=createdAt&sortDir=desc&page=1&pageSize=20
+2026-09-04T09:22:40.197Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:22:40.516Z [INFO] [http] GET /api/v1/cases?sortBy=createdAt&sortDir=desc&page=1&pageSize=20
+2026-09-04T09:22:40.812Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T09:22:41.653Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:22:41.656Z [INFO] [http] GET /api/v1/dashboard/summary?range=thisMonth
+2026-09-04T09:22:41.663Z [INFO] [http] GET /api/v1/dashboard/trend?range=thisMonth
+2026-09-04T09:22:41.668Z [INFO] [http] GET /api/v1/dashboard/distribution?range=thisMonth
+2026-09-04T09:22:41.675Z [INFO] [http] GET /api/v1/dashboard/handlers?range=thisMonth
+2026-09-04T09:22:41.680Z [INFO] [http] GET /api/v1/dashboard/anomalies
+2026-09-04T09:22:41.984Z [INFO] [http] GET /api/v1/dashboard/weekly-report/list?limit=20
+2026-09-04T09:22:41.988Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:22:41.992Z [INFO] [http] GET /api/v1/dashboard/summary?range=thisMonth
+2026-09-04T09:22:41.997Z [INFO] [http] GET /api/v1/dashboard/trend?range=thisMonth
+2026-09-04T09:22:42.001Z [INFO] [http] GET /api/v1/dashboard/distribution?range=thisMonth
+2026-09-04T09:22:42.006Z [INFO] [http] GET /api/v1/dashboard/handlers?range=thisMonth
+2026-09-04T09:22:42.319Z [INFO] [http] GET /api/v1/dashboard/anomalies
+2026-09-04T09:22:42.323Z [INFO] [http] GET /api/v1/dashboard/weekly-report/list?limit=20
+2026-09-04T09:22:43.664Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:22:43.666Z [INFO] [http] GET /api/v1/cases?sortBy=createdAt&sortDir=desc&page=1&pageSize=20
+2026-09-04T09:22:43.921Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:22:43.985Z [INFO] [http] GET /api/v1/cases?sortBy=createdAt&sortDir=desc&page=1&pageSize=20
+2026-09-04T09:22:44.663Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:22:44.981Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:22:44.983Z [INFO] [http] GET /api/v1/config
+2026-09-04T09:22:45.303Z [INFO] [http] GET /api/v1/config
+2026-09-04T09:22:46.159Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:22:46.472Z [INFO] [http] GET /api/v1/cases?sortBy=createdAt&sortDir=desc&page=1&pageSize=20
+2026-09-04T09:22:46.476Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:22:46.784Z [INFO] [http] GET /api/v1/cases?sortBy=createdAt&sortDir=desc&page=1&pageSize=20
+2026-09-04T09:22:47.610Z [INFO] [http] GET /api/v1/qr/overview
+2026-09-04T09:22:47.871Z [INFO] [http] GET /api/v1/qr/overview
+2026-09-04T09:22:49.785Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:22:50.104Z [INFO] [http] GET /api/v1/cases?sortBy=createdAt&sortDir=desc&page=1&pageSize=20
+2026-09-04T09:22:50.107Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:22:50.413Z [INFO] [http] GET /api/v1/cases?sortBy=createdAt&sortDir=desc&page=1&pageSize=20
+2026-09-04T09:22:51.274Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:22:51.277Z [INFO] [http] GET /api/v1/dashboard/summary?range=thisMonth
+2026-09-04T09:22:51.281Z [INFO] [http] GET /api/v1/dashboard/trend?range=thisMonth
+2026-09-04T09:22:51.286Z [INFO] [http] GET /api/v1/dashboard/distribution?range=thisMonth
+2026-09-04T09:22:51.292Z [INFO] [http] GET /api/v1/dashboard/handlers?range=thisMonth
+2026-09-04T09:22:51.296Z [INFO] [http] GET /api/v1/dashboard/anomalies
+2026-09-04T09:22:51.582Z [INFO] [http] GET /api/v1/dashboard/weekly-report/list?limit=20
+2026-09-04T09:22:51.591Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:22:51.594Z [INFO] [http] GET /api/v1/dashboard/summary?range=thisMonth
+2026-09-04T09:22:51.600Z [INFO] [http] GET /api/v1/dashboard/trend?range=thisMonth
+2026-09-04T09:22:51.604Z [INFO] [http] GET /api/v1/dashboard/distribution?range=thisMonth
+2026-09-04T09:22:51.608Z [INFO] [http] GET /api/v1/dashboard/handlers?range=thisMonth
+2026-09-04T09:22:51.899Z [INFO] [http] GET /api/v1/dashboard/anomalies
+2026-09-04T09:22:51.918Z [INFO] [http] GET /api/v1/dashboard/weekly-report/list?limit=20
+2026-09-04T09:22:59.979Z [INFO] [http] GET /api/v1/dashboard/trend?range=thisQuarter
+2026-09-04T09:22:59.983Z [INFO] [http] GET /api/v1/dashboard/distribution?range=thisQuarter
+2026-09-04T09:22:59.987Z [INFO] [http] GET /api/v1/dashboard/handlers?range=thisQuarter
+2026-09-04T09:22:59.991Z [INFO] [http] GET /api/v1/dashboard/summary?range=thisQuarter
+2026-09-04T09:22:59.996Z [INFO] [http] GET /api/v1/dashboard/anomalies
+2026-09-04T09:23:00.000Z [INFO] [http] GET /api/v1/dashboard/weekly-report/list?limit=20
+2026-09-04T09:23:00.857Z [INFO] [http] GET /api/v1/dashboard/summary?range=today
+2026-09-04T09:23:00.865Z [INFO] [http] GET /api/v1/dashboard/trend?range=today
+2026-09-04T09:23:00.871Z [INFO] [http] GET /api/v1/dashboard/distribution?range=today
+2026-09-04T09:23:00.876Z [INFO] [http] GET /api/v1/dashboard/handlers?range=today
+2026-09-04T09:23:00.879Z [INFO] [http] GET /api/v1/dashboard/anomalies
+2026-09-04T09:23:00.884Z [INFO] [http] GET /api/v1/dashboard/weekly-report/list?limit=20
+2026-09-04T09:23:02.095Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:23:02.097Z [INFO] [http] GET /api/v1/cases?sortBy=createdAt&sortDir=desc&page=1&pageSize=20
+2026-09-04T09:23:02.103Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:23:02.353Z [INFO] [http] GET /api/v1/cases?sortBy=createdAt&sortDir=desc&page=1&pageSize=20
+2026-09-04T09:23:07.065Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:23:07.367Z [INFO] [http] GET /api/v1/config
+2026-09-04T09:23:07.374Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:23:07.690Z [INFO] [http] GET /api/v1/config
+2026-09-04T09:23:09.625Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:23:09.627Z [INFO] [http] GET /api/v1/cases?sortBy=createdAt&sortDir=desc&page=1&pageSize=20
+2026-09-04T09:23:09.890Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:23:09.937Z [INFO] [http] GET /api/v1/cases?sortBy=createdAt&sortDir=desc&page=1&pageSize=20
+2026-09-04T09:23:11.282Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:23:11.598Z [INFO] [http] GET /api/v1/config
+2026-09-04T09:23:11.608Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:23:11.914Z [INFO] [http] GET /api/v1/config
+2026-09-04T09:23:13.290Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:23:13.294Z [INFO] [http] GET /api/v1/cases?sortBy=createdAt&sortDir=desc&page=1&pageSize=20
+2026-09-04T09:23:13.300Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:23:13.531Z [INFO] [http] GET /api/v1/cases?sortBy=createdAt&sortDir=desc&page=1&pageSize=20
+2026-09-04T09:23:27.403Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:23:27.710Z [INFO] [http] GET /api/v1/dashboard/summary?range=thisMonth
+2026-09-04T09:23:27.714Z [INFO] [http] GET /api/v1/dashboard/trend?range=thisMonth
+2026-09-04T09:23:27.719Z [INFO] [http] GET /api/v1/dashboard/distribution?range=thisMonth
+2026-09-04T09:23:27.723Z [INFO] [http] GET /api/v1/dashboard/handlers?range=thisMonth
+2026-09-04T09:23:27.726Z [INFO] [http] GET /api/v1/dashboard/anomalies
+2026-09-04T09:23:27.733Z [INFO] [http] GET /api/v1/dashboard/weekly-report/list?limit=20
+2026-09-04T09:23:28.036Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:23:28.039Z [INFO] [http] GET /api/v1/dashboard/summary?range=thisMonth
+2026-09-04T09:23:28.044Z [INFO] [http] GET /api/v1/dashboard/trend?range=thisMonth
+2026-09-04T09:23:28.048Z [INFO] [http] GET /api/v1/dashboard/distribution?range=thisMonth
+2026-09-04T09:23:28.053Z [INFO] [http] GET /api/v1/dashboard/handlers?range=thisMonth
+2026-09-04T09:23:28.056Z [INFO] [http] GET /api/v1/dashboard/anomalies
+2026-09-04T09:23:28.358Z [INFO] [http] GET /api/v1/dashboard/weekly-report/list?limit=20
+2026-09-04T09:23:29.772Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:23:29.774Z [INFO] [http] GET /api/v1/cases?sortBy=createdAt&sortDir=desc&page=1&pageSize=20
+2026-09-04T09:23:30.026Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:23:30.086Z [INFO] [http] GET /api/v1/cases?sortBy=createdAt&sortDir=desc&page=1&pageSize=20
+2026-09-04T09:23:30.370Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:23:30.695Z [INFO] [http] GET /api/v1/dashboard/summary?range=thisMonth
+2026-09-04T09:23:30.700Z [INFO] [http] GET /api/v1/dashboard/trend?range=thisMonth
+2026-09-04T09:23:30.705Z [INFO] [http] GET /api/v1/dashboard/distribution?range=thisMonth
+2026-09-04T09:23:30.709Z [INFO] [http] GET /api/v1/dashboard/handlers?range=thisMonth
+2026-09-04T09:23:30.712Z [INFO] [http] GET /api/v1/dashboard/anomalies
+2026-09-04T09:23:30.717Z [INFO] [http] GET /api/v1/dashboard/weekly-report/list?limit=20
+2026-09-04T09:23:31.028Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:23:31.034Z [INFO] [http] GET /api/v1/dashboard/summary?range=thisMonth
+2026-09-04T09:23:31.044Z [INFO] [http] GET /api/v1/dashboard/trend?range=thisMonth
+2026-09-04T09:23:31.050Z [INFO] [http] GET /api/v1/dashboard/distribution?range=thisMonth
+2026-09-04T09:23:31.056Z [INFO] [http] GET /api/v1/dashboard/handlers?range=thisMonth
+2026-09-04T09:23:31.061Z [INFO] [http] GET /api/v1/dashboard/anomalies
+2026-09-04T09:23:31.357Z [INFO] [http] GET /api/v1/dashboard/weekly-report/list?limit=20
+2026-09-04T09:23:31.746Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:23:31.748Z [INFO] [http] GET /api/v1/cases?sortBy=createdAt&sortDir=desc&page=1&pageSize=20
+2026-09-04T09:23:32.013Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:23:32.056Z [INFO] [http] GET /api/v1/cases?sortBy=createdAt&sortDir=desc&page=1&pageSize=20
+2026-09-04T09:23:40.808Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T09:23:57.463Z [INFO] [http] GET /api/v1/cases/SMS%2FSR%2FCHNG%2F260904001
+2026-09-04T09:23:57.783Z [INFO] [http] GET /api/v1/cases/SMS%2FSR%2FCHNG%2F260904001
+2026-09-04T09:23:58.045Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:23:58.139Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:24:03.993Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:24:04.295Z [INFO] [http] GET /api/v1/cases?sortBy=createdAt&sortDir=desc&page=1&pageSize=20
+2026-09-04T09:24:04.300Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:24:04.322Z [INFO] [http] GET /api/v1/cases?sortBy=createdAt&sortDir=desc&page=1&pageSize=20
+2026-09-04T09:24:06.383Z [INFO] [http] GET /api/v1/cases/SMS%2FSR%2FCHNG%2F260904001
+2026-09-04T09:24:06.708Z [INFO] [http] GET /api/v1/cases/SMS%2FSR%2FCHNG%2F260904001
+2026-09-04T09:24:06.956Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:24:07.066Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:24:17.866Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:24:18.174Z [INFO] [http] GET /api/v1/cases?sortBy=createdAt&sortDir=desc&page=1&pageSize=20
+2026-09-04T09:24:18.180Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:24:18.501Z [INFO] [http] GET /api/v1/cases?sortBy=createdAt&sortDir=desc&page=1&pageSize=20
+2026-09-04T09:24:39.941Z [INFO] [http] POST /api/v1/auth/login
+2026-09-04T09:24:40.197Z [INFO] [http] GET /api/v1/me
+2026-09-04T09:24:40.286Z [INFO] [http] GET /api/v1/me
+2026-09-04T09:24:40.517Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:24:40.597Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:24:40.600Z [INFO] [http] GET /api/v1/cases?sortBy=createdAt&sortDir=desc&page=1&pageSize=20
+2026-09-04T09:24:40.822Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T09:24:40.841Z [INFO] [http] GET /api/v1/cases?sortBy=createdAt&sortDir=desc&page=1&pageSize=20
+2026-09-04T09:25:10.297Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:25:40.613Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:25:40.827Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T09:26:10.307Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:26:40.617Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:26:40.842Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T09:27:10.297Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:27:40.606Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:27:40.850Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T09:28:10.296Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:28:40.615Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-04T09:28:40.859Z [INFO] [slaReminder] SLA_SCAN cases=1 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-04T09:29:10.309Z [INFO] [http] GET /api/v1/notifications/unread-count
+Restarting 'src/server.js'
+Restarting 'src/server.js'
+2026-09-04T09:29:18.543Z [INFO] [static] serving frontend dist at C:\Users\606610\CodeBuddy\QRCode 客戶意見反饋\frontend\dist
+2026-09-04T09:29:18.549Z [INFO] [server] QRCode 客戶意見反饋骨架已啟動 http://localhost:3000/api/v1
+2026-09-04T09:29:18.549Z [INFO] [scheduler] SLA 掃描定時器已啟動（每 60000ms）
+2026-09-04T09:29:18.549Z [WARN] [scheduler] 週報定時器停用（WEEKLY_REPORT_CHECK_MS 為 0/未設定）
+Restarting 'src/server.js'
+2026-09-04T09:29:21.187Z [INFO] [static] serving frontend dist at C:\Users\606610\CodeBuddy\QRCode 客戶意見反饋\frontend\dist
+node:events:496
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: listen EADDRINUSE: address already in use :::3000
+    at Server.setupListenHandle [as _listen2] (node:net:1937:16)
+    at listenInCluster (node:net:1994:12)
+    at Server.listen (node:net:2099:7)
+    at Function.listen (C:\Users\606610\CodeBuddy\QRCode 客戶意見反饋\backend\node_modules\express\lib\application.js:635:24)
+    at Object.<anonymous> (C:\Users\606610\CodeBuddy\QRCode 客戶意見反饋\backend\src\server.js:13:5)
+    at Module._compile (node:internal/modules/cjs/loader:1554:14)
+    at Object..js (node:internal/modules/cjs/loader:1706:10)
+    at Module.load (node:internal/modules/cjs/loader:1289:32)
+    at Function._load (node:internal/modules/cjs/loader:1108:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:220:24)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:170:5)
+    at node:internal/main/run_main_module:36:49
+Emitted 'error' event on Server instance at:
+    at emitErrorNT (node:net:1973:8)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 3000
+}
+
+Node.js v22.14.0
+Failed running 'src/server.js'
