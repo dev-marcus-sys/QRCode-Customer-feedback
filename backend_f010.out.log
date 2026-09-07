@@ -8443,3 +8443,208 @@ Restarting 'src/server.js'
 2026-09-07T08:09:02.751Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
 2026-09-07T08:09:52.563Z [INFO] [http] GET /api/v1/notifications/unread-count
 2026-09-07T08:10:02.760Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:10:53.554Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:11:02.776Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:11:57.060Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:12:02.802Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:12:57.243Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:13:02.805Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:13:58.550Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:14:02.821Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:14:59.553Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:15:02.833Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:16:00.557Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:16:02.842Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:17:01.563Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:17:02.843Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:18:02.557Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:18:02.855Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:19:02.863Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:19:03.554Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:20:02.865Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:20:04.557Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:21:02.879Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:21:05.552Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:22:02.890Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:22:06.585Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:23:02.897Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:23:06.686Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:24:02.899Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:24:06.703Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:25:02.901Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:25:06.241Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:26:02.911Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:26:06.557Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:27:02.919Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:27:06.275Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:28:02.923Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:28:06.557Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:29:02.928Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:29:06.241Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:30:02.941Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:30:06.546Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:31:02.947Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:31:06.313Z [INFO] [http] GET /api/v1/notifications/unread-count
+Restarting 'src/server.js'
+Restarting 'src/server.js'
+Restarting 'src/server.js'
+2026-09-07T08:31:44.278Z [INFO] [static] serving frontend dist at C:\Users\606610\CodeBuddy\QRCode 客戶意見反饋\frontend\dist
+2026-09-07T08:31:44.291Z [INFO] [server] QRCode 客戶意見反饋骨架已啟動 http://localhost:3000/api/v1
+2026-09-07T08:31:44.291Z [INFO] [scheduler] SLA 掃描定時器已啟動（每 60000ms）
+2026-09-07T08:31:44.291Z [WARN] [scheduler] 週報定時器停用（WEEKLY_REPORT_CHECK_MS 為 0/未設定）
+2026-09-07T08:31:44.292Z [INFO] [scheduler] QR 自動到期掃描已啟動（每 60000ms）
+2026-09-07T08:32:03.646Z [INFO] [http] GET /survey/5e2b8ec4d502eb56abf13943767088443a7017139166a518
+2026-09-07T08:32:03.942Z [INFO] [http] GET /assets/index-BrTCdClv.js
+2026-09-07T08:32:04.239Z [INFO] [http] GET /api/v1/survey/5e2b8ec4d502eb56abf13943767088443a7017139166a518?lang=zh-Hant
+2026-09-07T08:32:06.616Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:32:44.307Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:33:06.582Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:33:44.313Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:34:06.270Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:34:14.357Z [INFO] [http] POST /api/v1/survey/5e2b8ec4d502eb56abf13943767088443a7017139166a518/submit
+2026-09-07T08:34:14.359Z [INFO] [surveyService] SURVEY_SUBMIT CRPM/SR/CWC/260907001 avg=4 low=false
+2026-09-07T08:34:16.730Z [INFO] [http] GET /api/v1/survey/5e2b8ec4d502eb56abf13943767088443a7017139166a518?lang=en
+2026-09-07T08:34:17.350Z [INFO] [http] GET /api/v1/survey/5e2b8ec4d502eb56abf13943767088443a7017139166a518?lang=zh-Hant
+2026-09-07T08:34:44.315Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:35:06.574Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:35:44.325Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:36:06.252Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:36:15.736Z [INFO] [http] GET /api/v1/cases?sortBy=createdAt&sortDir=desc&page=1&pageSize=20
+2026-09-07T08:36:15.745Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:36:15.983Z [INFO] [http] GET /api/v1/cases?sortBy=createdAt&sortDir=desc&page=1&pageSize=20
+2026-09-07T08:36:16.073Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:36:21.864Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:36:22.170Z [INFO] [http] GET /api/v1/surveys/stats
+2026-09-07T08:36:22.185Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:36:22.505Z [INFO] [http] GET /api/v1/surveys/stats
+2026-09-07T08:36:37.124Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:36:37.133Z [INFO] [http] GET /api/v1/cases?sortBy=createdAt&sortDir=desc&page=1&pageSize=20
+2026-09-07T08:36:37.371Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:36:37.466Z [INFO] [http] GET /api/v1/cases?sortBy=createdAt&sortDir=desc&page=1&pageSize=20
+2026-09-07T08:36:40.868Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:36:41.200Z [INFO] [http] GET /api/v1/dashboard/summary?range=thisMonth
+2026-09-07T08:36:41.207Z [INFO] [http] GET /api/v1/dashboard/trend?range=thisMonth
+2026-09-07T08:36:41.211Z [INFO] [http] GET /api/v1/dashboard/anomalies
+2026-09-07T08:36:41.218Z [INFO] [http] GET /api/v1/dashboard/weekly-report/list?limit=20
+2026-09-07T08:36:41.222Z [INFO] [http] GET /api/v1/dashboard/distribution?range=thisMonth
+2026-09-07T08:36:41.228Z [INFO] [http] GET /api/v1/dashboard/handlers?range=thisMonth
+2026-09-07T08:36:41.525Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:36:41.542Z [INFO] [http] GET /api/v1/dashboard/summary?range=thisMonth
+2026-09-07T08:36:41.548Z [INFO] [http] GET /api/v1/dashboard/anomalies
+2026-09-07T08:36:41.552Z [INFO] [http] GET /api/v1/dashboard/trend?range=thisMonth
+2026-09-07T08:36:41.557Z [INFO] [http] GET /api/v1/dashboard/weekly-report/list?limit=20
+2026-09-07T08:36:41.561Z [INFO] [http] GET /api/v1/dashboard/distribution?range=thisMonth
+2026-09-07T08:36:41.850Z [INFO] [http] GET /api/v1/dashboard/handlers?range=thisMonth
+2026-09-07T08:36:44.355Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:37:11.196Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:37:40.879Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:37:41.473Z [INFO] [http] POST /api/v1/dashboard/weekly-report/run
+2026-09-07T08:37:41.479Z [INFO] [notification] EMAIL_QUEUE template=weekly_report recipient=admin@***
+2026-09-07T08:37:41.480Z [INFO] [notification] EMAIL_QUEUE template=weekly_report recipient=ccsup@***
+2026-09-07T08:37:41.480Z [INFO] [notification] EMAIL_QUEUE template=weekly_report recipient=cwcsup@***
+2026-09-07T08:37:41.480Z [INFO] [notification] EMAIL_QUEUE template=weekly_report recipient=yprsup@***
+2026-09-07T08:37:41.481Z [INFO] [notification] EMAIL_QUEUE template=weekly_report recipient=chngsup@***
+2026-09-07T08:37:41.481Z [INFO] [notification] EMAIL_QUEUE template=weekly_report recipient=dahfsup@***
+2026-09-07T08:37:41.483Z [INFO] [weeklyReport] WEEKLY_REPORT 2026-08-31~2026-09-06 recipients=6 emailQueued=6
+2026-09-07T08:37:41.730Z [INFO] [http] GET /api/v1/dashboard/weekly-report/list?limit=20
+2026-09-07T08:37:44.360Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:37:57.652Z [INFO] [http] GET /api/v1/dashboard/summary?range=thisWeek
+2026-09-07T08:37:57.970Z [INFO] [http] GET /api/v1/dashboard/trend?range=thisWeek
+2026-09-07T08:37:57.974Z [INFO] [http] GET /api/v1/dashboard/distribution?range=thisWeek
+2026-09-07T08:37:57.978Z [INFO] [http] GET /api/v1/dashboard/anomalies
+2026-09-07T08:37:57.983Z [INFO] [http] GET /api/v1/dashboard/handlers?range=thisWeek
+2026-09-07T08:37:57.986Z [INFO] [http] GET /api/v1/dashboard/weekly-report/list?limit=20
+2026-09-07T08:38:03.056Z [INFO] [http] GET /api/v1/dashboard/summary?range=thisMonth
+2026-09-07T08:38:03.062Z [INFO] [http] GET /api/v1/dashboard/trend?range=thisMonth
+2026-09-07T08:38:03.066Z [INFO] [http] GET /api/v1/dashboard/distribution?range=thisMonth
+2026-09-07T08:38:03.072Z [INFO] [http] GET /api/v1/dashboard/handlers?range=thisMonth
+2026-09-07T08:38:03.076Z [INFO] [http] GET /api/v1/dashboard/anomalies
+2026-09-07T08:38:03.081Z [INFO] [http] GET /api/v1/dashboard/weekly-report/list?limit=20
+2026-09-07T08:38:11.182Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:38:41.246Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:38:44.363Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:39:11.548Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:39:41.240Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:39:44.378Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:40:44.386Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:40:45.553Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:41:44.394Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:41:46.629Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:42:16.840Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:42:41.200Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:42:44.408Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:42:57.090Z [INFO] [http] POST /api/v1/dashboard/weekly-report/run
+2026-09-07T08:42:57.472Z [INFO] [http] GET /api/v1/dashboard/weekly-report/list?limit=20
+2026-09-07T08:43:06.224Z [INFO] [http] GET /api/v1/notifications?page=1&pageSize=20
+2026-09-07T08:43:11.212Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:43:15.307Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:43:15.642Z [INFO] [http] GET /api/v1/cases?sortBy=createdAt&sortDir=desc&page=1&pageSize=20
+2026-09-07T08:43:15.648Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:43:15.674Z [INFO] [http] GET /api/v1/cases?sortBy=createdAt&sortDir=desc&page=1&pageSize=20
+2026-09-07T08:43:19.893Z [INFO] [http] GET /api/v1/roles
+2026-09-07T08:43:19.898Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:43:19.902Z [INFO] [http] GET /api/v1/users?active=1
+2026-09-07T08:43:20.159Z [INFO] [http] GET /api/v1/roles
+2026-09-07T08:43:20.253Z [INFO] [http] GET /api/v1/users?active=1
+2026-09-07T08:43:20.259Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:43:44.451Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:43:50.568Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:44:20.549Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:44:44.454Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:44:50.834Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:45:20.562Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:45:44.455Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:45:50.241Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:46:20.565Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:46:44.461Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:47:06.403Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:47:44.467Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:48:06.560Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:48:44.505Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:49:06.261Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:49:44.509Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:50:06.551Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:50:44.513Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:51:06.260Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:51:44.516Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:52:06.543Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:52:44.527Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:53:06.260Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:53:44.528Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:54:06.558Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:54:44.534Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:55:06.260Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:55:44.535Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:56:06.578Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:56:44.549Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:57:06.260Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:57:33.244Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:57:44.560Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:57:50.247Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:58:20.551Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:58:44.564Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:59:06.254Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:59:33.473Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T08:59:44.565Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T08:59:50.251Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T09:00:20.560Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T09:00:44.576Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T09:01:06.239Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T09:01:44.581Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T09:02:06.598Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T09:02:44.582Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T09:03:06.563Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T09:03:44.585Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T09:04:06.264Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T09:04:44.594Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T09:05:06.568Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T09:05:44.606Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T09:06:06.273Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T09:06:44.312Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T09:06:44.612Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T09:06:49.587Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T09:07:23.113Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T09:07:44.616Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0
+2026-09-07T09:07:50.492Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T09:08:20.562Z [INFO] [http] GET /api/v1/notifications/unread-count
+2026-09-07T09:08:44.632Z [INFO] [slaReminder] SLA_SCAN cases=0 respRemind=0 respEsc=0 closureRemind=0 closureEsc=0 surveyExpired=0

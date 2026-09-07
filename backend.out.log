@@ -6641,3 +6641,42 @@ Emitted 'error' event on Server instance at:
 
 Node.js v22.14.0
 Failed running 'src/server.js'
+Restarting 'src/server.js'
+Restarting 'src/server.js'
+2026-09-07T08:31:42.136Z [INFO] [static] serving frontend dist at C:\Users\606610\CodeBuddy\QRCode 客戶意見反饋\frontend\dist
+2026-09-07T08:31:42.142Z [INFO] [server] QRCode 客戶意見反饋骨架已啟動 http://localhost:3000/api/v1
+2026-09-07T08:31:42.143Z [INFO] [scheduler] SLA 掃描定時器已啟動（每 60000ms）
+2026-09-07T08:31:42.143Z [WARN] [scheduler] 週報定時器停用（WEEKLY_REPORT_CHECK_MS 為 0/未設定）
+2026-09-07T08:31:42.143Z [INFO] [scheduler] QR 自動到期掃描已啟動（每 60000ms）
+Restarting 'src/server.js'
+2026-09-07T08:31:46.935Z [INFO] [static] serving frontend dist at C:\Users\606610\CodeBuddy\QRCode 客戶意見反饋\frontend\dist
+node:events:496
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: listen EADDRINUSE: address already in use :::3000
+    at Server.setupListenHandle [as _listen2] (node:net:1937:16)
+    at listenInCluster (node:net:1994:12)
+    at Server.listen (node:net:2099:7)
+    at Function.listen (C:\Users\606610\CodeBuddy\QRCode 客戶意見反饋\backend\node_modules\express\lib\application.js:635:24)
+    at Object.<anonymous> (C:\Users\606610\CodeBuddy\QRCode 客戶意見反饋\backend\src\server.js:13:5)
+    at Module._compile (node:internal/modules/cjs/loader:1554:14)
+    at Object..js (node:internal/modules/cjs/loader:1706:10)
+    at Module.load (node:internal/modules/cjs/loader:1289:32)
+    at Function._load (node:internal/modules/cjs/loader:1108:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:220:24)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:170:5)
+    at node:internal/main/run_main_module:36:49
+Emitted 'error' event on Server instance at:
+    at emitErrorNT (node:net:1973:8)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 3000
+}
+
+Node.js v22.14.0
+Failed running 'src/server.js'
