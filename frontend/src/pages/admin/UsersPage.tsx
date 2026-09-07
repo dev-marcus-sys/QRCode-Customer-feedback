@@ -20,14 +20,7 @@ import {
 } from '../../api/client';
 import { NotificationCenter } from '../../components/NotificationCenter';
 import AdminNav from '../../admin/AdminNav';
-
-const ESTATE_OPTIONS = [
-  { code: 'ALL', zh: '全屋苑（ALL）' },
-  { code: 'CWC', zh: '灣景中心（CWC）' },
-  { code: 'YPR', zh: '攸壆路（YPR）' },
-  { code: 'CHNG', zh: '頌雅苑（CHNG）' },
-  { code: 'DAHF', zh: '大夫第（DAHF）' },
-];
+import { useEstates } from '../../admin/useEstates';
 
 export function UsersPage() {
   const navigate = useNavigate();
@@ -61,6 +54,16 @@ export function UsersPage() {
   const [resetDlg, setResetDlg] = useState<{ username: string; temp: string } | null>(null);
   const [confirm, setConfirm] = useState<{ userId: number; username: string; disable: boolean } | null>(null);
   const [menuFor, setMenuFor] = useState<{ userId: number; anchor: HTMLElement } | null>(null);
+
+  const estates = useEstates();
+  // 選項：ALL（全屋苑）+ 啟用中屋苑；若正在編輯的用戶所屬屋苑已停用，仍列入以保留原值
+  const estateChoices = [
+    { code: 'ALL', zh: '全屋苑（ALL）' },
+    ...estates.activeOptions.map((o) => ({ code: o.estateCode, zh: `${o.estateNameZh}（${o.estateCode}）` })),
+  ];
+  if (editing && editing.estateCode !== 'ALL' && !estates.activeOptions.some((o) => o.estateCode === editing.estateCode)) {
+    estateChoices.push({ code: editing.estateCode, zh: `${estates.nameOf(editing.estateCode)}（${editing.estateCode}）` });
+  }
 
   const load = useCallback(() => {
     setLoading(true);
@@ -175,7 +178,7 @@ export function UsersPage() {
             onChange={(e) => setKeyword(e.target.value)} placeholder="帳號/姓名/Email" sx={{ minWidth: 180 }} />
           <TextField size="small" select label="屋苑" value={estate} onChange={(e) => setEstate(e.target.value)} sx={{ minWidth: 150 }}>
             <MenuItem value="">全部</MenuItem>
-            {ESTATE_OPTIONS.map((o) => <MenuItem key={o.code} value={o.code}>{o.zh}</MenuItem>)}
+            {estateChoices.map((o) => <MenuItem key={o.code} value={o.code}>{o.zh}</MenuItem>)}
           </TextField>
           <TextField size="small" select label="狀態" value={active} onChange={(e) => setActive(e.target.value)} sx={{ minWidth: 120 }}>
             <MenuItem value="">全部</MenuItem>
@@ -211,7 +214,7 @@ export function UsersPage() {
                   <TableRow key={u.userId} hover>
                     <TableCell sx={{ fontWeight: 600 }}>{u.username}</TableCell>
                     <TableCell>{u.fullName}</TableCell>
-                    <TableCell>{u.estateCode}</TableCell>
+                    <TableCell>{estates.nameOf(u.estateCode)}{u.estateCode !== 'ALL' ? `（${u.estateCode}）` : ''}</TableCell>
                     <TableCell>{u.roles.map((r) => <Chip key={r.code} size="small" label={r.name} sx={{ mr: 0.5 }} />)}</TableCell>
                     <TableCell>
                       {u.isActive ? <Chip size="small" color="success" label="啟用" /> : <Chip size="small" label="停用" />}
@@ -261,7 +264,7 @@ export function UsersPage() {
             <TextField size="small" label="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} fullWidth />
             <TextField size="small" label="電話" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} fullWidth />
             <TextField size="small" select label="所屬屋苑" value={form.estateCode} onChange={(e) => setForm({ ...form, estateCode: e.target.value })} fullWidth>
-              {ESTATE_OPTIONS.map((o) => <MenuItem key={o.code} value={o.code}>{o.zh}</MenuItem>)}
+              {estateChoices.map((o) => <MenuItem key={o.code} value={o.code}>{o.zh}</MenuItem>)}
             </TextField>
             <TextField size="small" select label="角色（可多選）" SelectProps={{ multiple: true }} value={form.roles}
               onChange={(e) => setForm({ ...form, roles: e.target.value as unknown as string[] })} fullWidth

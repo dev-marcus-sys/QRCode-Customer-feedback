@@ -410,6 +410,10 @@ export interface QrItem {
   active: boolean | null;
   generatedAt: string | null;
   invalidatedAt: string | null;
+  /** 有效日期（DB UTC 字串 'YYYY-MM-DD HH:mm:ss'）；null = 永不自動停用（預設） */
+  validUntil: string | null;
+  /** 是否已逾有效日期（validUntil 為 null 時恆為 false） */
+  expired: boolean;
 }
 
 export interface QrOverviewData {
@@ -425,6 +429,7 @@ export interface QrActionResult {
   active: boolean;
   generatedAt: string;
   invalidatedAt?: string | null;
+  validUntil?: string | null;
 }
 
 /* ------- F-010 用戶與權限管理 ------- */
@@ -502,6 +507,20 @@ export interface AuditListData {
   actions: string[];
 }
 
+/* ------- 屋苑主檔（後台「屋苑」管理頁）------- */
+
+export interface EstateItem {
+  estateCode: string;
+  estateNameZh: string;
+  estateNameEn: string;
+  companyCode: string;
+  isActive: number; // 0/1
+}
+
+export interface EstateListData {
+  items: EstateItem[];
+}
+
 const BASE = '/api/v1';
 
 /** F-008 儀表板共用查詢參數 */
@@ -577,10 +596,13 @@ export const api = {
   listCases: (query: string, token: string) => request<CaseListData>(`/cases?${query}`, { token }),
   caseDetail: (caseId: string, token: string) => request<CaseDetailData>(`/cases/${encodeURIComponent(caseId)}`, { token }),
   listQrOverview: (token: string) => request<QrOverviewData>('/qr/overview', { token }),
-  generateQr: (estateCode: string, token: string) =>
-    request<QrActionResult>('/qr/generate', { method: 'POST', body: { estateCode }, token }),
+  generateQr: (estateCode: string, token: string, validUntil?: string | null) =>
+    request<QrActionResult>('/qr/generate', { method: 'POST', body: { estateCode, validUntil: validUntil ?? null }, token }),
   setQrStatus: (qrId: number, active: boolean, token: string) =>
     request<QrActionResult>(`/qr/${qrId}/status`, { method: 'POST', body: { active }, token }),
+  /** 設定有效日期；傳 null/空字串 = 永不自動停用 */
+  setQrValidUntil: (qrId: number, validUntil: string | null, token: string) =>
+    request<QrActionResult>(`/qr/${qrId}/valid-until`, { method: 'PUT', body: { validUntil }, token }),
   saveSiteBaseUrl: (siteBaseUrl: string, token: string) =>
     request<{ siteBaseUrl: string }>('/qr/site-url', { method: 'PUT', body: { siteBaseUrl }, token }),
   /* ------- F-004 個案動作 / F-006 完結 / F-007 問卷 / 通知中心 ------- */
@@ -674,6 +696,11 @@ export const api = {
     request<unknown>(`/roles/${encodeURIComponent(roleCode)}`, { method: 'DELETE', token }),
   /* F-010 審計 */
   listAudit: (query: string, token: string) => request<AuditListData>(`/audit?${query}`, { token }),
+  /* 屋苑主檔管理（後台「屋苑」頁） */
+  listEstates: (token: string) => request<EstateListData>('/estates', { token }),
+  createEstate: (body: unknown, token: string) => request<EstateItem>('/estates', { method: 'POST', body, token }),
+  updateEstate: (estateCode: string, body: unknown, token: string) =>
+    request<EstateItem>(`/estates/${encodeURIComponent(estateCode)}`, { method: 'PUT', body, token }),
 };
 
 /** 私有附件下載（帶 token 之 blob 下載） */

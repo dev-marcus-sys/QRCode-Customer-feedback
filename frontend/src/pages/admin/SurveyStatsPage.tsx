@@ -9,7 +9,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import LogoutIcon from '@mui/icons-material/Logout';
 import FactCheckIcon from '@mui/icons-material/FactCheck';
 import { api, ApiRequestError, authStore, SurveyStatsData } from '../../api/client';
-import { ESTATE_OPTIONS } from '../../admin/options';
+import { useEstates } from '../../admin/useEstates';
 import { NotificationCenter } from '../../components/NotificationCenter';
 
 const AVG_LABELS: { key: 'overall' | 'response' | 'attitude' | 'resolution'; zh: string }[] = [
@@ -38,6 +38,7 @@ export function SurveyStatsPage() {
   const user = authStore.getUser();
   const token = authStore.getToken() || '';
   const locked = !!user && user.estateCode !== 'ALL';
+  const estates = useEstates();
   const [estate, setEstate] = useState('');
   const [data, setData] = useState<SurveyStatsData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -107,8 +108,8 @@ export function SurveyStatsPage() {
             onChange={(e) => setEstate(e.target.value)}
           >
             <MenuItem value="">全部屋苑</MenuItem>
-            {ESTATE_OPTIONS.map((x) => (
-              <MenuItem key={x.code} value={x.code}>{x.nameZh}</MenuItem>
+            {estates.activeOptions.map((x) => (
+              <MenuItem key={x.estateCode} value={x.estateCode}>{x.estateNameZh}</MenuItem>
             ))}
           </TextField>
           <Chip icon={<FactCheckIcon />} label="匿名問卷，僅顯示統計" variant="outlined" size="small" />

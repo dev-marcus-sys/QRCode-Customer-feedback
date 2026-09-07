@@ -20,7 +20,8 @@ import {
   DistributionData, HandlerRow, KpiCard, RangePreset, TrendPoint, WeeklyReportItem, api,
   downloadDashboardCsv,
 } from '../../api/client';
-import { ESTATE_OPTIONS, STATUS_COLORS } from '../../admin/options';
+import { STATUS_COLORS } from '../../admin/options';
+import { useEstates } from '../../admin/useEstates';
 import { NotificationCenter } from '../../components/NotificationCenter';
 
 const RANGES: { code: RangePreset; label: string }[] = [
@@ -145,6 +146,7 @@ export function DashboardPage() {
   const user = authStore.getUser();
   const token = authStore.getToken() || '';
   const locked = !!user && user.estateCode !== 'ALL';
+  const estates = useEstates();
 
   const [range, setRange] = useState<RangePreset>('thisMonth');
   const [from, setFrom] = useState('');
@@ -274,7 +276,7 @@ export function DashboardPage() {
             value={effectiveEstate}
             onChange={(e) => setEstate(e.target.value)}>
             <MenuItem value="">全部屋苑</MenuItem>
-            {ESTATE_OPTIONS.map((x) => (<MenuItem key={x.code} value={x.code}>{x.nameZh}</MenuItem>))}
+            {estates.activeOptions.map((x) => (<MenuItem key={x.estateCode} value={x.estateCode}>{x.estateNameZh}</MenuItem>))}
           </TextField>
           <Button size="small" variant="outlined" startIcon={<RefreshIcon />} onClick={load}>重新整理</Button>
           <Button size="small" variant="outlined" startIcon={<DownloadIcon />} onClick={exportCsv}>匯出 CSV</Button>

@@ -46,13 +46,15 @@ const PERMISSIONS = [
   ['role:manage', 'role', '角色管理'],
   ['audit:view', 'audit', '審計查閱'],
   ['dashboard:view', 'dashboard', '儀表板'],
+  ['estate:list', 'estate', '屋苑查閱'],
+  ['estate:manage', 'estate', '屋苑管理'],
 ];
 
 const ROLE_PERMISSIONS = {
   ADMIN: PERMISSIONS.map((p) => p[0]),
-  CC_SUPERVISOR: ['case:list', 'case:view', 'case:export', 'case:assign', 'case:review', 'case:reopen', 'audit:view', 'dashboard:view', 'config:view', 'qr:view', 'sla:run', 'user:list', 'user:update', 'role:list'],
+  CC_SUPERVISOR: ['case:list', 'case:view', 'case:export', 'case:assign', 'case:review', 'case:reopen', 'audit:view', 'dashboard:view', 'config:view', 'qr:view', 'sla:run', 'user:list', 'user:update', 'role:list', 'estate:list'],
   CC_STAFF: ['case:list', 'case:view', 'case:export', 'case:assign', 'case:update', 'case:resolve', 'dashboard:view'],
-  ESTATE_SUPERVISOR: ['case:list', 'case:view', 'case:export', 'case:assign', 'case:update', 'case:resolve', 'case:review', 'case:reopen', 'dashboard:view', 'user:list', 'role:list', 'audit:view'],
+  ESTATE_SUPERVISOR: ['case:list', 'case:view', 'case:export', 'case:assign', 'case:update', 'case:resolve', 'case:review', 'case:reopen', 'dashboard:view', 'user:list', 'role:list', 'audit:view', 'estate:list'],
   ESTATE_STAFF: ['case:list', 'case:view', 'case:update', 'case:resolve'],
   AUDITOR: ['case:list', 'case:view', 'audit:view', 'dashboard:view'],
 };

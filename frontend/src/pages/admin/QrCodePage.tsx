@@ -27,6 +27,8 @@ function isDeadContent(content: string | null): boolean {
 }
 
 function statusMeta(item: QrItem): { label: string; color: string } {
+  // 已逾有效日期者優先顯示（排程會自動停用；即便尚未停用也視為不可用）
+  if (item.expired) return { label: '已過期', color: '#d32f2f' };
   if (item.active === true) return { label: '啟用', color: '#2E7D32' };
   if (item.active === false) {
     if (isDeadContent(item.qrContent)) return { label: '過期（舊連結）', color: '#ED6C02' };
@@ -78,6 +80,8 @@ export function QrCodePage() {
   const [siteBusy, setSiteBusy] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<{ kind: ConfirmKind; item: QrItem } | null>(null);
+  /** 有效日期輸入草稿：qrId → 'YYYY-MM-DD'；空字串代表永不自動停用 */
+  const [validDraft, setValidDraft] = useState<Record<number, string>>({});
 
   const toMessage = (e: unknown): string => {
     if (e instanceof ApiRequestError) {
@@ -154,6 +158,18 @@ export function QrCodePage() {
       await api.setQrStatus(item.qrId, active, token);
       await refresh();
     }, active ? `${item.estateNameZh} 的 QR Code 已啟用` : `${item.estateNameZh} 的 QR Code 已停用`);
+
+  const saveValidUntil = (item: QrItem, value: string) =>
+    runAction(`vu:${item.qrId}`, async () => {
+      if (item.qrId == null) return;
+      await api.setQrValidUntil(item.qrId, value ? value : null, token);
+      setValidDraft((d) => {
+        const next = { ...d };
+        delete next[item.qrId as number];
+        return next;
+      });
+      await refresh();
+    }, value ? `${item.estateNameZh} 的有效日期已設為 ${value}` : `${item.estateNameZh} 已改為永遠有效（不自動停用）`);
 
   const download = (item: QrItem, format: 'png' | 'svg') => {
     if (item.qrId == null) return;
@@ -253,7 +269,7 @@ export function QrCodePage() {
             <Box sx={{ display: 'grid', placeItems: 'center', minHeight: 200 }}><CircularProgress /></Box>
           ) : (
             <TableContainer>
-              <Table size="small" sx={{ minWidth: 960 }}>
+              <Table size="small" sx={{ minWidth: 1180 }}>
                 <TableHead>
                   <TableRow sx={{ bgcolor: '#f7f9fc' }}>
                     <TableCell sx={{ fontWeight: 600 }}>屋苑</TableCell>
@@ -261,6 +277,7 @@ export function QrCodePage() {
                     <TableCell sx={{ fontWeight: 600 }}>QR Code</TableCell>
                     <TableCell sx={{ fontWeight: 600 }}>掃描連結內容</TableCell>
                     <TableCell sx={{ fontWeight: 600 }}>生成日期</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>有效日期</TableCell>
                     <TableCell sx={{ fontWeight: 600 }}>操作</TableCell>
                   </TableRow>
                 </TableHead>
@@ -269,7 +286,10 @@ export function QrCodePage() {
                     const meta = statusMeta(item);
                     const busyKey = `gen:${item.estateCode}`;
                     const stKey = `st:${item.qrId}`;
-                    const rowBusy = busy === busyKey || busy === stKey;
+                    const validKey = `vu:${item.qrId}`;
+                    const currentValid = item.validUntil ? item.validUntil.slice(0, 10) : '';
+                    const draftValid = validDraft[item.qrId as number] ?? currentValid;
+                    const rowBusy = busy === busyKey || busy === stKey || busy === validKey;
                     return (
                       <TableRow key={item.estateCode} hover>
                         <TableCell>
@@ -298,6 +318,36 @@ export function QrCodePage() {
                         </TableCell>
                         <TableCell sx={{ whiteSpace: 'nowrap', color: 'text.secondary' }}>
                           {fmtDate(item.generatedAt)}
+                        </TableCell>
+                        <TableCell sx={{ minWidth: 220 }}>
+                          {item.qrId == null ? (
+                            <Typography variant="body2" color="text.secondary">尚未生成</Typography>
+                          ) : (
+                            <Stack direction="row" spacing={0.5} alignItems="center">
+                              <TextField
+                                type="date"
+                                size="small"
+                                value={draftValid}
+                                disabled={!canManage || busy !== null}
+                                onChange={(e) => setValidDraft((d) => ({ ...d, [item.qrId as number]: e.target.value }))}
+                                inputProps={{ 'aria-label': `${item.estateNameZh} 有效日期` }}
+                                sx={{ width: 150 }}
+                              />
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                disabled={!canManage || busy !== null || draftValid === currentValid}
+                                onClick={() => saveValidUntil(item, draftValid)}
+                              >
+                                {busy === validKey ? <CircularProgress size={16} /> : '儲存'}
+                              </Button>
+                            </Stack>
+                          )}
+                          {item.qrId != null && !item.validUntil && (
+                            <Typography variant="caption" color="text.secondary">
+                              空白＝永遠有效（不會自動停用）
+                            </Typography>
+                          )}
                         </TableCell>
                         <TableCell>
                           {item.qrId == null ? (

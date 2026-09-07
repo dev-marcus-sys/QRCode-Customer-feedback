@@ -242,5 +242,6 @@ CREATE TABLE qr_code (
   generated_by  BIGINT      NOT NULL,
   generated_at  DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
   invalidated_at DATETIME   NULL,
+  valid_until    DATETIME   NULL COMMENT '有效日期；NULL = 永不自動停用，到點由排程自動停用',
   CONSTRAINT fk_qr_estate FOREIGN KEY (estate_code) REFERENCES sys_estate(estate_code)
 ) ENGINE=InnoDB COMMENT='QR Code 主資料';

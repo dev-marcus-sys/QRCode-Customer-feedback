@@ -163,6 +163,7 @@ CREATE TABLE IF NOT EXISTS qr_code (
   generated_by   INTEGER NOT NULL,
   generated_at   TEXT NOT NULL DEFAULT (datetime('now')),
   invalidated_at TEXT,
+  valid_until    TEXT,
   FOREIGN KEY (estate_code) REFERENCES sys_estate(estate_code)
 );
 

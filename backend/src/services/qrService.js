@@ -9,6 +9,7 @@ const QRCode = require('qrcode');
 const { ERR } = require('../config/constants');
 const { ApiError } = require('../middlewares/error');
 const { getConfig } = require('../db/configStore');
+const { toDb, parseDb, dateRangeUtc } = require('../utils/time');
 
 /** sys_config 鍵：表單網站主機（空字串 = 自動採用目前訪問主機） */
 const SITE_BASE_URL_KEY = 'form.site_base_url';
@@ -65,10 +66,35 @@ function getEstate(db, code) {
   ).get(String(code || '').toUpperCase());
 }
 
+/**
+ * 正規化「有效日期」輸入：
+ * - 空值（null / ''）→ null，代表永不自動停用（預設行為）；
+ * - 'YYYY-MM-DD' 視為香港日期，存為該日 23:59:59（UTC）；
+ * - 其他可解析之時間字串 → 轉為 DB 格式。無法解析拋 VALIDATION。
+ */
+function normalizeValidUntil(value) {
+  const raw = typeof value === 'string' ? value.trim() : value;
+  if (raw === null || raw === undefined || raw === '') return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return dateRangeUtc(raw, true);
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) {
+    throw new ApiError(ERR.VALIDATION, '有效日期格式不正確（須為 YYYY-MM-DD）', 400, { field: 'validUntil' });
+  }
+  return toDb(d);
+}
+
+/** 是否已逾有效日期（validUntil 為 null 代表永不自動停用） */
+function isExpired(validUntil) {
+  const d = parseDb(validUntil);
+  if (!d) return false;
+  return Date.now() > d.getTime();
+}
+
 function getQr(db, qrId) {
   return db.prepare(
     `SELECT qr_id AS qrId, estate_code AS estateCode, qr_type AS qrType, qr_content AS qrContent,
-            is_active AS active, generated_by AS generatedBy, generated_at AS generatedAt, invalidated_at AS invalidatedAt
+            is_active AS active, generated_by AS generatedBy, generated_at AS generatedAt,
+            invalidated_at AS invalidatedAt, valid_until AS validUntil
        FROM qr_code WHERE qr_id = ?`
   ).get(Number(qrId));
 }
@@ -90,7 +116,8 @@ function overview(db) {
             q.qr_content AS qrContent,
             q.is_active AS active,
             q.generated_at AS generatedAt,
-            q.invalidated_at AS invalidatedAt
+            q.invalidated_at AS invalidatedAt,
+            q.valid_until AS validUntil
        FROM sys_estate e
        LEFT JOIN qr_code q ON q.qr_id = (
          SELECT q2.qr_id FROM qr_code q2
@@ -98,6 +125,7 @@ function overview(db) {
           ORDER BY q2.generated_at DESC, q2.qr_id DESC
           LIMIT 1
        )
+      WHERE e.is_active = 1
       ORDER BY e.estate_code`
   ).all();
   return {
@@ -111,6 +139,8 @@ function overview(db) {
       active: r.qrId ? Boolean(r.active) : null,
       generatedAt: r.generatedAt || null,
       invalidatedAt: r.invalidatedAt || null,
+      validUntil: r.validUntil || null,
+      expired: isExpired(r.validUntil),
     })),
   };
 }
@@ -121,12 +151,14 @@ function overview(db) {
  * 2. 插入新碼（內容 = base + estate 參數）；
  * 3. 回傳新記錄。全程單一事務。
  */
-function generate(db, { estateCode, base }, userId) {
+function generate(db, { estateCode, base, validUntil }, userId) {
   const code = String(estateCode || '').toUpperCase();
-  if (!getEstate(db, code)) {
+  const estate = getEstate(db, code);
+  if (!estate || !estate.isActive) {
     throw new ApiError(ERR.ESTATE_NOT_FOUND, null, 404);
   }
   const content = composeQrContent(base, code);
+  const until = normalizeValidUntil(validUntil === undefined ? null : validUntil);
   const tx = db.transaction(() => {
     db.prepare(
       `UPDATE qr_code
@@ -134,8 +166,8 @@ function generate(db, { estateCode, base }, userId) {
         WHERE estate_code = ? AND is_active = 1`
     ).run(code);
     const info = db.prepare(
-      "INSERT INTO qr_code (estate_code, qr_type, qr_content, file_url, generated_by) VALUES (?, 'FORM', ?, '', ?)"
-    ).run(code, content, userId);
+      "INSERT INTO qr_code (estate_code, qr_type, qr_content, file_url, generated_by, valid_until) VALUES (?, 'FORM', ?, '', ?, ?)"
+    ).run(code, content, userId, until);
     return getQr(db, Number(info.lastInsertRowid));
   });
   return tx();
@@ -164,6 +196,32 @@ function setActive(db, qrId, active) {
     return getQr(db, qr.qrId);
   });
   return tx();
+}
+
+/**
+ * 設定有效日期（null / '' = 永不自動停用，為預設值）。
+ * 若設定之日期已過，該 QR 即視為已過期（實際停用作業由 applyExpiry 執行）。
+ */
+function setValidUntil(db, qrId, value) {
+  const qr = assertQr(db, qrId);
+  const until = normalizeValidUntil(value);
+  db.prepare('UPDATE qr_code SET valid_until = ? WHERE qr_id = ?').run(until, qr.qrId);
+  return getQr(db, qr.qrId);
+}
+
+/**
+ * 自動到期：將已逾有效日期且仍啟用之 QR 停用並寫入停用時間。
+ * 回傳自動停用筆數。供排程定時呼叫，並於總覽查詢前懶執行一次。
+ */
+function applyExpiry(db) {
+  const info = db.prepare(
+    `UPDATE qr_code
+        SET is_active = 0, invalidated_at = COALESCE(invalidated_at, datetime('now'))
+      WHERE is_active = 1
+        AND valid_until IS NOT NULL
+        AND valid_until < datetime('now')`
+  ).run();
+  return info.changes || 0;
 }
 
 /** 儲存表單網站主機設定（空字串 = 清除，退回自動偵測） */
@@ -195,6 +253,10 @@ module.exports = {
   overview,
   generate,
   setActive,
+  setValidUntil,
+  applyExpiry,
+  normalizeValidUntil,
+  isExpired,
   getQr,
   assertQr,
   saveSiteBaseUrl,

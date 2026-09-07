@@ -28,6 +28,8 @@ const NEW_COLUMNS = [
   ['case', 'closure_reminded_at', 'TEXT'],
   ['case', 'response_escalated_at', 'TEXT'],
   ['case', 'closure_escalated_at', 'TEXT'],
+  // QR Code 有效日期（NULL = 永不自動停用）
+  ['qr_code', 'valid_until', 'TEXT'],
 ];
 
 /** 權限碼、名稱 → 需綁定之角色（維持 seed 一致，舊 DB 靠此補齊） */
@@ -50,6 +52,9 @@ const PERM_BINDINGS = [
   { code: 'role:list', module: 'role', name: '角色查閱', roles: ['ADMIN', 'CC_SUPERVISOR', 'ESTATE_SUPERVISOR'] },
   { code: 'role:manage', module: 'role', name: '角色管理', roles: ['ADMIN'] },
   { code: 'audit:view', module: 'audit', name: '審計查閱', roles: ['ADMIN', 'CC_SUPERVISOR', 'ESTATE_SUPERVISOR', 'AUDITOR'] },
+  // 屋苑主檔管理（後台「屋苑」頁；下拉用 GET 僅需登入，不需本權限）
+  { code: 'estate:list', module: 'estate', name: '屋苑查閱', roles: ['ADMIN', 'CC_SUPERVISOR', 'ESTATE_SUPERVISOR'] },
+  { code: 'estate:manage', module: 'estate', name: '屋苑管理', roles: ['ADMIN'] },
 ];
 
 /** 需確保存在之系統參數（INSERT OR IGNORE） */

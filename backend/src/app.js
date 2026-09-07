@@ -19,6 +19,7 @@ const configRoutes = require('./routes/config');
 const userRoutes = require('./routes/users');
 const roleRoutes = require('./routes/roles');
 const auditRoutes = require('./routes/audit');
+const estateRoutes = require('./routes/estates');
 
 /** 前端建置產物目錄（production 模式由後端直接托管；不存在時退回純 API / dev proxy） */
 const FRONTEND_DIST = path.resolve(__dirname, '../../frontend/dist');
@@ -60,6 +61,7 @@ function createApp() {
   app.use('/api/v1/users', userRoutes);
   app.use('/api/v1/roles', roleRoutes);
   app.use('/api/v1/audit', auditRoutes);
+  app.use('/api/v1/estates', estateRoutes);
 
   // Production：若存在前端建置產物則托管靜態檔並提供 SPA fallback（React Router 深鏈）
   if (fs.existsSync(INDEX_HTML)) {

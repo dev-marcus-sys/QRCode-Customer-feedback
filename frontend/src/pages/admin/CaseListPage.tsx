@@ -17,9 +17,10 @@ import { NotificationCenter } from '../../components/NotificationCenter';
 import AdminNav from '../../admin/AdminNav';
 import { BatchActions } from '../../components/BatchActions';
 import {
-  CATEGORY_OPTIONS, ESTATE_OPTIONS, EVENT_OPTIONS, PRIORITY_OPTIONS,
+  CATEGORY_OPTIONS, EVENT_OPTIONS, PRIORITY_OPTIONS,
   labelOf, STATUS_OPTIONS,
 } from '../../admin/options';
+import { useEstates } from '../../admin/useEstates';
 import { StatusChip } from '../../components/StatusChip';
 
 type SortKey = 'caseId' | 'createdAt' | 'responseSlaDue' | 'closureSlaDue';
@@ -64,6 +65,7 @@ export function CaseListPage() {
   const user = authStore.getUser();
   const estateLocked = !!user && user.estateCode !== 'ALL';
   const canExport = !!user?.permissions?.includes('case:export');
+  const estates = useEstates();
 
   const [filters, setFilters] = useState<Filters>({});
   const [keyword, setKeyword] = useState('');
@@ -213,7 +215,7 @@ export function CaseListPage() {
         <Box sx={{ flex: 1 }} />
         {user && (
           <Typography variant="body2" color="text.secondary" sx={{ mr: 1.5 }}>
-            {user.fullName} · {estateLocked ? ESTATE_OPTIONS.find((e) => e.code === user.estateCode)?.nameZh || user.estateCode : '全部屋苑'}
+            {user.fullName} · {estateLocked ? estates.nameOf(user.estateCode) : '全部屋苑'}
           </Typography>
         )}
         <NotificationCenter />
@@ -245,8 +247,8 @@ export function CaseListPage() {
                   onChange={(e) => setFilter('estate', e.target.value)}
                 >
                   <MenuItem value="">全部</MenuItem>
-                  {ESTATE_OPTIONS.map((o) => (
-                    <MenuItem key={o.code} value={o.code}>{o.nameZh}</MenuItem>
+                  {estates.activeOptions.map((o) => (
+                    <MenuItem key={o.estateCode} value={o.estateCode}>{o.estateNameZh}</MenuItem>
                   ))}
                 </TextField>
                 <TextField

@@ -14,7 +14,7 @@ const router = express.Router();
 router.use(requireAuth);
 
 const MAX_PAGE = 100;
-const ACTIONS = ['LOGIN', 'LOGOUT', 'CASE_CREATE', 'CASE_ASSIGN', 'CASE_STATUS', 'CASE_REOPEN', 'CONFIG_CHANGE', 'EXPORT', 'QR_GENERATE', 'QR_DEACTIVATE', 'QR_REACTIVATE', 'USER_MANAGE', 'ROLE_MANAGE', 'WEEKLY_REPORT', 'SURVEY'];
+const ACTIONS = ['LOGIN', 'LOGOUT', 'CASE_CREATE', 'CASE_ASSIGN', 'CASE_STATUS', 'CASE_REOPEN', 'CONFIG_CHANGE', 'EXPORT', 'QR_GENERATE', 'QR_DEACTIVATE', 'QR_REACTIVATE', 'USER_MANAGE', 'ROLE_MANAGE', 'ESTATE_MANAGE', 'WEEKLY_REPORT', 'SURVEY'];
 
 router.get('/', requirePerm('audit:view'), (req, res) => {
   const q = req.query;

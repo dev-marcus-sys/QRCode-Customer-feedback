@@ -1,13 +1,7 @@
 /**
  * 後台選項常數（與種子資料/規格書一致）。
+ * 注意：屋苑清單已改為動態（見 useEstates.ts / GET /api/v1/estates），請勿在此寫死。
  */
-export const ESTATE_OPTIONS: { code: string; nameZh: string; nameEn: string }[] = [
-  { code: 'CWC', nameZh: '灣景中心', nameEn: 'Bayview Centre' },
-  { code: 'YPR', nameZh: '攸壆路', nameEn: 'Yau Pok Road' },
-  { code: 'CHNG', nameZh: '頌雅苑', nameEn: 'Chung Nga Court' },
-  { code: 'DAHF', nameZh: '大夫第', nameEn: 'Dai Fu House' },
-];
-
 export const CATEGORY_OPTIONS: { code: string; labelZh: string; labelEn: string }[] = [
   { code: 'MO_SERVICE', labelZh: '管理處人員服務', labelEn: 'Property Management Service' },
   { code: 'SECURITY', labelZh: '保安人員服務', labelEn: 'Security Service' },
