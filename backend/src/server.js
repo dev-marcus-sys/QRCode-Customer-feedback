@@ -4,7 +4,7 @@
 'use strict';
 require('dotenv').config();
 const { createApp } = require('./app');
-const { startSlaScheduler, startWeeklyScheduler, startQrExpiryScheduler } = require('./scheduler');
+const { startSlaScheduler, startWeeklyScheduler, startQrExpiryScheduler, startAiScheduler } = require('./scheduler');
 const logger = require('./utils/logger');
 
 const port = Number(process.env.PORT) || 3000;
@@ -15,4 +15,5 @@ app.listen(port, () => {
   startSlaScheduler();
   startWeeklyScheduler();
   startQrExpiryScheduler();
+  startAiScheduler();
 });

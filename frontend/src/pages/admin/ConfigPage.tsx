@@ -2,7 +2,7 @@
  * F-009 系統參數配置（/admin/config；config:view 可看，config:update 可編輯）。
  * 對應 docs/F008-F009_細部設計.md §8.2。骨架採「直接修改即時生效＋完整審計」。
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Alert, Box, Button, Card, CardContent, Chip, CircularProgress, Dialog, DialogActions,
@@ -16,10 +16,11 @@ import EditIcon from '@mui/icons-material/Edit';
 import HistoryIcon from '@mui/icons-material/History';
 import SaveIcon from '@mui/icons-material/Save';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import NetworkCheckIcon from '@mui/icons-material/NetworkCheck';
 import {
-  ApiRequestError, authStore, ConfigAuditRow, ConfigGroup, ConfigItem, api,
+  ApiRequestError, authStore, AiStatus, AiTestResult, ConfigAuditRow, ConfigGroup, ConfigItem, api,
 } from '../../api/client';
-import { CATEGORY_OPTIONS, EVENT_OPTIONS } from '../../admin/options';
+import { CATEGORY_OPTIONS, EVENT_OPTIONS, labelOf } from '../../admin/options';
 import { NotificationCenter } from '../../components/NotificationCenter';
 
 const WEEKDAY_OPTIONS = [
@@ -55,11 +56,35 @@ export function ConfigPage() {
   const [error, setError] = useState('');
   const [toast, setToast] = useState('');
   const [editItem, setEditItem] = useState<ConfigItem | null>(null);
-  const [draft, setDraft] = useState<Record<string, unknown> | number | string | null>(null);
+  const [draft, setDraft] = useState<Record<string, unknown> | number | string | boolean | null>(null);
   const [saving, setSaving] = useState(false);
   const [auditOpen, setAuditOpen] = useState(false);
   const [audit, setAudit] = useState<ConfigAuditRow[]>([]);
   const [auditLoading, setAuditLoading] = useState(false);
+  /* M0 AI 連線測試（/api/v1/ai/status、/api/v1/ai/test） */
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiStatus, setAiStatus] = useState<AiStatus | null>(null);
+  const [aiStatusLoading, setAiStatusLoading] = useState(false);
+  const [aiProvider, setAiProvider] = useState('');
+  const [aiText, setAiText] = useState('');
+  const [aiResult, setAiResult] = useState<AiTestResult | null>(null);
+  const [aiTesting, setAiTesting] = useState(false);
+  const [aiScanning, setAiScanning] = useState(false);
+  /* AI API 連線設定（Base URL／模型入系統參數；金鑰經 /ai/api-key 寫入後端 .env） */
+  const [aiBaseUrl, setAiBaseUrl] = useState('');
+  const [aiModel, setAiModel] = useState('');
+  const [aiApiKey, setAiApiKey] = useState('');
+  const [aiSaving, setAiSaving] = useState(false);
+  const [aiKeyMsg, setAiKeyMsg] = useState('');
+  /** AI 對話框內之錯誤提示（頁面頂層 Alert 會被 Dialog 遮住，須獨立顯示） */
+  const [aiErr, setAiErr] = useState('');
+  const aiResultRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (aiResult && aiResultRef.current) {
+      aiResultRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [aiResult]);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -89,6 +114,106 @@ export function ConfigPage() {
       .then((d) => setAudit(d.items))
       .catch((e) => setError(e instanceof ApiRequestError ? e.message : '載入審計失敗'))
       .finally(() => setAuditLoading(false));
+  };
+
+  /** AI 連線測試：先讀設定現況（含環境變數就緒度，不回傳金鑰） */
+  const openAiTest = () => {
+    setAiOpen(true);
+    setAiResult(null);
+    setAiText('');
+    setAiErr('');
+    setAiKeyMsg('');
+    setAiStatusLoading(true);
+    api
+      .aiStatus(token)
+      .then((s) => {
+        setAiStatus(s);
+        setAiProvider(s.provider);
+        setAiBaseUrl(s.env.baseUrlSource === 'db' ? s.env.baseUrl : '');
+        setAiModel(s.env.modelSource === 'db' ? s.env.model : '');
+      })
+      .catch((e) => setAiErr(e instanceof ApiRequestError ? e.message : '載入 AI 設定失敗'))
+      .finally(() => setAiStatusLoading(false));
+  };
+
+  /** 是否有尚未套用嘅 API 設定（Key 已輸入，或 Base URL／模型與已存值不同） */
+  const aiDirty = !!aiApiKey.trim()
+    || aiBaseUrl.trim() !== (aiStatus && aiStatus.env.baseUrlSource === 'db' ? aiStatus.env.baseUrl : '')
+    || aiModel.trim() !== (aiStatus && aiStatus.env.modelSource === 'db' ? aiStatus.env.model : '');
+
+  /** 儲存 AI API 設定：Base URL／模型 → 系統參數；API Key → 後端 .env（即時生效，不入資料庫） */
+  const persistAiApi = async (silent = false) => {
+    setAiSaving(true);
+    setAiKeyMsg('');
+    setAiErr('');
+    try {
+      const jobs: Promise<unknown>[] = [
+        api.configUpdate('ai.api.base_url', aiBaseUrl.trim(), token),
+        api.configUpdate('ai.api.model', aiModel.trim(), token),
+      ];
+      if (aiApiKey.trim()) jobs.push(api.aiSetApiKey(aiApiKey.trim(), token));
+      await Promise.all(jobs);
+      setAiApiKey('');
+      if (!silent) setToast('AI API 設定已儲存（Base URL／模型即時生效）');
+      load();
+      const s = await api.aiStatus(token);
+      setAiStatus(s);
+      setAiProvider(s.provider);
+      return true;
+    } catch (e) {
+      setAiErr(e instanceof ApiRequestError ? e.message : 'AI API 設定儲存失敗');
+      return false;
+    } finally {
+      setAiSaving(false);
+    }
+  };
+
+  /** 立即處理 pending 建議（免等排程 60 秒） */
+  const runAiScan = () => {
+    setAiScanning(true);
+    setAiErr('');
+    api
+      .aiScan(token)
+      .then((r) => setAiKeyMsg(`已處理 ${r.processed} 筆待辦建議`))
+      .catch((e) => setAiErr(e instanceof ApiRequestError ? e.message : '處理佇列失敗'))
+      .finally(() => setAiScanning(false));
+  };
+
+  const clearAiKey = () => {
+    setAiSaving(true);
+    setAiKeyMsg('');
+    setAiErr('');
+    api
+      .aiClearApiKey(token)
+      .then((r) => {
+        setAiKeyMsg(r.persisted
+          ? '已清除 API Key（.env 已更新）'
+          : `已於執行期清除；.env 未能寫入${r.persistError ? `：${r.persistError}` : ''}`);
+        return api.aiStatus(token);
+      })
+      .then(setAiStatus)
+      .catch((e) => setAiErr(e instanceof ApiRequestError ? e.message : '清除 API Key 失敗'))
+      .finally(() => setAiSaving(false));
+  };
+
+  /** 開始測試：先自動套用尚未儲存嘅 Key／Base URL／模型，避免用舊設定去測 */
+  const runAiTest = async () => {
+    setAiTesting(true);
+    setAiResult(null);
+    setAiErr('');
+    try {
+      if (aiDirty) {
+        const saved = await persistAiApi(true);
+        if (!saved) return;
+        setAiKeyMsg('已先儲存 API 設定再測試');
+      }
+      setAiResult(await api.aiTest({ provider: aiProvider || undefined, text: aiText.trim() || undefined }, token));
+      setAiStatus(await api.aiStatus(token));
+    } catch (e) {
+      setAiErr(e instanceof ApiRequestError ? e.message : 'AI 連線測試失敗');
+    } finally {
+      setAiTesting(false);
+    }
   };
 
   if (!user?.permissions?.includes('config:view')) {
@@ -192,6 +317,29 @@ export function ConfigPage() {
             <TextField label="表單標語（英文）" value={String((d.sloganEn as string) || '')} onChange={(e) => setObj('sloganEn', e.target.value)} fullWidth />
           </Stack>
         );
+      case 'boolean': {
+        const on = draft === true || draft === 'true' || draft === 1 || draft === '1';
+        return (
+          <TextField select label={editItem.labelZh} autoFocus fullWidth value={on ? 'true' : 'false'}
+            onChange={(e) => setDraft(e.target.value === 'true')}>
+            <MenuItem value="true">啟用（true）</MenuItem>
+            <MenuItem value="false">停用（false）</MenuItem>
+          </TextField>
+        );
+      }
+      case 'enum':
+        return (
+          <TextField select label={editItem.labelZh} autoFocus fullWidth value={String(draft ?? '')}
+            onChange={(e) => setDraft(e.target.value)}>
+            {(editItem.options || []).map((o) => <MenuItem key={o} value={o}>{o}</MenuItem>)}
+          </TextField>
+        );
+      case 'string':
+        return (
+          <TextField label={editItem.labelZh} autoFocus fullWidth value={String(draft ?? '')}
+            placeholder="空白＝使用環境變數／預設值"
+            onChange={(e) => setDraft(e.target.value)} />
+        );
       default:
         return <DialogContentText>唯讀參數無法編輯。</DialogContentText>;
     }
@@ -229,6 +377,9 @@ export function ConfigPage() {
           <Chip icon={<TuneIcon />} label={canEdit ? '可編輯模式（修改即時生效＋完整審計）' : '唯讀檢視（config:view）'} size="small" color={canEdit ? 'primary' : 'default'} />
           <Button size="small" variant="outlined" startIcon={<HistoryIcon />} onClick={openAudit}>更新紀錄</Button>
           <Button size="small" variant="outlined" startIcon={<RefreshIcon />} onClick={load}>重新整理</Button>
+          {canEdit && (
+            <Button size="small" variant="outlined" startIcon={<NetworkCheckIcon />} onClick={openAiTest}>AI 連線測試</Button>
+          )}
           <Box sx={{ flex: 1 }} />
         </Stack>
 
@@ -293,6 +444,109 @@ export function ConfigPage() {
         <DialogActions>
           <Button onClick={() => setEditItem(null)}>取消</Button>
           <Button variant="contained" startIcon={<SaveIcon />} disabled={saving} onClick={save}>{saving ? '儲存中…' : '儲存'}</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* M0 AI 連線測試（GET /ai/status + POST /ai/test） */}
+      <Dialog open={aiOpen} onClose={() => setAiOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          AI 連線測試{' '}
+          <Typography component="span" variant="caption" color="text.secondary">/api/v1/ai/test</Typography>
+        </DialogTitle>
+        <DialogContent dividers>
+          <DialogContentText variant="body2" sx={{ mb: 1.5 }}>
+            以文字實際呼叫供應商：<strong>rules</strong> 係本機規則基線（零外部依賴）；
+            <strong>openai / ollama</strong> 會先做 de-PII 遮罩再送出。測試唔會改動任何個案，並會寫入審計（AI_TEST）。
+            金鑰只存於後端環境變數，此處僅顯示「已設定／未設定」。
+          </DialogContentText>
+          {aiErr && <Alert severity="error" sx={{ mb: 1.5 }}>{aiErr}</Alert>}
+          {aiStatusLoading ? (
+            <Box sx={{ display: 'grid', placeItems: 'center', py: 3 }}><CircularProgress size={28} /></Box>
+          ) : aiStatus ? (
+            <Stack spacing={1.5}>
+              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                <Chip size="small" variant="outlined" color="primary" label={`供應商：${aiStatus.provider}`} />
+                <Chip size="small" variant="outlined" color={aiStatus.effective ? 'success' : 'default'} label={`實際生效：${aiStatus.effective ? '是' : '否'}`} />
+                <Chip size="small" variant="outlined" label={`AI_BASE_URL：${aiStatus.env.baseUrlSet ? '已設定' : '用預設值'}`} />
+                <Chip size="small" variant="outlined" color={aiStatus.env.apiKeySet ? 'success' : 'default'} label={`AI_API_KEY：${aiStatus.env.apiKeySet ? '已設定' : '未設定'}`} />
+                <Chip size="small" variant="outlined" label={`模型：${aiStatus.env.model}`} />
+                <Chip size="small" variant="outlined" label={`佇列掃描：${aiStatus.env.scanEnabled ? `${aiStatus.env.scanIntervalMs}ms` : '停用'}`} />
+                {aiResult && (
+                  <Chip size="small" color={aiResult.ok ? 'success' : aiResult.skipped ? 'warning' : 'error'}
+                    label={`上次測試：${aiResult.ok ? '成功' : aiResult.skipped ? '已停用' : '失敗'}（${aiResult.latencyMs}ms）`} />
+                )}
+              </Stack>
+              <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'Consolas, monospace' }}>
+                實際使用：{aiStatus.env.baseUrl}　{aiStatus.env.model}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                API Key：{aiStatus.env.apiKeySet ? `已設定 ${aiStatus.env.apiKeyMasked}` : '未設定'}
+                　（來源 baseUrl={aiStatus.env.baseUrlSource}／model={aiStatus.env.modelSource}）
+              </Typography>
+
+              <Divider />
+              <Typography variant="subtitle2" sx={{ color: '#1a5aa6' }}>AI API 連線設定</Typography>
+              <TextField size="small" label="Base URL（空白＝用環境變數／預設值）" fullWidth
+                value={aiBaseUrl} onChange={(e) => setAiBaseUrl(e.target.value)}
+                placeholder="https://api.openai.com/v1" />
+              <TextField size="small" label="模型名稱（空白＝用環境變數／預設值）" fullWidth
+                value={aiModel} onChange={(e) => setAiModel(e.target.value)}
+                placeholder="gpt-4o-mini" />
+              <TextField size="small" type="password" autoComplete="new-password" fullWidth
+                label="API Key（留空＝不更改；只寫入後端 .env，不入資料庫／審計）"
+                value={aiApiKey} onChange={(e) => setAiApiKey(e.target.value)}
+                helperText={aiApiKey.trim() ? '尚未儲存；按「儲存設定」或直接按「開始測試」（會先自動儲存）' : ''} />
+              <Stack direction="row" spacing={1}>
+                <Button variant="outlined" startIcon={<SaveIcon />} disabled={aiSaving} onClick={() => persistAiApi()}>
+                  {aiSaving ? '儲存中…' : '儲存設定'}
+                </Button>
+                {aiStatus.env.apiKeySet && (
+                  <Button variant="outlined" color="error" disabled={aiSaving} onClick={clearAiKey}>清除 Key</Button>
+                )}
+              </Stack>
+              {aiKeyMsg && <Alert severity="info">{aiKeyMsg}</Alert>}
+
+              <Divider />
+              <TextField select size="small" label="測試供應商（臨時覆寫，不會儲存）" value={aiProvider}
+                onChange={(e) => setAiProvider(e.target.value)} fullWidth>
+                {aiStatus.providers.map((p) => <MenuItem key={p} value={p}>{p}</MenuItem>)}
+              </TextField>
+              <TextField size="small" label="測試文字（留空用內建樣本）" multiline minRows={2} fullWidth
+                value={aiText} onChange={(e) => setAiText(e.target.value)}
+                placeholder="廁所天花爆喉漏水，好危險，請盡快派師傅維修。" />
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Button variant="contained" startIcon={<NetworkCheckIcon />} disabled={aiTesting || aiSaving} onClick={runAiTest}>
+                  {aiTesting ? '測試中…' : '開始測試'}
+                </Button>
+                <Button variant="outlined" disabled={aiScanning} onClick={runAiScan}>
+                  {aiScanning ? '處理中…' : '立即處理佇列'}
+                </Button>
+                {aiDirty && <Chip size="small" color="warning" variant="outlined" label="有未儲存變更（測試前會自動儲存）" />}
+              </Stack>
+              {aiResult && (
+                <Box ref={aiResultRef} sx={{ scrollMarginTop: 16 }}>
+                  <Typography variant="subtitle2" sx={{ color: '#1a5aa6', mb: 0.5 }}>測試結果</Typography>
+                  <Alert severity={aiResult.ok ? 'success' : aiResult.skipped ? 'warning' : 'error'} sx={{ mb: 1 }}>
+                    {aiResult.message}{aiResult.error ? `　${aiResult.error}` : ''}
+                  </Alert>
+                  {aiResult.result && (
+                    <Typography variant="body2" component="div" sx={{ fontFamily: 'Consolas, monospace', fontSize: 13 }}>
+                      類別：{labelOf(CATEGORY_OPTIONS, aiResult.result.category, 'zh-Hant')}（{aiResult.result.category}）<br />
+                      意圖：{aiResult.result.intent}　緊急度：{aiResult.result.urgency}<br />
+                      事件類型：{labelOf(EVENT_OPTIONS, aiResult.result.eventType, 'zh-Hant')}（{aiResult.result.eventType}）<br />
+                      信心值：{aiResult.result.confidence}　模型：{aiResult.model || '—'}　延遲：{aiResult.latencyMs}ms<br />
+                      理由：{aiResult.result.reason}
+                    </Typography>
+                  )}
+                </Box>
+              )}
+            </Stack>
+          ) : (
+            <DialogContentText variant="body2">無法取得 AI 設定現況。</DialogContentText>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setAiOpen(false)}>關閉</Button>
         </DialogActions>
       </Dialog>
 

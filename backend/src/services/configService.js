@@ -46,6 +46,31 @@ const CATALOG = [
     key: 'form.style', group: 'FORM', labelZh: '公眾表單樣式',
     kind: 'formStyle',
   },
+  // M0 AI 橫向服務層（AI-01 影子模式先導；見 docs/AI_利用方案.md §6.3）
+  {
+    key: 'ai.enabled', group: 'AI', labelZh: 'AI 總開關（影子模式）',
+    kind: 'boolean',
+  },
+  {
+    key: 'ai.provider', group: 'AI', labelZh: 'AI 供應商',
+    kind: 'enum', options: ['none', 'rules', 'openai', 'ollama'],
+  },
+  {
+    key: 'ai.classify.enabled', group: 'AI', labelZh: 'AI-01 內容分類建議（影子）',
+    kind: 'boolean',
+  },
+  {
+    key: 'ai.pii.mode', group: 'AI', labelZh: 'de-PII 模式（出外前遮罩）',
+    kind: 'enum', options: ['local', 'cloud'],
+  },
+  {
+    key: 'ai.api.base_url', group: 'AI', labelZh: 'AI API 端點 Base URL（空白＝用環境變數/預設）',
+    kind: 'string', maxLength: 300, url: true, allowEmpty: true,
+  },
+  {
+    key: 'ai.api.model', group: 'AI', labelZh: 'AI 模型名稱（空白＝用環境變數/預設）',
+    kind: 'string', maxLength: 120, allowEmpty: true,
+  },
 ];
 
 const GROUP_ORDER = [
@@ -54,6 +79,7 @@ const GROUP_ORDER = [
   { key: 'SURVEY', labelZh: '問卷' },
   { key: 'WEEKLY', labelZh: '週報' },
   { key: 'FORM', labelZh: '表單樣式' },
+  { key: 'AI', labelZh: 'AI 參數' },
   { key: 'FORM_TYPE', labelZh: '表單與規則（唯讀）' },
   { key: 'NUMBERING', labelZh: '編號規則（唯讀）' },
   { key: 'SYSTEM', labelZh: '其他（唯讀）' },
@@ -115,6 +141,17 @@ function validate(key, value) {
       const t = String(value[f] == null ? '' : value[f]);
       if (t.length > 80) throw bad(`標語（${f}）不得超過 80 字`);
     }
+  } else if (kind === 'boolean') {
+    if (typeof value !== 'boolean') throw bad(`${def.labelZh} 須為 true / false`);
+  } else if (kind === 'enum') {
+    const opts = def.options || [];
+    if (!opts.includes(value)) throw bad(`${def.labelZh} 須為 ${opts.join(' / ')} 之一`);
+  } else if (kind === 'string') {
+    if (typeof value !== 'string') throw bad(`${def.labelZh} 須為字串`);
+    const v = value.trim();
+    if (!v && def.allowEmpty) return;
+    if (def.maxLength && value.length > def.maxLength) throw bad(`${def.labelZh} 不得超過 ${def.maxLength} 字`);
+    if (def.url && !/^https?:\/\/\S+$/i.test(v)) throw bad(`${def.labelZh} 須為 http(s):// 開頭之網址`);
   }
 }
 
@@ -153,6 +190,7 @@ function listConfigs(db) {
       value: parsed,
       updatedBy: r.updatedByName || null,
       updatedAt: r.updatedAt ? dbToIso8(r.updatedAt) : null,
+      options: def && Array.isArray(def.options) ? def.options : undefined,
     });
   }
   const groups = [...byGroup.values()].filter((g) => g.items.length || g.key === 'SLA');

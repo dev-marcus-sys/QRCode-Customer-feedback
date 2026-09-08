@@ -12,6 +12,7 @@ const { getConfig } = require('../db/configStore');
 const { generateCaseId } = require('./numbering');
 const { findDuplicate, findSecondComplaint } = require('./dedupe');
 const { computeEvent, computeDueDates } = require('./sla');
+const { enqueueClassify } = require('./aiService');
 const { submissionKey } = require('../utils/hash');
 const { toDb, now, parseDb, dbToIso8, dateRangeUtc } = require('../utils/time');
 const { notifyUser, enqueueEmail, reviewersForCase } = require('./notificationService');
@@ -247,6 +248,13 @@ function createCaseFromFeedback(db, payload, lang = 'zh-Hant') {
       }
       throw e;
     }
+  }
+
+  // M0 AI-01：內容分類影子模式（ai.enabled 先導；失敗不影響建案）
+  try {
+    enqueueClassify(db, created.caseId);
+  } catch (e) {
+    logger.warn('caseService', `AI-01 建議入隊失敗 ${created.caseId}: ${e.message}`);
   }
 
   const promise = getConfig(db, 'form.promise', {})[lang === 'en' ? 'en' : 'zh'];

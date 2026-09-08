@@ -278,3 +278,41 @@ CREATE TABLE IF NOT EXISTS weekly_report (
   generated_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS ix_weekly_period ON weekly_report(period_start DESC);
+
+-- ---------- AI 建議／用量日誌（M0 橫向服務層；AI-01 內容分類影子模式先導） ----------
+-- 見 docs/AI_利用方案.md §6.3（ai_suggestion 表）。payload 存 JSON 字串；
+-- 輸入只存 de-PII 遮罩後之摘要（input_excerpt），不存原文。
+CREATE TABLE IF NOT EXISTS ai_suggestion (
+  suggestion_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  case_id       TEXT NOT NULL,
+  ai_type       TEXT NOT NULL DEFAULT 'classify',
+  status        TEXT NOT NULL DEFAULT 'pending'
+                CHECK (status IN ('pending','shown','accepted','rejected','skipped','failed')),
+  payload       TEXT,
+  input_excerpt TEXT,
+  confidence    REAL,
+  model         TEXT,
+  error         TEXT,
+  created_by    INTEGER NOT NULL DEFAULT 0,
+  created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+  decided_by    INTEGER,
+  decided_at    TEXT,
+  decided_note  TEXT,
+  FOREIGN KEY (case_id) REFERENCES `case`(case_id)
+);
+CREATE INDEX IF NOT EXISTS ix_ai_sug_case ON ai_suggestion(case_id, created_at);
+CREATE INDEX IF NOT EXISTS ix_ai_sug_pending ON ai_suggestion(status, created_at);
+
+CREATE TABLE IF NOT EXISTS ai_usage_log (
+  usage_id      INTEGER PRIMARY KEY AUTOINCREMENT,
+  task          TEXT NOT NULL DEFAULT 'classify',
+  case_id       TEXT,
+  model         TEXT,
+  input_tokens  INTEGER,
+  output_tokens INTEGER,
+  latency_ms    INTEGER,
+  ok            INTEGER NOT NULL DEFAULT 1 CHECK (ok IN (0,1)),
+  error         TEXT,
+  created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS ix_ai_usage_task ON ai_usage_log(task, created_at);

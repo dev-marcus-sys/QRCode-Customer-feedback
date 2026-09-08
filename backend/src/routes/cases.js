@@ -30,6 +30,7 @@ const { listCases, getCaseDetail, getAssignees, assignCase, reassignCase,
   submitResolution, approveResolution, rejectResolution, reopenCase,
   uploadCaseAttachment, downloadCaseAttachment, batchAssignCases, batchUpdateCases } = require('../services/caseService');
 const { exportFile } = require('../services/exportService');
+const { listAiSuggestions, decideAiSuggestion, reanalyzeCase } = require('../services/aiService');
 const logger = require('../utils/logger');
 
 const router = express.Router();
@@ -132,6 +133,34 @@ router.get('/:caseId/attachments/:attachmentId/download', requirePerm('case:view
   res.set('Content-Type', att.fileType === 'pdf' ? 'application/pdf' : `image/${att.fileType === 'jpg' ? 'jpeg' : att.fileType}`);
   res.set('Content-Disposition', `attachment; filename="${encodeURIComponent(att.fileName)}"`);
   return res.sendFile(att.absPath);
+});
+
+/* ---------- AI 建議（M0 / AI-01 影子模式；docs/AI_利用方案.md §7.1） ---------- */
+router.get('/:caseId/ai-suggestions', requirePerm('case:view'), (req, res) => {
+  ok(res, listAiSuggestions(getDb(), req.params.caseId, req.user));
+});
+
+router.post('/:caseId/ai-suggestions/:suggestionId/accept', requirePerm('case:update'), (req, res) => {
+  ok(res, decideAiSuggestion(getDb(), req.params.suggestionId, req.user, {
+    accept: true,
+    note: req.body && req.body.note,
+  }));
+});
+
+router.post('/:caseId/ai-suggestions/:suggestionId/reject', requirePerm('case:update'), (req, res) => {
+  ok(res, decideAiSuggestion(getDb(), req.params.suggestionId, req.user, {
+    accept: false,
+    note: req.body && req.body.note,
+  }));
+});
+
+/** 重新分析（為現有個案即時產生分類建議；補跑開關開啟前／後台建案之個案） */
+router.post('/:caseId/ai-suggestions/refresh', requirePerm('case:update'), async (req, res, next) => {
+  try {
+    ok(res, await reanalyzeCase(getDb(), req.params.caseId, req.user));
+  } catch (e) {
+    next(e);
+  }
 });
 
 router.get('/:caseId', requirePerm('case:view'), (req, res) => {

@@ -34,3 +34,7 @@ deploy/*.zip
 # Vite build temp
 vite.config.ts.timestamp-*.mjs
 *.timestamp-*.mjs
+
+# Test temp databases (debug snapshots)
+backend/test/._*.db
+backend/test/*.db

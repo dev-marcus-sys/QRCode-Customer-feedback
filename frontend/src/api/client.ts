@@ -200,6 +200,42 @@ export interface BatchActionResult {
   assigneeId?: number;
 }
 
+/* ------- AI 建議（M0 / AI-01 內容分類影子模式；docs/AI_利用方案.md §7.1）------- */
+
+export interface AiClassifyPayload {
+  category: string;
+  intent: string;
+  urgency: string;
+  eventType: string;
+  reason: string;
+  withDiff: boolean;
+  baseline: { category: string; intent: string; eventType: string };
+}
+
+export interface AiSuggestionItem {
+  suggestionId: number;
+  caseId: string;
+  aiType: string;
+  status: string;
+  payload: AiClassifyPayload | null;
+  inputExcerpt: string | null;
+  confidence: number | null;
+  model: string | null;
+  error: string | null;
+  createdAt: string;
+  decidedAt: string | null;
+  decidedByName: string | null;
+  decidedNote: string | null;
+}
+
+export interface AiDecideResult {
+  suggestionId: number;
+  caseId: string;
+  status: string;
+  changes: string[];
+  responseSlaDue: string | null;
+}
+
 export interface NotificationItem {
   notifId: number;
   title: string;
@@ -369,6 +405,8 @@ export interface ConfigItem {
   value: unknown;
   updatedBy: string | null;
   updatedAt: string | null;
+  /** enum 等 kind 之可選值清單（後端 CATALOG def.options） */
+  options?: string[];
 }
 
 export interface ConfigGroup {
@@ -398,6 +436,58 @@ export interface ConfigUpdateResult {
   value: unknown;
   updatedAt: string;
   notified: number[];
+}
+
+/** M0 AI 設定現況（GET /api/v1/ai/status；不含任何金鑰內容） */
+export interface AiStatus {
+  provider: string;
+  aiEnabled: boolean;
+  classifyEnabled: boolean;
+  effective: boolean;
+  piiMode: string;
+  providers: string[];
+  env: {
+    baseUrl: string;
+    baseUrlSet: boolean;
+    baseUrlSource: 'db' | 'env' | 'default';
+    apiKeySet: boolean;
+    apiKeyMasked: string | null;
+    model: string;
+    modelSource: 'db' | 'env' | 'default';
+    scanIntervalMs: number | null;
+    scanEnabled: boolean;
+  };
+  checkedAt: string | null;
+}
+
+/** AI API Key 設定結果（PUT/DELETE /api/v1/ai/api-key；不回傳明文） */
+export interface AiApiKeyResult {
+  apiKeySet: boolean;
+  apiKeyMasked: string | null;
+  persisted: boolean;
+  persistedAt: string | null;
+  persistError: string | null;
+}
+
+/** M0 AI 連線測試結果（POST /api/v1/ai/test） */
+export interface AiTestResult {
+  provider: string;
+  ok: boolean;
+  local: boolean;
+  skipped: boolean;
+  latencyMs: number;
+  model: string | null;
+  message: string;
+  error: string | null;
+  testedAt: string | null;
+  result: {
+    category: string;
+    intent: string;
+    urgency: string;
+    eventType: string;
+    confidence: number;
+    reason: string;
+  } | null;
 }
 
 /** 單一屋苑之 QR 現況（每苑一列；未生成時 qrId 為 null） */
@@ -595,6 +685,15 @@ export const api = {
   me: (token: string) => request<AdminUser>('/me', { token }),
   listCases: (query: string, token: string) => request<CaseListData>(`/cases?${query}`, { token }),
   caseDetail: (caseId: string, token: string) => request<CaseDetailData>(`/cases/${encodeURIComponent(caseId)}`, { token }),
+  /* AI 建議（AI-01 影子模式；case:view 查閱、case:update 採納/忽略） */
+  listAiSuggestions: (caseId: string, token: string) =>
+    request<AiSuggestionItem[]>(`/cases/${encodeURIComponent(caseId)}/ai-suggestions`, { token }),
+  acceptAiSuggestion: (caseId: string, suggestionId: number, token: string) =>
+    request<AiDecideResult>(`/cases/${encodeURIComponent(caseId)}/ai-suggestions/${suggestionId}/accept`, { method: 'POST', body: {}, token }),
+  rejectAiSuggestion: (caseId: string, suggestionId: number, token: string) =>
+    request<AiDecideResult>(`/cases/${encodeURIComponent(caseId)}/ai-suggestions/${suggestionId}/reject`, { method: 'POST', body: {}, token }),
+  refreshAiSuggestion: (caseId: string, token: string) =>
+    request<AiSuggestionItem[]>(`/cases/${encodeURIComponent(caseId)}/ai-suggestions/refresh`, { method: 'POST', body: {}, token }),
   listQrOverview: (token: string) => request<QrOverviewData>('/qr/overview', { token }),
   generateQr: (estateCode: string, token: string, validUntil?: string | null) =>
     request<QrActionResult>('/qr/generate', { method: 'POST', body: { estateCode, validUntil: validUntil ?? null }, token }),
@@ -675,6 +774,16 @@ export const api = {
     request<{ items: ConfigAuditRow[] }>(`/config/audit?limit=${limit}${key ? `&key=${encodeURIComponent(key)}` : ''}`, { token }),
   configUpdate: (key: string, value: unknown, token: string) =>
     request<ConfigUpdateResult>(`/config/${encodeURIComponent(key)}`, { method: 'PUT', body: { value }, token }),
+  /* M0 AI 診斷（AI-01） */
+  aiStatus: (token: string) => request<AiStatus>('/ai/status', { token }),
+  aiTest: (body: { text?: string; provider?: string }, token: string) =>
+    request<AiTestResult>('/ai/test', { method: 'POST', body, token }),
+  aiSetApiKey: (apiKey: string, token: string) =>
+    request<AiApiKeyResult>('/ai/api-key', { method: 'PUT', body: { apiKey }, token }),
+  aiClearApiKey: (token: string) =>
+    request<AiApiKeyResult>('/ai/api-key', { method: 'DELETE', token }),
+  aiScan: (token: string) =>
+    request<{ processed: number }>('/ai/scan', { method: 'POST', body: {}, token }),
   /* F-010 用戶管理 */
   listUsers: (query: string, token: string) => request<UserListData>(`/users?${query}`, { token }),
   createUser: (body: unknown, token: string) => request<UserRow>('/users', { method: 'POST', body, token }),

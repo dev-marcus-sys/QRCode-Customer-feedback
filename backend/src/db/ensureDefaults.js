@@ -65,6 +65,16 @@ const CONFIG_DEFAULTS = [
   ['survey.questions', 'SLA'],
   ['weekly_report.schedule', 'SYSTEM'],
   ['pwd.max_age_days', 'SYSTEM'],
+  // M0 AI 橫向服務層（AI-01 影子模式；見 docs/AI_利用方案.md §6.3）
+  ['ai.enabled', 'AI'],
+  ['ai.provider', 'AI'],
+  ['ai.classify.enabled', 'AI'],
+  ['ai.classify.auto_apply_threshold', 'AI'],
+  ['ai.pii.mode', 'AI'],
+  ['ai.usage.retention_days', 'AI'],
+  // AI API 連線設定（非敏感值；金鑰只存環境變數，見 aiService.saveAiApiKey）
+  ['ai.api.base_url', 'AI'],
+  ['ai.api.model', 'AI'],
 ];
 
 function configValue(key) {
@@ -88,6 +98,16 @@ function configValue(key) {
         { key: 'resolution', label: 'Extent of problem resolution' },
       ],
     },
+    // AI-01 預設：先導預設關閉；開 ai.enabled 即用規則基線（零外部依賴）跑影子建議。
+    'ai.enabled': false,
+    'ai.provider': 'rules',
+    'ai.classify.enabled': true,
+    'ai.classify.auto_apply_threshold': 1.0, // v0 只採納不自動套用（1.0 永不自動）
+    'ai.pii.mode': 'local',
+    'ai.usage.retention_days': 90,
+    // 空白＝跟隨環境變數／provider 預設值
+    'ai.api.base_url': '',
+    'ai.api.model': '',
   };
   return values[key];
 }

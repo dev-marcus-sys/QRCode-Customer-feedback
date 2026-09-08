@@ -13,6 +13,7 @@ import { StatusChip } from '../../components/StatusChip';
 import { ActionArea } from '../../components/ActionArea';
 import { CaseAttachments, AttachmentMeta } from '../../components/CaseAttachments';
 import { SurveyStatusCard } from '../../components/SurveyStatusCard';
+import { AiSuggestionsCard } from '../../components/AiSuggestionsCard';
 import { NotificationCenter } from '../../components/NotificationCenter';
 
 const LOG_TYPE_ZH: Record<string, string> = {
@@ -227,6 +228,15 @@ export function CaseDetailPage() {
                 onDone={notify}
               />
             </SectionCard>
+
+            {/* AI 建議（M0 / AI-01 內容分類影子模式；docs/AI_利用方案.md §7.1） */}
+            <AiSuggestionsCard
+              caseId={c.caseId}
+              canUpdate={canUpdate}
+              caseClosed={c.caseStatus === 'CLOSED'}
+              onChanged={refresh}
+              onMessage={notify}
+            />
 
             {/* 附件（F-004 FR-004-08） */}
             <SectionCard title="附件" extra={<Chip size="small" label={`${attachments.length} 個檔案`} variant="outlined" />}>

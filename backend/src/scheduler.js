@@ -9,12 +9,14 @@
 const { scanSla } = require('./services/slaReminderService');
 const { maybeRunWeekly } = require('./services/weeklyReportService');
 const { applyExpiry } = require('./services/qrService');
+const { processClassifyQueue } = require('./services/aiService');
 const { getDb } = require('./db/connection');
 const logger = require('./utils/logger');
 
 let slaTimer = null;
 let weeklyTimer = null;
 let qrExpiryTimer = null;
+let aiTimer = null;
 
 function intervalOf(raw, fallback) {
   const intervalMs = raw === undefined || raw === '' ? fallback : Number(raw);
@@ -104,8 +106,37 @@ function stopQrExpiryScheduler() {
   }
 }
 
+/**
+ * AI 建議掃描（M0 / AI-01 影子模式）：處理 ai_suggestion 中 status=pending 之建議。
+ * rules 基線通常於建案時已即時處理，此處主要服務遠端模型 provider 之佇列。
+ * 間隔由 AI_SCAN_INTERVAL_MS 控制（省略 → 60000；設 0 停用）。
+ */
+function startAiScheduler() {
+  if (aiTimer) return;
+  const intervalMs = intervalOf(process.env.AI_SCAN_INTERVAL_MS, 60000);
+  if (!intervalMs) {
+    logger.warn('scheduler', 'AI 建議掃描定時器停用（AI_SCAN_INTERVAL_MS 為 0/無效）');
+    return;
+  }
+  aiTimer = setInterval(() => {
+    processClassifyQueue(getDb(), { limit: 5 }).catch((e) => {
+      logger.error('scheduler', `AI 分類掃描失敗：${e.message}`);
+    });
+  }, intervalMs);
+  if (aiTimer.unref) aiTimer.unref();
+  logger.info('scheduler', `AI 建議掃描定時器已啟動（每 ${intervalMs}ms）`);
+}
+
+function stopAiScheduler() {
+  if (aiTimer) {
+    clearInterval(aiTimer);
+    aiTimer = null;
+  }
+}
+
 module.exports = {
   startSlaScheduler, stopSlaScheduler,
   startWeeklyScheduler, stopWeeklyScheduler,
   startQrExpiryScheduler, stopQrExpiryScheduler,
+  startAiScheduler, stopAiScheduler,
 };

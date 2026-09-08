@@ -131,6 +131,13 @@ function buildConfigs() {
       { key: 'resolution', label: 'Extent of problem resolution' },
     ],
   };
+  // M0 AI 橫向服務層（AI-01 影子模式；與 ensureDefaults 一致）
+  configs['ai.enabled'] = false;
+  configs['ai.provider'] = 'rules';
+  configs['ai.classify.enabled'] = true;
+  configs['ai.classify.auto_apply_threshold'] = 1.0;
+  configs['ai.pii.mode'] = 'local';
+  configs['ai.usage.retention_days'] = 90;
   return configs;
 }
 
@@ -138,7 +145,7 @@ function insertConfigs(db, configs) {
   const stmt = db.prepare(
     'INSERT INTO sys_config (config_key, config_value, config_type) VALUES (@k, @v, @t)'
   );
-  const typeOf = (k) => (k.startsWith('sla') ? 'SLA' : k.startsWith('category') || k.startsWith('form') ? 'FORM_STYLE' : k.startsWith('numbering') ? 'NUMBERING' : 'SYSTEM');
+  const typeOf = (k) => (k.startsWith('ai') ? 'AI' : k.startsWith('sla') ? 'SLA' : k.startsWith('category') || k.startsWith('form') ? 'FORM_STYLE' : k.startsWith('numbering') ? 'NUMBERING' : 'SYSTEM');
   const tx = db.transaction((map) => {
     for (const [key, value] of Object.entries(map)) {
       stmt.run({ k: key, v: JSON.stringify(value), t: typeOf(key) });
