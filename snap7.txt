@@ -1,9 +1,0 @@
-﻿- generic
-  - dialog "重新生成 灣景中心 的 QR Code？"
-    - heading "重新生成 灣景中心 的 QR Code？" [level=2, ref=e1]
-    - paragraph
-      - StaticText "系統會停用該屋苑現行的 QR Code（張貼中的貼紙將失效）並建立全新連結。確定繼續？"
-    - button "取消" [ref=e2]
-      - StaticText "取消"
-    - button "重新生成" [ref=e3]
-      - StaticText "重新生成"
