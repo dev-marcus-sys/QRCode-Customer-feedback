@@ -16,6 +16,7 @@ const { validateFeedback } = require('../utils/validate');
 const { createCaseFromFeedback } = require('../services/caseService');
 const { createLimiter } = require('../utils/rateLimit');
 const { jwtSecret } = require('../middlewares/auth');
+const { getQrByToken, isExpired } = require('../services/qrService');
 
 const formRouter = express.Router();
 const publicRouter = express.Router();
@@ -39,10 +40,43 @@ function estateOf(db, code, lang) {
   return row;
 }
 
+/**
+ * 驗證「短亂數 token QR 連結」：表單僅能經由帶 t（link_token）的有效 QR 進入。
+ * - 缺 t（舊格式 ?estate=... 或簽章格式）→ QR_INVALID(403)
+ * - token 不存在 / estate 不符 / 停用 / 已逾有效日期 → 對應錯誤
+ * 精確比對「該張 QR」狀態，且 token 為 64-bit 亂數不可被偽造或枚舉（FR-009-03 強化）。
+ * t 來源：GET 取 query，POST（token/feedback）取 body。
+ */
+function requireValidQrLink(req, db, lang) {
+  const q = req.query || {};
+  const b = req.body || {};
+  const estate = q.estate || b.estate;
+  const token = q.t || b.t;
+
+  if (!token) {
+    throw new ApiError(ERR.QR_INVALID, messageFor(ERR.QR_INVALID, lang), 403);
+  }
+  const row = getQrByToken(db, token);
+  if (!row) {
+    throw new ApiError(ERR.QR_INVALID, messageFor(ERR.QR_INVALID, lang), 403);
+  }
+  if (row.estateCode !== String(estate || '').toUpperCase()) {
+    throw new ApiError(ERR.QR_INVALID, messageFor(ERR.QR_INVALID, lang), 403);
+  }
+  if (!row.active) {
+    throw new ApiError(ERR.QR_INACTIVE, messageFor(ERR.QR_INACTIVE, lang), 403);
+  }
+  if (isExpired(row.validUntil)) {
+    throw new ApiError(ERR.QR_INACTIVE, messageFor(ERR.QR_INACTIVE, lang), 403);
+  }
+  return row;
+}
+
 /** 取得表單設定（8.4.1） */
 formRouter.get('/meta', (req, res) => {
   const lang = langOf(req);
   const db = getDb();
+  requireValidQrLink(req, db, lang);
   const estate = estateOf(db, req.query.estate, lang);
   const isEn = lang === 'en';
   const categoriesCfg = getConfig(db, 'form.categories', {});
@@ -77,6 +111,7 @@ formRouter.get('/meta', (req, res) => {
 formRouter.post('/token', (req, res) => {
   const lang = langOf(req);
   const db = getDb();
+  requireValidQrLink(req, db, lang);
   tokenLimiter.assert(`formToken:${req.ip}`, lang);
   const estateCode = req.body && req.body.estate;
   estateOf(db, estateCode, lang);
@@ -90,6 +125,7 @@ publicRouter.post('/feedback', (req, res) => {
   // 優先採提交體語言（前端語言切換會帶入 lang），其次 Accept-Language
   const lang = body.lang && (body.lang === 'zh-Hant' || body.lang === 'en') ? body.lang : langOf(req);
   const db = getDb();
+  requireValidQrLink(req, db, lang);
   feedbackLimiter.assert(`feedback:${req.ip}`, lang);
 
   // formToken 驗證

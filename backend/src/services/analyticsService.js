@@ -11,6 +11,7 @@ const { STATUS_META, EVENT_TYPE } = require('../config/constants');
 const { ApiError } = require('../middlewares/error');
 const { ERR } = require('../config/constants');
 const { parseDb, toDb, dateRangeUtc } = require('../utils/time');
+const { estateScope: resolveEstates, estateInClause } = require('../utils/estateScope');
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const HK_MS = 8 * 60 * 60 * 1000;
@@ -20,7 +21,7 @@ const KPI_META = {
   KPI_01: { labelZh: '累計意見宗數', unit: '宗', target: null, good: null, dec: 0 },
   KPI_02: { labelZh: '平均結案時效', unit: '天', target: 3, good: 'down', dec: 1 },
   KPI_03: { labelZh: '未關閉個案', unit: '宗', target: null, good: null, dec: 0 },
-  KPI_04: { labelZh: 'QR 提交量', unit: '宗', target: null, good: null, dec: 0 },
+  KPI_04: { labelZh: '已處理個案', unit: '宗', target: null, good: null, dec: 0 },
   KPI_05: { labelZh: '二次投訴比率', unit: '%', target: 2, good: 'down', dec: 1 },
   KPI_06: { labelZh: '首次回應及時率', unit: '%', target: 95, good: 'up', dec: 1 },
   KPI_07: { labelZh: '7 天關閉達標率', unit: '%', target: 90, good: 'up', dec: 1 },
@@ -149,12 +150,18 @@ function lastWeekRange(nowMs = Date.now()) {
 /* ---------------- 範圍與權限 ---------------- */
 
 function effectiveEstate(user, filters) {
-  if (user && user.estateCode && user.estateCode !== 'ALL') return user.estateCode;
+  const codes = resolveEstates(user && user.estateCode);
+  if (codes) return codes.length === 1 ? codes[0] : codes.join(',');
   return filters && filters.estate ? filters.estate : '';
 }
 
 function estateScope(user, filters) {
-  const estate = effectiveEstate(user, filters);
+  const codes = resolveEstates(user && user.estateCode);
+  if (codes) {
+    const sc = estateInClause('c.estate_code', user.estateCode);
+    return { where: sc.clause ? ` AND ${sc.clause}` : '', params: sc.params };
+  }
+  const estate = filters && filters.estate ? filters.estate : '';
   if (!estate) return { where: '', params: [] };
   return { where: ' AND c.estate_code = ?', params: [estate] };
 }
@@ -201,6 +208,25 @@ function computeMetrics(db, fromDb, toDb, scope, nowDb) {
       WHERE ${createdWhere}`
   ).get(...createdP);
 
+  // KPI-04：已處理個案（期間內核結 CLOSED 或完結 RESOLVED）
+  const processed = db.prepare(
+    `SELECT COUNT(*) AS c FROM \`case\` c
+      WHERE 1=1${scope.where}
+        AND ((c.closed_at BETWEEN ? AND ? AND c.case_status = 'CLOSED')
+          OR (c.resolved_at BETWEEN ? AND ? AND c.case_status = 'RESOLVED'))`
+  ).get(...scope.params, fromDb, toDb, fromDb, toDb).c;
+
+  // 滿意度調查接受情況（願意／不願意／已完成）：依期間內建案範圍
+  const consent = db.prepare(
+    `SELECT COUNT(*) AS total2,
+            COALESCE(SUM(CASE WHEN c.satisfaction_consent = 1 THEN 1 ELSE 0 END), 0) AS willing,
+            COALESCE(SUM(CASE WHEN c.satisfaction_consent = 0 THEN 1 ELSE 0 END), 0) AS unwilling,
+            COALESCE(SUM(CASE WHEN c.satisfaction_consent = 1 AND EXISTS (
+                SELECT 1 FROM satisfaction_survey s
+                 WHERE s.case_id = c.case_id AND s.status = 'SUBMITTED') THEN 1 ELSE 0 END), 0) AS completed
+       FROM \`case\` c WHERE ${createdWhere}`
+  ).get(...createdP);
+
   // KPI-12：分派後首次進入 IN_PROGRESS 之平均時效（小時）
   const dispatch = db.prepare(
     `SELECT AVG(dh) AS avgHours FROM (
@@ -239,6 +265,10 @@ function computeMetrics(db, fromDb, toDb, scope, nowDb) {
     avgOverall: survey.avgOverall == null ? null : Number(survey.avgOverall),
     avgHours: dispatch.avgHours == null ? null : Number(dispatch.avgHours),
     overdueCount: Number(overdue || 0),
+    processedCount: Number(processed || 0),
+    willingCount: Number(consent.willing || 0),
+    unwillingCount: Number(consent.unwilling || 0),
+    completedCount: Number(consent.completed || 0),
   };
 }
 
@@ -260,6 +290,10 @@ function derive(m) {
     lowRate: pct(m.lowCount, m.submitted),
     overdueCount: Number(m.overdueCount),
     avgHours: m.avgHours == null ? null : r1(m.avgHours),
+    processedCount: Number(m.processedCount),
+    willingCount: Number(m.willingCount),
+    unwillingCount: Number(m.unwillingCount),
+    completedCount: Number(m.completedCount),
   };
 }
 
@@ -290,7 +324,7 @@ function assembleKpi(m, p) {
   const now = derive(m);
   const prev = p ? derive(p) : null;
   const fields = {
-    KPI_01: 'total', KPI_02: 'avgDays', KPI_03: 'openCount', KPI_04: 'qrCount',
+    KPI_01: 'total', KPI_02: 'avgDays', KPI_03: 'openCount', KPI_04: 'processedCount',
     KPI_05: 'secondRate', KPI_06: 'firstRespRate', KPI_07: 'closureRate',
     KPI_08: 'replyRate', KPI_09: 'avgOverall', KPI_10: 'lowRate',
     KPI_11: 'overdueCount', KPI_12: 'avgHours',
@@ -496,14 +530,14 @@ function handlers(db, user, filters = {}) {
   const toDbEnd = toDb(new Date(pr.toMs));
   const rows = db.prepare(
     `SELECT c.assigned_to AS userId, u.full_name AS fullName,
-            e2.estate_name_zh AS estateNameZh,
+            MIN(e2.estate_name_zh) AS estateNameZh,
             COUNT(*) AS caseCount,
             COALESCE(SUM(CASE WHEN c.case_status = 'CLOSED' THEN 1 ELSE 0 END), 0) AS closedCount,
             AVG(CASE WHEN c.case_status = 'CLOSED' THEN c.handling_days END) AS avgDays,
             AVG(s.avgSat) AS avgSat
        FROM \`case\` c
        JOIN sys_user u ON u.user_id = c.assigned_to
-       LEFT JOIN sys_estate e2 ON e2.estate_code = u.estate_code
+       LEFT JOIN sys_estate e2 ON (',' || u.estate_code || ',') LIKE ('%,' || e2.estate_code || ',%')
        LEFT JOIN (SELECT case_id AS cid, AVG(rating_overall) AS avgSat
                     FROM satisfaction_survey
                    WHERE status = 'SUBMITTED'
@@ -559,6 +593,15 @@ function summary(db, user = ALL_SCOPE_USER, filters = {}, opts = {}) {
     range: { from: pr.from, to: pr.to, labelZh: pr.labelZh },
     estate: effectiveEstate(user, filters) || 'ALL',
     kpi,
+    surveyConsent: {
+      total: Number(m.total),
+      willing: { count: Number(m.willingCount), rate: pct(m.willingCount, m.total) },
+      unwilling: { count: Number(m.unwillingCount), rate: pct(m.unwillingCount, m.total) },
+      completed: {
+        count: Number(m.completedCount),
+        rate: m.willingCount ? pct(m.completedCount, m.willingCount) : null,
+      },
+    },
     statusCounts,
     anomalySummary: {
       OVERDUE: Number(m.overdueCount),
@@ -605,6 +648,20 @@ function buildExportCsv(db, user, filters = {}) {
   for (const k of assembleKpi(m, pm)) {
     push([k.labelZh, k.value, k.unit, k.target == null ? '—' : k.target, k.delta == null ? '—' : k.delta]);
   }
+  push([]);
+  push(['-- 滿意度調查接受情況 --', '宗數', '佔比%']);
+  push([
+    '願意接受滿意度調查', m.willingCount,
+    m.total ? Math.round((m.willingCount / m.total) * 1000) / 10 : 0,
+  ]);
+  push([
+    '已完成滿意度調查', m.completedCount,
+    m.willingCount ? Math.round((m.completedCount / m.willingCount) * 1000) / 10 : 0,
+  ]);
+  push([
+    '不願意接受滿意度調查', m.unwillingCount,
+    m.total ? Math.round((m.unwillingCount / m.total) * 1000) / 10 : 0,
+  ]);
   push([]);
   const distSec = [['意見性質', dist.intent], ['事項類別', dist.category], ['屋苑', dist.estate], ['狀態', dist.status]];
   for (const [name, arr] of distSec) {

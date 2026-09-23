@@ -14,6 +14,7 @@ const { getConfig } = require('../db/configStore');
 const { toDb, now } = require('../utils/time');
 const { writeAudit } = require('../utils/audit');
 const { isStrong, generateTempPassword } = require('../utils/password');
+const { parseEstates, estateScope, normalizeEstateValue } = require('../utils/estateScope');
 
 const HASH_COST = 10;
 
@@ -29,6 +30,7 @@ function rowToUser(r) {
   return {
     ...rest,
     estateCode: r.estate_code,
+    estateCodes: parseEstates(r.estate_code),
     fullName: r.full_name,
     isActive: r.is_active,
     mustChangePwd: r.must_change_pwd,
@@ -40,9 +42,8 @@ function rowToUser(r) {
 }
 
 function resolveScope(actor) {
-  // ALL 視為全屋苑（含 ADMIN/CC 角色）；ESTATE 角色限所屬屋苑
-  if (!actor || !actor.estateCode || actor.estateCode === 'ALL') return null;
-  return actor.estateCode;
+  // ALL／空 視為全屋苑（含 ADMIN/CC 角色）；其餘限所屬屋苑（可多選）
+  return estateScope(actor && actor.estateCode);
 }
 
 function listUsers(db, { actor, keyword, roleCode, estateCode, active, sortBy, sortDir, page, pageSize }) {
@@ -50,8 +51,10 @@ function listUsers(db, { actor, keyword, roleCode, estateCode, active, sortBy, s
   const params = [];
   const scope = resolveScope(actor);
   if (scope) {
-    where.push('u.estate_code = ?');
-    params.push(scope);
+    // 操作者限屋苑：列出「所屬屋苑清單與其範圍有交集」的用戶
+    const ors = scope.map(() => "(',' || u.estate_code || ',') LIKE ?");
+    where.push(`(${ors.join(' OR ')})`);
+    for (const code of scope) params.push(`%,${code},%`);
   }
   if (keyword) {
     where.push('(u.username LIKE ? OR u.full_name LIKE ? OR u.email LIKE ?)');
@@ -59,8 +62,13 @@ function listUsers(db, { actor, keyword, roleCode, estateCode, active, sortBy, s
     params.push(kw, kw, kw);
   }
   if (estateCode) {
-    where.push('u.estate_code = ?');
-    params.push(estateCode);
+    // 篩選指定屋苑：ALL 用戶亦視為命中
+    if (estateCode === 'ALL') {
+      where.push("u.estate_code = 'ALL'");
+    } else {
+      where.push("(',' || u.estate_code || ',') LIKE ?");
+      params.push(`%,${estateCode},%`);
+    }
   }
   if (active !== undefined && active !== null && active !== '') {
     where.push('u.is_active = ?');
@@ -108,16 +116,19 @@ function passwordExpired(db, user) {
 }
 
 function validateEstate(db, estateCode) {
-  if (estateCode === 'ALL') return;
-  const row = db.prepare('SELECT estate_code FROM sys_estate WHERE estate_code = ?').get(estateCode);
-  if (!row) throw bad('屋苑代碼不存在');
+  for (const code of parseEstates(estateCode)) {
+    if (code === 'ALL') continue;
+    const row = db.prepare('SELECT estate_code FROM sys_estate WHERE estate_code = ?').get(code);
+    if (!row) throw bad(`屋苑代碼不存在：${code}`);
+  }
 }
 
 function createUser(db, actor, payload) {
-  const { username, fullName, email, phone, estateCode, roles, password, securityQuestion, securityAnswer } = payload || {};
+  const { username, fullName, email, phone, estateCode, estateCodes, roles, password, securityQuestion, securityAnswer } = payload || {};
   if (!username || !/^[A-Za-z0-9_.-]{3,50}$/.test(username)) throw bad('登入帳號須為 3~50 位英數或 ._-');
   if (!fullName || fullName.length > 50) throw bad('姓名為必填（≤50 字）');
-  validateEstate(db, estateCode || 'ALL');
+  const estateValue = normalizeEstateValue(estateCodes !== undefined ? estateCodes : estateCode) || 'ALL';
+  validateEstate(db, estateValue);
   if (db.prepare('SELECT 1 FROM sys_user WHERE username = ?').get(username)) throw bad('登入帳號已存在', 409);
   const roleRows = resolveRoles(db, roles);
   let hash;
@@ -133,10 +144,10 @@ function createUser(db, actor, payload) {
   const info = db.prepare(
     `INSERT INTO sys_user (username, password_hash, full_name, email, phone, estate_code, security_question, security_answer_hash, must_change_pwd, is_active)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`
-  ).run(username, hash, fullName, email || null, phone || null, estateCode || 'ALL', securityQuestion || null, saHash, mustChange);
+  ).run(username, hash, fullName, email || null, phone || null, estateValue, securityQuestion || null, saHash, mustChange);
   const userId = info.lastInsertRowid;
   linkRoles(db, userId, roleRows.map((r) => r.role_id));
-  writeAudit(db, { userId: actor.userId, username: actor.username, action: 'USER_MANAGE', targetType: 'USER', targetId: userId, detail: { op: 'create', username, estateCode, roles: roleRows.map((r) => r.role_code) } });
+  writeAudit(db, { userId: actor.userId, username: actor.username, action: 'USER_MANAGE', targetType: 'USER', targetId: userId, detail: { op: 'create', username, estateCode: estateValue, roles: roleRows.map((r) => r.role_code) } });
   return { userId, mustChangePwd: !!mustChange, tempPassword: mustChange ? undefined : undefined };
 }
 
@@ -161,7 +172,7 @@ function linkRoles(db, userId, roleIds) {
 function updateUser(db, actor, userId, payload) {
   const user = db.prepare('SELECT * FROM sys_user WHERE user_id = ?').get(userId);
   if (!user) throw bad('用戶不存在', 404);
-  const { fullName, email, phone, estateCode, roles, securityQuestion, securityAnswer } = payload || {};
+  const { fullName, email, phone, estateCode, estateCodes, roles, securityQuestion, securityAnswer } = payload || {};
   const tx = db.transaction(() => {
     const sets = [];
     const params = [];
@@ -171,7 +182,12 @@ function updateUser(db, actor, userId, payload) {
     }
     if (email !== undefined) { sets.push('email = ?'); params.push(email || null); }
     if (phone !== undefined) { sets.push('phone = ?'); params.push(phone || null); }
-    if (estateCode !== undefined) { validateEstate(db, estateCode); sets.push('estate_code = ?'); params.push(estateCode); }
+    const estateInput = estateCodes !== undefined ? estateCodes : estateCode;
+    if (estateInput !== undefined) {
+      const estateValue = normalizeEstateValue(estateInput) || 'ALL';
+      validateEstate(db, estateValue);
+      sets.push('estate_code = ?'); params.push(estateValue);
+    }
     if (securityQuestion !== undefined) {
       sets.push('security_question = ?'); params.push(securityQuestion || null);
       sets.push('security_answer_hash = ?');

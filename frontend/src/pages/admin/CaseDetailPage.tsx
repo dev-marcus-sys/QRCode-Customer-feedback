@@ -6,6 +6,7 @@ import {
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { api, ApiRequestError, authStore, CaseDetailData, CaseItem } from '../../api/client';
+import { useAiFeatures, featureOn } from '../../aiFeatures';
 import {
   CATEGORY_OPTIONS, EVENT_OPTIONS, PRIORITY_OPTIONS, labelOf, STATUS_OPTIONS,
 } from '../../admin/options';
@@ -14,6 +15,8 @@ import { ActionArea } from '../../components/ActionArea';
 import { CaseAttachments, AttachmentMeta } from '../../components/CaseAttachments';
 import { SurveyStatusCard } from '../../components/SurveyStatusCard';
 import { AiSuggestionsCard } from '../../components/AiSuggestionsCard';
+import { AiAssigneeCard } from '../../components/AiAssigneeCard';
+import { AiDraftCard } from '../../components/AiDraftCard';
 import { NotificationCenter } from '../../components/NotificationCenter';
 
 const LOG_TYPE_ZH: Record<string, string> = {
@@ -64,6 +67,10 @@ export function CaseDetailPage() {
   const navigate = useNavigate();
   const me = authStore.getUser();
   const permissions = me?.permissions || [];
+  const { features } = useAiFeatures();
+  const showSuggestions = featureOn(features, 'classify') || featureOn(features, 'similar');
+  const showAssign = featureOn(features, 'assign');   // AI-03
+  const showDraft = featureOn(features, 'draft');      // AI-04
   const [detail, setDetail] = useState<CaseDetailData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -129,6 +136,7 @@ export function CaseDetailPage() {
     .join(' ');
   const canReview = permissions.includes('case:review');
   const canUpdate = permissions.includes('case:update');
+  const canAssign = permissions.includes('case:assign');
   const attachments: AttachmentMeta[] = detail.timeline
     .filter((t) => t.logType === 'UPLOAD' && t.attachmentId != null)
     .map((t) => ({ attachmentId: t.attachmentId as number, attachmentName: t.attachmentName || '附件', attachmentSize: t.attachmentSize ?? null }));
@@ -153,7 +161,7 @@ export function CaseDetailPage() {
         </Typography>
       </Toolbar>
 
-      <Box sx={{ p: { xs: 1.5, md: 3 } }} maxWidth="lg" mx="auto">
+      <Box sx={{ p: { xs: 1.5, md: 3 } }} maxWidth="xl" mx="auto">
         {toast && (
           <Alert severity="success" sx={{ mb: 2 }} onClose={() => setToast('')}>{toast}</Alert>
         )}
@@ -230,6 +238,7 @@ export function CaseDetailPage() {
             </SectionCard>
 
             {/* AI 建議（M0 / AI-01 內容分類影子模式；docs/AI_利用方案.md §7.1） */}
+            {showSuggestions && (
             <AiSuggestionsCard
               caseId={c.caseId}
               canUpdate={canUpdate}
@@ -237,6 +246,30 @@ export function CaseDetailPage() {
               onChanged={refresh}
               onMessage={notify}
             />
+            )}
+
+            {/* AI-03 智能分派建議（§4.3 級一：規則＋SQL 統計） */}
+            {showAssign && (
+            <AiAssigneeCard
+              caseId={c.caseId}
+              canAssign={canAssign}
+              caseClosed={c.caseStatus === 'CLOSED'}
+              caseStatus={c.caseStatus}
+              onChanged={refresh}
+              onMessage={notify}
+            />
+            )}
+
+            {/* AI-04 草擬回覆／個案摘要（§4.4；人審後存入，不自動寄出） */}
+            {showDraft && (
+            <AiDraftCard
+              caseId={c.caseId}
+              canUpdate={canUpdate}
+              caseClosed={c.caseStatus === 'CLOSED'}
+              onChanged={refresh}
+              onMessage={notify}
+            />
+            )}
 
             {/* 附件（F-004 FR-004-08） */}
             <SectionCard title="附件" extra={<Chip size="small" label={`${attachments.length} 個檔案`} variant="outlined" />}>
@@ -244,6 +277,7 @@ export function CaseDetailPage() {
                 caseId={c.caseId}
                 items={attachments}
                 canManage={canUpdate && ['ASSIGNED', 'IN_PROGRESS', 'WAITING', 'REOPENED'].includes(c.caseStatus)}
+                canAnalyze={canUpdate}
                 onChanged={notify}
               />
             </SectionCard>

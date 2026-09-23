@@ -21,6 +21,7 @@ const roleRoutes = require('./routes/roles');
 const auditRoutes = require('./routes/audit');
 const estateRoutes = require('./routes/estates');
 const aiRoutes = require('./routes/ai');
+const analyticsRoutes = require('./routes/analytics');
 
 /** 前端建置產物目錄（production 模式由後端直接托管；不存在時退回純 API / dev proxy） */
 const FRONTEND_DIST = path.resolve(__dirname, '../../frontend/dist');
@@ -65,6 +66,7 @@ function createApp() {
   app.use('/api/v1/estates', estateRoutes);
   // M0 AI 診斷（AI-01 影子模式之設定現況／連線測試）
   app.use('/api/v1/ai', aiRoutes);
+  app.use('/api/v1/analytics', analyticsRoutes);
 
   // Production：若存在前端建置產物則托管靜態檔並提供 SPA fallback（React Router 深鏈）
   if (fs.existsSync(INDEX_HTML)) {

@@ -46,30 +46,128 @@ const CATALOG = [
     key: 'form.style', group: 'FORM', labelZh: '公眾表單樣式',
     kind: 'formStyle',
   },
-  // M0 AI 橫向服務層（AI-01 影子模式先導；見 docs/AI_利用方案.md §6.3）
+  // ===== AI 參數（順序＝AI-00 總覽 → AI-01…AI-07；subGroup 供前端分節顯示） =====
+  // --- AI-00 總覽與連線（§6.3 橫向服務層）---
   {
-    key: 'ai.enabled', group: 'AI', labelZh: 'AI 總開關（影子模式）',
-    kind: 'boolean',
+    key: 'ai.enabled', group: 'AI', labelZh: 'AI 總開關（關閉＝所有 AI 功能停用）',
+    subGroup: 'AI-00 總覽與連線', kind: 'boolean',
   },
   {
-    key: 'ai.provider', group: 'AI', labelZh: 'AI 供應商',
-    kind: 'enum', options: ['none', 'rules', 'openai', 'ollama'],
+    key: 'ai.provider', group: 'AI', labelZh: 'AI 供應商（rules＝本機規則基線）',
+    subGroup: 'AI-00 總覽與連線', kind: 'enum', options: ['none', 'rules', 'openai', 'ollama'],
   },
   {
-    key: 'ai.classify.enabled', group: 'AI', labelZh: 'AI-01 內容分類建議（影子）',
-    kind: 'boolean',
+    key: 'ai.pii.mode', group: 'AI', labelZh: 'de-PII 模式（local＝出外前先遮罩）',
+    subGroup: 'AI-00 總覽與連線', kind: 'enum', options: ['local', 'cloud'],
   },
   {
-    key: 'ai.pii.mode', group: 'AI', labelZh: 'de-PII 模式（出外前遮罩）',
-    kind: 'enum', options: ['local', 'cloud'],
+    key: 'ai.api.base_url', group: 'AI', labelZh: 'AI API 端點 Base URL（空白＝環境變數）',
+    subGroup: 'AI-00 總覽與連線', kind: 'string', maxLength: 300, url: true, allowEmpty: true,
   },
   {
-    key: 'ai.api.base_url', group: 'AI', labelZh: 'AI API 端點 Base URL（空白＝用環境變數/預設）',
-    kind: 'string', maxLength: 300, url: true, allowEmpty: true,
+    key: 'ai.api.model', group: 'AI', labelZh: 'AI 模型名稱（空白＝環境變數）',
+    subGroup: 'AI-00 總覽與連線', kind: 'string', maxLength: 120, allowEmpty: true,
+  },
+  // --- AI-01 內容分類建議（§4.1）---
+  {
+    key: 'ai.classify.enabled', group: 'AI', labelZh: 'AI-01 內容分類建議（影子模式）',
+    subGroup: 'AI-01 內容分類', kind: 'boolean',
+  },
+  // --- AI-02 語意防重（§4.2）---
+  {
+    key: 'ai.similar.enabled', group: 'AI', labelZh: 'AI-02 語意防重（相似個案建議）',
+    subGroup: 'AI-02 語意防重', kind: 'boolean',
   },
   {
-    key: 'ai.api.model', group: 'AI', labelZh: 'AI 模型名稱（空白＝用環境變數/預設）',
-    kind: 'string', maxLength: 120, allowEmpty: true,
+    key: 'ai.similar.lookback_days', group: 'AI', labelZh: 'AI-02 比對回溯期（天）',
+    subGroup: 'AI-02 語意防重', kind: 'int', min: 1, max: 365,
+  },
+  {
+    key: 'ai.similar.threshold', group: 'AI', labelZh: 'AI-02 相似度門檻（0.3~0.99）',
+    subGroup: 'AI-02 語意防重', kind: 'number', min: 0.3, max: 0.99,
+  },
+  {
+    key: 'ai.similar.max_matches', group: 'AI', labelZh: 'AI-02 最多建議關聯個案數',
+    subGroup: 'AI-02 語意防重', kind: 'int', min: 1, max: 10,
+  },
+  // --- AI-03 智能分派建議（§4.3）---
+  {
+    key: 'ai.assign.enabled', group: 'AI', labelZh: 'AI-03 智能分派建議',
+    subGroup: 'AI-03 智能分派', kind: 'boolean',
+  },
+  {
+    key: 'ai.assign.category_role', group: 'AI', labelZh: 'AI-03 類別→偏好角色對照（JSON）',
+    subGroup: 'AI-03 智能分派', kind: 'json',
+  },
+  {
+    key: 'ai.assign.lookback_days', group: 'AI', labelZh: 'AI-03 統計回溯期（天）',
+    subGroup: 'AI-03 智能分派', kind: 'int', min: 7, max: 365,
+  },
+  // --- AI-04 草擬回覆與個案摘要（§4.4）---
+  {
+    key: 'ai.draft.enabled', group: 'AI', labelZh: 'AI-04 草擬回覆／個案摘要',
+    subGroup: 'AI-04 回覆草稿', kind: 'boolean',
+  },
+  {
+    key: 'ai.draft.style_guide', group: 'AI', labelZh: 'AI-04 回覆風格指引',
+    subGroup: 'AI-04 回覆草稿', kind: 'string', maxLength: 500, allowEmpty: true,
+  },
+  // --- AI-05 問卷開放意見分析（§4.5）---
+  {
+    key: 'ai.feedback.enabled', group: 'AI', labelZh: 'AI-05 問卷開放意見分析',
+    subGroup: 'AI-05 問卷分析', kind: 'boolean',
+  },
+  {
+    key: 'ai.feedback.lookback_days', group: 'AI', labelZh: 'AI-05 分析回溯期（天）',
+    subGroup: 'AI-05 問卷分析', kind: 'int', min: 7, max: 365,
+  },
+  // --- AI-06 週報 AI 摘要（§4.6；輸入為彙總數字，私隱風險最低）---
+  {
+    key: 'ai.weekly_summary.enabled', group: 'AI', labelZh: 'AI-06 週報 AI 摘要',
+    subGroup: 'AI-06 週報摘要', kind: 'boolean',
+  },
+  {
+    key: 'ai.weekly_summary.style', group: 'AI', labelZh: 'AI-06 週報摘要風格指引',
+    subGroup: 'AI-06 週報摘要', kind: 'string', maxLength: 500, allowEmpty: true,
+  },
+  // --- AI-07 附件影像理解（§4.7；影像含人樣／車牌，私隱敏感度高）---
+  {
+    key: 'ai.attachment.enabled', group: 'AI', labelZh: 'AI-07 附件影像理解（OCR／描述）',
+    subGroup: 'AI-07 附件影像', kind: 'boolean',
+  },
+  {
+    key: 'ai.vision.local_only', group: 'AI', labelZh: 'AI-07 影像只走本地模型（不外送雲端）',
+    subGroup: 'AI-07 附件影像', kind: 'boolean',
+  },
+  // --- AI-08 逾期風險預警（§4.8；級一純統計，輸入只係系統內數字）---
+  {
+    key: 'ai.risk.enabled', group: 'AI', labelZh: 'AI-08 逾期風險預警',
+    subGroup: 'AI-08 逾期風險', kind: 'boolean',
+  },
+  {
+    key: 'ai.risk.lookback_days', group: 'AI', labelZh: 'AI-08 歷史基線回溯期（天）',
+    subGroup: 'AI-08 逾期風險', kind: 'int', min: 7, max: 365,
+  },
+  {
+    key: 'ai.risk.notify_roles', group: 'AI', labelZh: 'AI-08 預警通知角色（逗號分隔）',
+    subGroup: 'AI-08 逾期風險', kind: 'string', maxLength: 200, allowEmpty: true,
+  },
+  // --- AI-09 RAG 知識庫（§4.9；讀取入口與管理）---
+  {
+    key: 'ai.kb.enabled', group: 'AI', labelZh: 'AI-09 知識庫檢索開關',
+    subGroup: 'AI-09 知識庫 (RAG)', kind: 'boolean',
+  },
+  {
+    key: 'ai.kb.top_k', group: 'AI', labelZh: 'AI-09 檢索返回塊數（top-k）',
+    subGroup: 'AI-09 知識庫 (RAG)', kind: 'int', min: 1, max: 20,
+  },
+  {
+    key: 'ai.kb.threshold', group: 'AI', labelZh: 'AI-09 最低相似度（0~1）',
+    subGroup: 'AI-09 知識庫 (RAG)', kind: 'number', min: 0, max: 1,
+  },
+  {
+    key: 'ai.kb.answer_enabled', group: 'AI', labelZh: 'AI-09 以 LLM 生成附引用答案（需雲端/ollama）',
+    subGroup: 'AI-09 知識庫 (RAG)', kind: 'boolean',
   },
 ];
 
@@ -146,6 +244,11 @@ function validate(key, value) {
   } else if (kind === 'enum') {
     const opts = def.options || [];
     if (!opts.includes(value)) throw bad(`${def.labelZh} 須為 ${opts.join(' / ')} 之一`);
+  } else if (kind === 'number') {
+    if (typeof value !== 'number' || Number.isNaN(value)) throw bad(`${def.labelZh} 須為數字`);
+    assertIntRange(value, def.min, def.max, def.labelZh);
+  } else if (kind === 'json') {
+    if (typeof value !== 'object' || value === null || Array.isArray(value)) throw bad(`${def.labelZh} 須為 JSON 物件`);
   } else if (kind === 'string') {
     if (typeof value !== 'string') throw bad(`${def.labelZh} 須為字串`);
     const v = value.trim();
@@ -171,9 +274,10 @@ function listConfigs(db) {
   const rows = db.prepare(
     `SELECT c.config_key AS configKey, c.config_value AS configValue, c.config_type AS configType,
             c.updated_by AS updatedBy, c.updated_at AS updatedAt, u.full_name AS updatedByName
-       FROM sys_config c LEFT JOIN sys_user u ON u.user_id = c.updated_by
-      ORDER BY c.config_key`
+       FROM sys_config c LEFT JOIN sys_user u ON u.user_id = c.updated_by`
   ).all();
+  // 群組內順序依 CATALOG 定義（AI-00→AI-01…AI-07），未列於目錄之唯讀鍵排於最後
+  const catalogIndex = new Map(CATALOG.map((c, i) => [c.key, i]));
   const byGroup = new Map(GROUP_ORDER.map((g) => [g.key, { ...g, items: [] }]));
   const editable = new Set(CATALOG.map((c) => c.key));
   for (const r of rows) {
@@ -185,6 +289,8 @@ function listConfigs(db) {
     byGroup.get(groupKey).items.push({
       key: r.configKey,
       labelZh: def ? def.labelZh : r.configKey,
+      // 未列於目錄之唯讀鍵（沿用既有 config_type）統一歸到「其他」分節，避免散落於末尾
+      subGroup: def ? def.subGroup : (groupKey === 'AI' ? '其他 AI 參數（唯讀）' : undefined),
       type: def ? def.kind : 'readonly',
       editable: editable.has(r.configKey),
       value: parsed,
@@ -193,7 +299,9 @@ function listConfigs(db) {
       options: def && Array.isArray(def.options) ? def.options : undefined,
     });
   }
+  const rank = (key) => (catalogIndex.has(key) ? catalogIndex.get(key) : Number.MAX_SAFE_INTEGER);
   const groups = [...byGroup.values()].filter((g) => g.items.length || g.key === 'SLA');
+  for (const g of groups) g.items.sort((a, b) => (rank(a.key) !== rank(b.key) ? rank(a.key) - rank(b.key) : a.key.localeCompare(b.key)));
   return { groups, editableOnly: true };
 }
 

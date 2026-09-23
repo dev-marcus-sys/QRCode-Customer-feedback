@@ -4,6 +4,7 @@
  */
 import { Box, Stack, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import { useAiFeatures, featureOn } from '../aiFeatures';
 
 const SECTIONS = [
   { key: 'cases', label: '個案', path: '/admin/cases' },
@@ -15,10 +16,13 @@ const SECTIONS = [
   { key: 'roles', label: '角色', path: '/admin/roles' },
   { key: 'audit', label: '審計', path: '/admin/audit' },
   { key: 'estates', label: '屋苑', path: '/admin/estates' },
+  { key: 'kb', label: '知識庫', path: '/admin/kb' },
 ];
 
 export default function AdminNav({ current }: { current: string }) {
   const navigate = useNavigate();
+  const { features } = useAiFeatures();
+  const kbEnabled = featureOn(features, 'kb'); // AI-09 知識庫：未啟用則隱藏導覽項
   return (
     <Stack spacing={1.5}>
       <Stack direction="row" spacing={2} alignItems="center">
@@ -40,7 +44,7 @@ export default function AdminNav({ current }: { current: string }) {
         }}
         sx={{ flexWrap: 'wrap' }}
       >
-        {SECTIONS.map((s) => (
+        {SECTIONS.filter((s) => s.key !== 'kb' || kbEnabled).map((s) => (
           <ToggleButton key={s.key} value={s.key}>
             {s.label}
           </ToggleButton>

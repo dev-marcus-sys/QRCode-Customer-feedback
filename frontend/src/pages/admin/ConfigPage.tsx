@@ -20,6 +20,7 @@ import NetworkCheckIcon from '@mui/icons-material/NetworkCheck';
 import {
   ApiRequestError, authStore, AiStatus, AiTestResult, ConfigAuditRow, ConfigGroup, ConfigItem, api,
 } from '../../api/client';
+import { invalidateAiFeatures } from '../../aiFeatures';
 import { CATEGORY_OPTIONS, EVENT_OPTIONS, labelOf } from '../../admin/options';
 import { NotificationCenter } from '../../components/NotificationCenter';
 
@@ -354,6 +355,7 @@ export function ConfigPage() {
       .then((r) => {
         setToast(`已更新 ${r.labelZh}（${r.key}）`);
         setEditItem(null);
+        if (r.key.startsWith('ai.')) invalidateAiFeatures(); // 切換 AI 開關後，其它頁即時反映
         return api.configList(token);
       })
       .then((d) => setGroups(d.groups))
@@ -403,7 +405,15 @@ export function ConfigPage() {
                 <CardContent sx={{ p: 0 }}>
                   {g.items.map((it, idx) => (
                     <Box key={it.key}>
-                      {idx > 0 && <Divider />}
+                      {/* 分節標題（AI 參數依 AI-00…AI-07 分節；同一 subGroup 只在首列顯示） */}
+                      {it.subGroup && it.subGroup !== g.items[idx - 1]?.subGroup && (
+                        <Box sx={{ px: 2.5, pt: 1.6, pb: 0.2, bgcolor: '#f7fafd', borderTop: idx > 0 ? '1px solid #eef1f6' : 'none' }}>
+                          <Typography variant="caption" sx={{ color: '#1a5aa6', fontWeight: 700, letterSpacing: 0.3 }}>
+                            {it.subGroup}
+                          </Typography>
+                        </Box>
+                      )}
+                      {idx > 0 && !it.subGroup && <Divider />}
                       <Box sx={{ px: 2.5, py: 1.6, display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
                         <Box sx={{ minWidth: 170, flex: 1 }}>
                           <Typography variant="body2" fontWeight={600}>{it.labelZh}</Typography>

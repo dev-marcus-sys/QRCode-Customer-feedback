@@ -14,6 +14,7 @@ import { UsersPage } from './pages/admin/UsersPage';
 import { RolesPage } from './pages/admin/RolesPage';
 import { AuditPage } from './pages/admin/AuditPage';
 import { EstatesPage } from './pages/admin/EstatesPage';
+import KnowledgeBasePage from './pages/admin/KnowledgeBasePage';
 
 export default function App() {
   return (
@@ -99,6 +100,14 @@ export default function App() {
         element={
           <AuthGuard>
             <EstatesPage />
+          </AuthGuard>
+        }
+      />
+      <Route
+        path="/admin/kb"
+        element={
+          <AuthGuard>
+            <KnowledgeBasePage />
           </AuthGuard>
         }
       />

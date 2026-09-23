@@ -11,6 +11,8 @@ const MESSAGES = {
   [ERR.FORM_TOKEN]: { zh: '表單已過期，請重新載入後再提交', en: 'The form has expired. Please reload and try again.' },
   [ERR.ESTATE_NOT_FOUND]: { zh: '屋苑或表單設定不存在或已停用', en: 'Estate or form configuration not found or disabled' },
   [ERR.QR_NOT_FOUND]: { zh: 'QR Code 不存在', en: 'QR Code not found' },
+  [ERR.QR_INACTIVE]: { zh: '此 QR Code 已停用或已過期，請向管理處索取最新 QR Code', en: 'This QR Code is inactive or expired. Please obtain the latest QR Code from the management office.' },
+  [ERR.QR_INVALID]: { zh: '此 QR Code 連結無效或已失效，請掃描最新生成的 QR Code', en: 'This QR Code link is invalid or expired. Please scan the latest generated QR Code.' },
   [ERR.UNAUTH]: { zh: '未登入或登入已過期', en: 'Not authenticated or session expired' },
   [ERR.BAD_CREDENTIALS]: { zh: '帳號或密碼錯誤', en: 'Incorrect username or password' },
   [ERR.ACCOUNT_LOCKED]: { zh: '帳戶已鎖定，請稍後再試', en: 'Account locked, please try again later' },

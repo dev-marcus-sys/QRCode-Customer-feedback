@@ -129,7 +129,7 @@ export function RolesPage() {
         <IconButton title="登出" onClick={logout}><LogoutIcon /></IconButton>
       </Toolbar>
 
-      <Box sx={{ p: { xs: 1.5, md: 3 } }} maxWidth="lg" mx="auto">
+      <Box sx={{ p: { xs: 1.5, md: 3 } }} maxWidth="xl" mx="auto">
         <AdminNav current="roles" />
         <Stack direction="row" spacing={1} sx={{ mb: 2, mt: 1 }} alignItems="center">
           <Box sx={{ flex: 1 }} />

@@ -13,6 +13,7 @@ const { ApiError } = require('../middlewares/error');
 const { toDb, now, parseDb, dbToIso8 } = require('../utils/time');
 const { enqueueEmail, notifyUser, reviewersForCase } = require('./notificationService');
 const logger = require('../utils/logger');
+const { estateInClause } = require('../utils/estateScope');
 
 const RATING_KEYS = ['overall', 'response', 'attitude', 'resolution'];
 const LOW_SCORE = 2;
@@ -205,9 +206,9 @@ function audit(db, user, action, targetId, detail) {
 function surveyStats(db, user, filters = {}) {
   const scopeWhere = [];
   const scopeParams = [];
-  if (user && user.estateCode && user.estateCode !== 'ALL') {
-    scopeWhere.push('c.estate_code = ?');
-    scopeParams.push(user.estateCode);
+  {
+    const sc = estateInClause('c.estate_code', user && user.estateCode);
+    if (sc.clause) { scopeWhere.push(sc.clause); scopeParams.push(...sc.params); }
   }
   if (filters.estate) {
     scopeWhere.push('c.estate_code = ?');

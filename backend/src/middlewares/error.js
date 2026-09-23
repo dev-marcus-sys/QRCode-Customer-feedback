@@ -25,6 +25,7 @@ function httpForCode(code) {
     [ERR.FORM_TOKEN]: 400,
     [ERR.ESTATE_NOT_FOUND]: 404,
     [ERR.QR_NOT_FOUND]: 404,
+    [ERR.QR_INACTIVE]: 403,
     [ERR.UNAUTH]: 401,
     [ERR.BAD_CREDENTIALS]: 401,
     [ERR.ACCOUNT_LOCKED]: 403,

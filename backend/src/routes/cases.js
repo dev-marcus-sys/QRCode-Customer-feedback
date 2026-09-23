@@ -30,7 +30,8 @@ const { listCases, getCaseDetail, getAssignees, assignCase, reassignCase,
   submitResolution, approveResolution, rejectResolution, reopenCase,
   uploadCaseAttachment, downloadCaseAttachment, batchAssignCases, batchUpdateCases } = require('../services/caseService');
 const { exportFile } = require('../services/exportService');
-const { listAiSuggestions, decideAiSuggestion, reanalyzeCase } = require('../services/aiService');
+const { listAiSuggestions, decideAiSuggestion, reanalyzeCase, linkSimilarCase, suggestAssignee,
+  createDraft, useDraft, caseFeedbackInsight, analyzeAttachment, attachmentInsights } = require('../services/aiService');
 const logger = require('../utils/logger');
 
 const router = express.Router();
@@ -135,6 +136,20 @@ router.get('/:caseId/attachments/:attachmentId/download', requirePerm('case:view
   return res.sendFile(att.absPath);
 });
 
+/** AI-07 附件影像理解結果（按附件聚合最新一筆；case:view） */
+router.get('/:caseId/attachments/ai-insights', requirePerm('case:view'), (req, res) => {
+  ok(res, { items: attachmentInsights(getDb(), req.params.caseId, req.user) });
+});
+
+/** AI-07 觸發單一附件影像分析（case:update；寫 ai_suggestion + ocr_text） */
+router.post('/:caseId/attachments/:attachmentId/analyze', requirePerm('case:update'), async (req, res, next) => {
+  try {
+    ok(res, await analyzeAttachment(getDb(), req.params.caseId, req.params.attachmentId, req.user));
+  } catch (e) {
+    next(e);
+  }
+});
+
 /* ---------- AI 建議（M0 / AI-01 影子模式；docs/AI_利用方案.md §7.1） ---------- */
 router.get('/:caseId/ai-suggestions', requirePerm('case:view'), (req, res) => {
   ok(res, listAiSuggestions(getDb(), req.params.caseId, req.user));
@@ -163,6 +178,42 @@ router.post('/:caseId/ai-suggestions/refresh', requirePerm('case:update'), async
   }
 });
 
+/** 確認相似個案為重複 → 關聯 original_case_id（case:update） */
+router.post('/:caseId/ai-suggestions/:suggestionId/link', requirePerm('case:update'), (req, res) => {
+  ok(res, linkSimilarCase(getDb(), req.params.suggestionId, req.user, {
+    targetCaseId: (req.body || {}).targetCaseId,
+  }));
+});
+
+/** AI-03 智能分派建議（case:assign；採納仍走現有分派 API） */
+router.get('/:caseId/ai-assignee-suggestion', requirePerm('case:assign'), (req, res) => {
+  ok(res, suggestAssignee(getDb(), req.params.caseId, req.user));
+});
+
+/** AI-04 產生個案摘要／回覆草稿（case:update；只出建議，不自動寄出） */
+router.post('/:caseId/ai-draft', requirePerm('case:update'), async (req, res, next) => {
+  try {
+    const body = req.body || {};
+    ok(res, await createDraft(getDb(), req.params.caseId, req.user, {
+      kind: body.kind || 'summary',
+      lang: body.lang || 'zh-Hant',
+    }), 201);
+  } catch (e) {
+    next(e);
+  }
+});
+
+/** AI-04 採納草稿：人手編輯後存入 case_log（AI_DRAFT_USED；不自動對外發送） */
+router.post('/:caseId/ai-draft/:suggestionId/use', requirePerm('case:update'), (req, res) => {
+  ok(res, useDraft(getDb(), req.params.caseId, req.params.suggestionId, req.user, {
+    content: (req.body || {}).content,
+  }));
+});
+
+/** AI-05 單一個案之問卷意見分析（低分「可能成因摘要」；case:view） */
+router.get('/:caseId/ai-feedback-insight', requirePerm('case:view'), (req, res) => {
+  ok(res, { insight: caseFeedbackInsight(getDb(), req.params.caseId, req.user) });
+});
 router.get('/:caseId', requirePerm('case:view'), (req, res) => {
   ok(res, getCaseDetail(getDb(), req.params.caseId, req.user));
 });

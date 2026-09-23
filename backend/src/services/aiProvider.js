@@ -168,6 +168,78 @@ async function classifyRemote(provider, text, opts = {}) {
   return { ...raw, model };
 }
 
+/** 本地詞彙向量（零依賴 baseline，AI-02 用）：雜湊分桶固定維度 L2 正規化 */
+function lexicalEmbed(text, dim = 256) {
+  const t = normalizeContent(text).toLowerCase();
+  const vec = new Array(dim).fill(0);
+  const bucket = (tk) => {
+    let h = 2166136261;
+    for (let i = 0; i < tk.length; i += 1) { h ^= tk.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return Math.abs(h) % dim;
+  };
+  for (const w of Object.keys(CATEGORY_KEYWORDS)) {
+    for (const kw of CATEGORY_KEYWORDS[w]) {
+      if (t.includes(String(kw).toLowerCase())) vec[bucket(`kw:${kw}`)] += 2;
+    }
+  }
+  for (const m of t.match(/[0-9]+/g) || []) vec[bucket(`num:${m}`)] += 1.5;
+  for (let i = 0; i < t.length - 1; i += 1) vec[bucket(t.slice(i, i + 2))] += 1;
+  let norm = 0;
+  for (let i = 0; i < dim; i += 1) norm += vec[i] * vec[i];
+  norm = Math.sqrt(norm) || 1;
+  return vec.map((x) => x / norm);
+}
+
+/** 餘弦相似度（輸入已正規化） */
+function cosine(a, b) {
+  const n = Math.min(a.length, b.length);
+  let dot = 0;
+  for (let i = 0; i < n; i += 1) dot += a[i] * b[i];
+  return dot;
+}
+
+/** 抽取可關聯實體（類別關鍵字 + 數字／座號），用於「相同關鍵實體」提示 */
+function extractEntities(text) {
+  const t = normalizeContent(text).toLowerCase();
+  const ents = new Set();
+  for (const w of Object.keys(CATEGORY_KEYWORDS)) {
+    for (const kw of CATEGORY_KEYWORDS[w]) {
+      if (t.includes(String(kw).toLowerCase())) ents.add(`kw:${kw}`);
+    }
+  }
+  for (const m of t.match(/[0-9]+/g) || []) ents.add(`num:${m}`);
+  return [...ents];
+}
+
+function sharedEntities(a, b) {
+  const setB = new Set(extractEntities(b));
+  return extractEntities(a).filter((e) => setB.has(e)).map((e) => (e.startsWith('kw:') ? e.slice(3) : e));
+}
+
+/**
+ * 遠端 embedding（OpenAI-compatible / Ollama；AI-02 語意防重）。
+ * @returns {Promise<{vectors:number[][], model:string, dim:number}>}
+ */
+async function embedRemote(provider, texts, opts = {}) {
+  const isOllama = provider === 'ollama';
+  const baseUrl = String(opts.baseUrl || process.env.AI_BASE_URL || '').trim().replace(/\/+$/, '')
+    || (isOllama ? 'http://localhost:11434' : 'https://api.openai.com/v1');
+  const apiKey = opts.apiKey != null ? opts.apiKey : (process.env.AI_API_KEY || '');
+  if (!isOllama && !apiKey) throw new Error('AI_API_KEY 未設定');
+  const model = opts.embedModel || process.env.AI_EMBED_MODEL
+    || (isOllama ? 'bge-m3' : 'text-embedding-3-small');
+  const endpoint = isOllama ? `${baseUrl}/api/embed` : `${baseUrl}/embeddings`;
+  const body = isOllama ? { model, input: texts } : { model, input: texts };
+  const headers = { 'Content-Type': 'application/json' };
+  if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
+  const resp = await fetch(endpoint, { method: 'POST', headers, body: JSON.stringify(body) });
+  if (!resp.ok) throw new Error(`${provider} HTTP ${resp.status}: ${(await resp.text()).slice(0, 200)}`);
+  const data = await resp.json();
+  const vectors = isOllama ? (data.embeddings || []) : (data.data || []).map((d) => d.embedding);
+  if (!vectors.length) throw new Error('模型未回傳向量');
+  return { vectors, model, dim: vectors[0].length };
+}
+
 module.exports = {
   CATEGORY_ORDER,
   EVENT_ORDER,
@@ -177,4 +249,9 @@ module.exports = {
   classifyRemote,
   eventTypeOfSuggestion,
   maskPii,
+  lexicalEmbed,
+  cosine,
+  extractEntities,
+  sharedEntities,
+  embedRemote,
 };

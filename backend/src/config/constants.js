@@ -68,6 +68,8 @@ const ERR = {
   FORM_TOKEN: 1003,
   ESTATE_NOT_FOUND: 1004,
   QR_NOT_FOUND: 1005,
+  QR_INACTIVE: 1006, // QR 已停用或已逾有效日期（公眾表單入口阻擋）
+  QR_INVALID: 1007, // QR 連結缺少/不符簽章（舊格式或未經簽署），一律阻擋
   UNAUTH: 2001,
   BAD_CREDENTIALS: 2002,
   ACCOUNT_LOCKED: 2003,

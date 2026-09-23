@@ -9,7 +9,7 @@
 const { scanSla } = require('./services/slaReminderService');
 const { maybeRunWeekly } = require('./services/weeklyReportService');
 const { applyExpiry } = require('./services/qrService');
-const { processClassifyQueue } = require('./services/aiService');
+const { processClassifyQueue, processFeedbackQueue, scanCaseRisk } = require('./services/aiService');
 const { getDb } = require('./db/connection');
 const logger = require('./utils/logger');
 
@@ -17,6 +17,7 @@ let slaTimer = null;
 let weeklyTimer = null;
 let qrExpiryTimer = null;
 let aiTimer = null;
+let riskTimer = null;
 
 function intervalOf(raw, fallback) {
   const intervalMs = raw === undefined || raw === '' ? fallback : Number(raw);
@@ -57,12 +58,13 @@ function startWeeklyScheduler() {
     return;
   }
   weeklyTimer = setInterval(() => {
-    try {
-      const out = maybeRunWeekly(getDb());
-      if (out.ran) logger.info('scheduler', `自動週報已產生（${out.report.periodStart}）`);
-    } catch (e) {
-      logger.error('scheduler', `週報檢查失敗：${e.message}`);
-    }
+    Promise.resolve(maybeRunWeekly(getDb()))
+      .then((out) => {
+        if (out && out.ran) logger.info('scheduler', `自動週報已產生（${out.report.periodStart}）`);
+      })
+      .catch((e) => {
+        logger.error('scheduler', `週報檢查失敗：${e.message}`);
+      });
   }, intervalMs);
   if (weeklyTimer.unref) weeklyTimer.unref();
   logger.info('scheduler', `週報定時器已啟動（每 ${intervalMs}ms）`);
@@ -109,6 +111,7 @@ function stopQrExpiryScheduler() {
 /**
  * AI 建議掃描（M0 / AI-01 影子模式）：處理 ai_suggestion 中 status=pending 之建議。
  * rules 基線通常於建案時已即時處理，此處主要服務遠端模型 provider 之佇列。
+ * 同一 tick 並行處理 AI-05 問卷意見分析批次（開關關閉時內部直接回傳 processed=0）。
  * 間隔由 AI_SCAN_INTERVAL_MS 控制（省略 → 60000；設 0 停用）。
  */
 function startAiScheduler() {
@@ -122,6 +125,10 @@ function startAiScheduler() {
     processClassifyQueue(getDb(), { limit: 5 }).catch((e) => {
       logger.error('scheduler', `AI 分類掃描失敗：${e.message}`);
     });
+    // AI-05 問卷開放意見分析批次（§4.5）
+    processFeedbackQueue(getDb(), { limit: 5 }).catch((e) => {
+      logger.error('scheduler', `AI-05 意見分析失敗：${e.message}`);
+    });
   }, intervalMs);
   if (aiTimer.unref) aiTimer.unref();
   logger.info('scheduler', `AI 建議掃描定時器已啟動（每 ${intervalMs}ms）`);
@@ -134,9 +141,44 @@ function stopAiScheduler() {
   }
 }
 
+/**
+ * AI-08 逾期風險預警掃描（§4.8）：為未結案個案以「剩餘 SLA vs 歷史同類處理時長」計風險分，
+ * 新升為 HIGH 時預警主管。間隔由 AI_RISK_SCAN_INTERVAL_MS 控制（省略 → 3600000＝每小時；設 0 停用）。
+ * 亦可由手動端點觸發（POST /api/v1/dashboard/risk-cases/run）。
+ */
+function startRiskScheduler() {
+  if (riskTimer) return;
+  const intervalMs = intervalOf(process.env.AI_RISK_SCAN_INTERVAL_MS, 3600000);
+  if (!intervalMs) {
+    logger.warn('scheduler', 'AI-08 風險掃描定時器停用（AI_RISK_SCAN_INTERVAL_MS 為 0/無效）');
+    return;
+  }
+  riskTimer = setInterval(() => {
+    Promise.resolve(scanCaseRisk(getDb()))
+      .then((r) => {
+        if (r && !r.skipped && r.scanned > 0) {
+          logger.info('scheduler', `AI-08 風險掃描：${r.scanned} 案（HIGH ${r.high}／MEDIUM ${r.medium}／LOW ${r.low}），新預警 ${r.notified} 宗`);
+        }
+      })
+      .catch((e) => {
+        logger.error('scheduler', `AI-08 風險掃描失敗：${e.message}`);
+      });
+  }, intervalMs);
+  if (riskTimer.unref) riskTimer.unref();
+  logger.info('scheduler', `AI-08 風險掃描定時器已啟動（每 ${intervalMs}ms）`);
+}
+
+function stopRiskScheduler() {
+  if (riskTimer) {
+    clearInterval(riskTimer);
+    riskTimer = null;
+  }
+}
+
 module.exports = {
   startSlaScheduler, stopSlaScheduler,
   startWeeklyScheduler, stopWeeklyScheduler,
   startQrExpiryScheduler, stopQrExpiryScheduler,
   startAiScheduler, stopAiScheduler,
+  startRiskScheduler, stopRiskScheduler,
 };

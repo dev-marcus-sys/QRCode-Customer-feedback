@@ -82,7 +82,7 @@ test('summary：KPI 數值與上期比較（custom 期間）', () => {
   assert.equal(kpiOf(s, 'KPI_01').value, 3);              // 期間建案 3 宗（上期無 → delta 3）
   assert.equal(kpiOf(s, 'KPI_01').delta, 3);
   assert.equal(kpiOf(s, 'KPI_03').value, 1);              // 未關閉 1 宗（SR-A3）
-  assert.equal(kpiOf(s, 'KPI_04').value, 2);              // QR 提交 2 宗
+  assert.equal(kpiOf(s, 'KPI_04').value, 2);              // 已處理 2 宗（SR-A1、SR-A2 於期間內結案）
   assert.equal(kpiOf(s, 'KPI_02').value, 0.9);            // (1.2+0.5)/2
   assert.equal(kpiOf(s, 'KPI_02').met, true);             // ≤ 3 天目標
   assert.equal(kpiOf(s, 'KPI_06').value, 100);            // 分母排除 N/A

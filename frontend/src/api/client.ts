@@ -54,6 +54,8 @@ export interface FeedbackPayload {
   surveyConsent: boolean;
   formToken: string;
   lang?: string;
+  /** 短亂數 QR 連結令牌（?estate=..&t=..），用於後端精確驗證該張 QR */
+  t?: string;
 }
 
 export interface FeedbackResult {
@@ -74,6 +76,7 @@ export interface AdminUser {
   fullName: string;
   email?: string;
   estateCode: string;
+  estateCodes?: string[];
   roles: string[];
   permissions: string[];
 }
@@ -235,6 +238,97 @@ export interface AiDecideResult {
   changes: string[];
   responseSlaDue: string | null;
 }
+export interface AiSimilarMatch {
+  caseId: string;
+  category: string;
+  score: number;
+  sharedEntities: string[];
+}
+
+export interface AiAssigneeCandidate {
+  userId: number;
+  fullName: string;
+  email: string | null;
+  roles: string[];
+  roleCodes: string[];
+  isPreferredRole: boolean;
+  stats: { sameCategoryCount: number; avgHandlingDays: number | null; judged: number; overdue: number; openCount: number };
+  score: number;
+  reason: string;
+}
+
+export interface AiAssigneeSuggestion {
+  enabled: boolean;
+  category: string | null;
+  preferredRole: string | null;
+  lookbackDays: number;
+  suggestedUserId: number | null;
+  suggestedUserName: string | null;
+  candidates: AiAssigneeCandidate[];
+}
+
+export interface AiLinkResult {
+  suggestionId: number;
+  caseId: string;
+  status: string;
+  originalCaseId: string;
+}
+export interface AiDraftPoint { label: string; text: string }
+
+export interface AiDraftPayload {
+  kind: 'summary' | 'reply';
+  lang: string;
+  text: string;
+  points?: AiDraftPoint[];
+  fallback?: boolean;
+}
+
+export interface AiDraftResult {
+  suggestionId: number;
+  caseId: string;
+  aiType: string;
+  status: string;
+  kind: 'summary' | 'reply';
+  lang: string;
+  payload: AiDraftPayload;
+  model: string | null;
+  confidence: number | null;
+}
+
+export interface AiDraftUseResult {
+  suggestionId: number;
+  caseId: string;
+  status: string;
+  kind: 'summary' | 'reply';
+  kindZh: string;
+  content: string;
+}
+
+export type FeedbackSentiment = 'positive' | 'neutral' | 'negative';
+
+export interface FeedbackInsightItem {
+  surveyId: number;
+  caseId: string;
+  estateCode: string;
+  estateNameZh: string | null;
+  topics: string[];
+  sentiment: FeedbackSentiment;
+  summary: string | null;
+  confidence: number | null;
+  model: string | null;
+  createdAt: string;
+  submittedAt: string | null;
+  overall: number | null;
+  isLowScore: boolean;
+}
+
+export interface SurveyInsightsData {
+  total: number;
+  topics: { topic: string; count: number; avgOverall: number | null; negativeRate: number }[];
+  sentiment: Record<FeedbackSentiment, number>;
+  items: FeedbackInsightItem[];
+  topicLabels: string[];
+}
 
 export interface NotificationItem {
   notifId: number;
@@ -323,10 +417,18 @@ export interface StatusCount {
   count: number;
 }
 
+export interface SurveyConsentData {
+  total: number;
+  willing: { count: number; rate: number | null };
+  unwilling: { count: number; rate: number | null };
+  completed: { count: number; rate: number | null };
+}
+
 export interface DashboardSummaryData {
   range: { from: string; to: string; labelZh: string };
   estate: string;
   kpi: KpiCard[];
+  surveyConsent: SurveyConsentData;
   statusCounts: StatusCount[];
   anomalySummary: { OVERDUE: number; LOW_SCORE: number; SECOND: number };
 }
@@ -388,6 +490,9 @@ export interface WeeklyReportItem {
   anomalyCount: number;
   anomalies?: AnomalyRow[];
   generatedAt: string;
+  aiSummary?: string | null;
+  aiSummaryModel?: string | null;
+  aiSummaryAt?: string | null;
 }
 
 export interface WeeklyReportRunResult {
@@ -407,6 +512,87 @@ export interface ConfigItem {
   updatedAt: string | null;
   /** enum 等 kind 之可選值清單（後端 CATALOG def.options） */
   options?: string[];
+  /** 群組內分節標題（AI 參數依 AI-00…AI-07 分節顯示） */
+  subGroup?: string;
+}
+
+/** AI-08 逾期風險預警（§4.8） */
+export interface RiskCaseItem {
+  caseId: string;
+  estateCode: string;
+  estateNameZh: string;
+  riskLevel: 'HIGH' | 'MEDIUM' | 'LOW';
+  riskScore: number;
+  reason: string | null;
+  suggestedAction: string | null;
+  model: string | null;
+  computedAt: string | null;
+  notifiedAt: string | null;
+  acknowledgedAt: string | null;
+  acknowledgedByName: string | null;
+  caseStatus: string;
+  categoryCode: string;
+  eventType: string;
+  dueAt: string | null;
+  remainingHours: number | null;
+  overdue: boolean;
+}
+
+/** AI-07 附件影像理解結果（§4.7） */
+export interface AttachmentInsight {
+  suggestionId: number;
+  attachmentId: number;
+  fileName: string;
+  fileType: string;
+  category: string;
+  categoryZh: string;
+  description: string;
+  ocrText: string;
+  confidence: number | null;
+  /** false＝規則模式／遠端失敗，未真正使用視覺模型（介面須明確標示，避免誤導） */
+  visionUsed: boolean;
+  model: string | null;
+  createdAt: string | null;
+}
+
+/* ------- AI-09 RAG 知識庫（§4.9）------- */
+export interface KbDocument {
+  docId: string;
+  title: string;
+  source: string;
+  version: string;
+  status: 'active' | 'disabled' | 'pending_review';
+  owner: string | null;
+  chunkCount: number;
+  embeddingModel: string | null;
+  ingestedAt: string | null;
+  updatedAt: string | null;
+}
+
+export interface KbChunk {
+  docId: string;
+  title: string;
+  source: string;
+  seq: number;
+  heading: string | null;
+  headingPath: string[];
+  score: number;
+  snippet: string;
+}
+
+export interface KbSearchData {
+  query: string;
+  model: string;
+  count: number;
+  results: KbChunk[];
+}
+
+export interface KbAskData {
+  answer: string;
+  model: string | null;
+  citations: KbChunk[];
+  fallback: boolean;
+  generated: boolean;
 }
 
 export interface ConfigGroup {
@@ -490,6 +676,23 @@ export interface AiTestResult {
   } | null;
 }
 
+/** 各頁 AI 功能開關快照（GET /api/v1/ai/features；依系統參數 AI 開關計算，不含金鑰） */
+export interface AiFeatures {
+  aiEnabled: boolean;
+  features: {
+    classify: boolean;      // AI-01 內容分類建議
+    similar: boolean;       // AI-02 語意防重
+    assign: boolean;        // AI-03 智能分派
+    draft: boolean;         // AI-04 草擬回覆／摘要
+    feedback: boolean;      // AI-05 問卷意見分析
+    weeklySummary: boolean; // AI-06 週報 AI 摘要
+    attachment: boolean;    // AI-07 附件影像理解
+    risk: boolean;          // AI-08 逾期風險預警
+    kb: boolean;            // AI-09 知識庫檢索
+    kbAnswer: boolean;      // AI-09 以 LLM 生成附引用答案
+  };
+}
+
 /** 單一屋苑之 QR 現況（每苑一列；未生成時 qrId 為 null） */
 export interface QrItem {
   estateCode: string;
@@ -536,6 +739,7 @@ export interface UserRow {
   email: string | null;
   phone: string | null;
   estateCode: string;
+  estateCodes: string[];
   isActive: number; // 0/1
   mustChangePwd: number; // 0/1
   roles: UserRoleRef[];
@@ -675,9 +879,16 @@ export const authStore = {
 };
 
 export const api = {
-  getMeta: (estate: string, lang: string) =>
-    request<FormMeta>(`/form/meta?estate=${encodeURIComponent(estate)}&lang=${lang}`),
-  getToken: (estate: string) => request<{ token: string }>('/form/token', { method: 'POST', body: { estate } }),
+  getMeta: (estate: string, lang: string, t?: string) => {
+    const params = new URLSearchParams({ estate, lang });
+    if (t) params.set('t', t);
+    return request<FormMeta>(`/form/meta?${params.toString()}`);
+  },
+  getToken: (estate: string, t?: string) =>
+    request<{ token: string }>('/form/token', {
+      method: 'POST',
+      body: { estate, ...(t ? { t } : {}) },
+    }),
   submitFeedback: (body: FeedbackPayload) =>
     request<FeedbackResult>('/feedback', { method: 'POST', body }),
   login: (username: string, password: string) =>
@@ -694,6 +905,26 @@ export const api = {
     request<AiDecideResult>(`/cases/${encodeURIComponent(caseId)}/ai-suggestions/${suggestionId}/reject`, { method: 'POST', body: {}, token }),
   refreshAiSuggestion: (caseId: string, token: string) =>
     request<AiSuggestionItem[]>(`/cases/${encodeURIComponent(caseId)}/ai-suggestions/refresh`, { method: 'POST', body: {}, token }),
+  aiAssigneeSuggestion: (caseId: string, token: string) =>
+    request<AiAssigneeSuggestion>(`/cases/${encodeURIComponent(caseId)}/ai-assignee-suggestion`, { token }),
+  linkSimilarCase: (caseId: string, suggestionId: number, targetCaseId: string, token: string) =>
+    request<AiLinkResult>(`/cases/${encodeURIComponent(caseId)}/ai-suggestions/${suggestionId}/link`, { method: 'POST', body: { targetCaseId }, token }),
+  // AI-07 附件影像理解（§4.7）
+  listAttachmentInsights: (caseId: string, token: string) =>
+    request<{ items: AttachmentInsight[] }>(`/cases/${encodeURIComponent(caseId)}/attachments/ai-insights`, { token }),
+  analyzeAttachment: (caseId: string, attachmentId: number, token: string) =>
+    request<AttachmentInsight>(`/cases/${encodeURIComponent(caseId)}/attachments/${attachmentId}/analyze`, { method: 'POST', body: {}, token }),
+
+  createAiDraft: (caseId: string, kind: 'summary' | 'reply', lang: string, token: string) =>
+    request<AiDraftResult>(`/cases/${encodeURIComponent(caseId)}/ai-draft`, { method: 'POST', body: { kind, lang }, token }),
+  useAiDraft: (caseId: string, suggestionId: number, content: string, token: string) =>
+    request<AiDraftUseResult>(`/cases/${encodeURIComponent(caseId)}/ai-draft/${suggestionId}/use`, { method: 'POST', body: { content }, token }),
+  caseFeedbackInsight: (caseId: string, token: string) =>
+    request<{ insight: FeedbackInsightItem | null }>(`/cases/${encodeURIComponent(caseId)}/ai-feedback-insight`, { token }),
+  surveyInsights: (query: string, token: string) =>
+    request<SurveyInsightsData>(`/analytics/survey-insights?${query}`, { token }),
+  runSurveyInsights: (limit: number, token: string) =>
+    request<{ processed: number }>('/analytics/survey-insights/run', { method: 'POST', body: { limit }, token }),
   listQrOverview: (token: string) => request<QrOverviewData>('/qr/overview', { token }),
   generateQr: (estateCode: string, token: string, validUntil?: string | null) =>
     request<QrActionResult>('/qr/generate', { method: 'POST', body: { estateCode, validUntil: validUntil ?? null }, token }),
@@ -768,6 +999,17 @@ export const api = {
     request<WeeklyReportRunResult>('/dashboard/weekly-report/run', { method: 'POST', token }),
   weeklyReportList: (token: string, limit = 20) =>
     request<{ items: WeeklyReportItem[] }>(`/dashboard/weekly-report/list?limit=${limit}`, { token }),
+  // AI-08 逾期風險預警（§4.8）
+  listCaseRisks: (token: string, level?: string, limit = 20) =>
+    request<{ items: RiskCaseItem[] }>(`/dashboard/risk-cases?limit=${limit}${level ? `&level=${encodeURIComponent(level)}` : ''}`, { token }),
+  runRiskScan: (token: string) =>
+    request<{ scanned: number; high: number; medium: number; low: number; notified: number; skipped?: boolean }>(
+      '/dashboard/risk-cases/run', { method: 'POST', body: {}, token }),
+  ackCaseRisk: (caseId: string, token: string) =>
+    request<{ caseId: string; riskLevel: string; acknowledgedAt: string }>(
+      `/dashboard/risk-cases/${encodeURIComponent(caseId)}/ack`, { method: 'POST', body: {}, token }),
+  weeklyReportAiSummary: (reportId: number, token: string) =>
+    request<{ reportId: number; aiSummary: string | null; aiSummaryModel: string | null; aiSummaryAt: string | null }>(`/dashboard/weekly-report/${reportId}/ai-summary`, { method: 'POST', token }),
   /* F-009 系統參數 */
   configList: (token: string) => request<ConfigListData>('/config', { token }),
   configAudit: (token: string, key = '', limit = 50) =>
@@ -776,6 +1018,8 @@ export const api = {
     request<ConfigUpdateResult>(`/config/${encodeURIComponent(key)}`, { method: 'PUT', body: { value }, token }),
   /* M0 AI 診斷（AI-01） */
   aiStatus: (token: string) => request<AiStatus>('/ai/status', { token }),
+  /* 各頁 AI 功能開關快照（依系統參數 AI 開關計算） */
+  aiFeatures: (token: string) => request<AiFeatures>('/ai/features', { token }),
   aiTest: (body: { text?: string; provider?: string }, token: string) =>
     request<AiTestResult>('/ai/test', { method: 'POST', body, token }),
   aiSetApiKey: (apiKey: string, token: string) =>
@@ -784,6 +1028,19 @@ export const api = {
     request<AiApiKeyResult>('/ai/api-key', { method: 'DELETE', token }),
   aiScan: (token: string) =>
     request<{ processed: number }>('/ai/scan', { method: 'POST', body: {}, token }),
+  /* AI-09 RAG 知識庫（§4.9；管理需 kb:manage，檢索/問答需 case:view 或 dashboard:view） */
+  kbListDocuments: (token: string, status = '') =>
+    request<{ items: KbDocument[] }>(`/ai/kb/documents${status ? `?status=${encodeURIComponent(status)}` : ''}`, { token }),
+  kbIngest: (body: { docId?: string; title: string; source: string; version?: string; owner?: string; status?: string; content: string }, token: string) =>
+    request<{ docId: string; chunkCount: number; model: string }>('/ai/kb/ingest', { method: 'POST', body, token }),
+  kbSetStatus: (docId: string, status: string, token: string) =>
+    request<KbDocument>(`/ai/kb/documents/${encodeURIComponent(docId)}/status`, { method: 'POST', body: { status }, token }),
+  kbDelete: (docId: string, token: string) =>
+    request<{ deleted: boolean }>(`/ai/kb/documents/${encodeURIComponent(docId)}`, { method: 'DELETE', token }),
+  kbSearch: (query: string, topK: number, token: string) =>
+    request<KbSearchData>('/ai/kb/search', { method: 'POST', body: { query, topK }, token }),
+  kbAsk: (query: string, topK: number, token: string) =>
+    request<KbAskData>('/ai/kb/ask', { method: 'POST', body: { query, topK }, token }),
   /* F-010 用戶管理 */
   listUsers: (query: string, token: string) => request<UserListData>(`/users?${query}`, { token }),
   createUser: (body: unknown, token: string) => request<UserRow>('/users', { method: 'POST', body, token }),

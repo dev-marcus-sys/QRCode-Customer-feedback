@@ -8,6 +8,7 @@
 
 const { dbToIso8 } = require('../utils/time');
 const logger = require('../utils/logger');
+const { estateListMatch } = require('../utils/estateScope');
 
 const NOTIF_TYPES = ['CASE', 'REMINDER', 'ESCALATION', 'SURVEY', 'SYSTEM'];
 
@@ -49,8 +50,8 @@ function usersByRole(db, roleCode, estateCode = null) {
          JOIN sys_user_role ur ON ur.user_id = u.user_id
          JOIN sys_role r ON r.role_id = ur.role_id
         WHERE r.role_code = ? AND u.is_active = 1
-          AND (r.data_scope = 'ALL' OR u.estate_code = ?)`
-    ).all(roleCode, estateCode);
+          AND (r.data_scope = 'ALL' OR (',' || u.estate_code || ',') LIKE ?)`
+    ).all(roleCode, `%,${estateCode},%`);
   }
   return db.prepare(
     `SELECT DISTINCT u.user_id AS userId, u.full_name AS fullName, u.email AS email
@@ -73,9 +74,9 @@ function reviewersForCase(db, estateCode, exceptUserId) {
        JOIN sys_role r ON r.role_id = ur.role_id
       WHERE u.is_active = 1 AND r.is_active = 1
         AND r.role_code IN ('ESTATE_SUPERVISOR','CC_SUPERVISOR','ADMIN')
-        AND (r.data_scope = 'ALL' OR u.estate_code = ?)
+        AND (r.data_scope = 'ALL' OR (',' || u.estate_code || ',') LIKE ?)
         AND u.user_id <> ?`
-  ).all(estateCode, exceptUserId || -1);
+  ).all(`%,${estateCode},%`, exceptUserId || -1);
   return rows;
 }
 

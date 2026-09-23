@@ -5,6 +5,7 @@
  * - 圖像不落盤，由 GET /api/v1/qr/:qrId/image 即時產生（見 routes/qr.js）。
  */
 'use strict';
+const crypto = require('crypto');
 const QRCode = require('qrcode');
 const { ERR } = require('../config/constants');
 const { ApiError } = require('../middlewares/error');
@@ -60,6 +61,29 @@ function composeQrContent(base, estateCode) {
   return `${String(base).replace(/\/+$/, '')}/?estate=${encodeURIComponent(estateCode)}`;
 }
 
+/**
+ * 產生短亂數連結令牌（16 hex = 64-bit，不可猜測）。用於 QR 連結 ?t=<token>，
+ * 取代明文 qr_id / 簽章，讓連結更短、更易掃描，且無法被偽造或枚舉。
+ */
+function genLinkToken() {
+  return crypto.randomBytes(8).toString('hex');
+}
+
+/** 組成 QR 內容：表單 URL + estate + 短亂數 t（不帶語言，表單自動依瀏覽器語言顯示） */
+function composeLink(base, estate, token) {
+  return `${String(base).replace(/\/+$/, '')}/?estate=${encodeURIComponent(estate)}&t=${encodeURIComponent(token)}`;
+}
+
+/** 依 link_token 查詢 QR（連結驗證用） */
+function getQrByToken(db, token) {
+  return db.prepare(
+    `SELECT qr_id AS qrId, estate_code AS estateCode, qr_content AS qrContent,
+            is_active AS active, generated_by AS generatedBy, generated_at AS generatedAt,
+            invalidated_at AS invalidatedAt, valid_until AS validUntil
+       FROM qr_code WHERE link_token = ?`
+  ).get(String(token || ''));
+}
+
 function getEstate(db, code) {
   return db.prepare(
     'SELECT estate_code AS estateCode, estate_name_zh AS estateNameZh, is_active AS isActive FROM sys_estate WHERE estate_code = ?'
@@ -103,6 +127,24 @@ function assertQr(db, qrId) {
   const qr = getQr(db, qrId);
   if (!qr) throw new ApiError(ERR.QR_NOT_FOUND, null, 404);
   return qr;
+}
+
+/**
+ * 取得屋苑目前「可用」的 QR（啟用中且未逾有效日期）；無則回 null。
+ * 有效日期以查詢當下判斷（valid_until IS NULL = 永不自動停用），
+ * 供公眾表單入口即時阻擋已停用／已過期之 QR 連結。
+ */
+function getUsableQr(db, estateCode) {
+  const row = db.prepare(
+    `SELECT qr_id AS qrId, qr_content AS qrContent, valid_until AS validUntil
+       FROM qr_code
+      WHERE estate_code = ?
+        AND is_active = 1
+        AND (valid_until IS NULL OR valid_until >= datetime('now'))
+      ORDER BY generated_at DESC, qr_id DESC
+      LIMIT 1`
+  ).get(String(estateCode || '').toUpperCase());
+  return row || null;
 }
 
 /** 總覽：每個屋苑一列，附其最新一張 QR（未生成時 qrId 為 null） */
@@ -157,7 +199,6 @@ function generate(db, { estateCode, base, validUntil }, userId) {
   if (!estate || !estate.isActive) {
     throw new ApiError(ERR.ESTATE_NOT_FOUND, null, 404);
   }
-  const content = composeQrContent(base, code);
   const until = normalizeValidUntil(validUntil === undefined ? null : validUntil);
   const tx = db.transaction(() => {
     db.prepare(
@@ -166,9 +207,15 @@ function generate(db, { estateCode, base, validUntil }, userId) {
         WHERE estate_code = ? AND is_active = 1`
     ).run(code);
     const info = db.prepare(
-      "INSERT INTO qr_code (estate_code, qr_type, qr_content, file_url, generated_by, valid_until) VALUES (?, 'FORM', ?, '', ?, ?)"
-    ).run(code, content, userId, until);
-    return getQr(db, Number(info.lastInsertRowid));
+      "INSERT INTO qr_code (estate_code, qr_type, qr_content, file_url, generated_by, valid_until) VALUES (?, 'FORM', '', '', ?, ?)"
+    ).run(code, userId, until);
+    const qrId = Number(info.lastInsertRowid);
+    // 產生唯一短亂數 link_token，寫入連結內容與欄位
+    let token = genLinkToken();
+    while (getQrByToken(db, token)) token = genLinkToken();
+    const content = composeLink(base, code, token);
+    db.prepare('UPDATE qr_code SET qr_content = ?, link_token = ? WHERE qr_id = ?').run(content, token, qrId);
+    return getQr(db, qrId);
   });
   return tx();
 }
@@ -201,12 +248,20 @@ function setActive(db, qrId, active) {
 /**
  * 設定有效日期（null / '' = 永不自動停用，為預設值）。
  * 若設定之日期已過，該 QR 即視為已過期（實際停用作業由 applyExpiry 執行）。
+ * 若設為永遠有效（null）且該 QR 因到期而被自動停用，則一併重新啟用。
  */
 function setValidUntil(db, qrId, value) {
   const qr = assertQr(db, qrId);
   const until = normalizeValidUntil(value);
-  db.prepare('UPDATE qr_code SET valid_until = ? WHERE qr_id = ?').run(until, qr.qrId);
-  return getQr(db, qr.qrId);
+  const tx = db.transaction(() => {
+    db.prepare('UPDATE qr_code SET valid_until = ? WHERE qr_id = ?').run(until, qr.qrId);
+    // 清空有效日期（永遠有效）時，若 QR 處於停用狀態則一併啟用
+    if (until === null && !qr.active) {
+      db.prepare('UPDATE qr_code SET is_active = 1, invalidated_at = NULL WHERE qr_id = ?').run(qr.qrId);
+    }
+    return getQr(db, qr.qrId);
+  });
+  return tx();
 }
 
 /**
@@ -259,9 +314,11 @@ module.exports = {
   isExpired,
   getQr,
   assertQr,
+  getUsableQr,
   saveSiteBaseUrl,
   sanitizeSiteBaseUrl,
   resolveBaseUrl,
   composeQrContent,
   renderQr,
+  getQrByToken,
 };

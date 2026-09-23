@@ -63,7 +63,10 @@ export function CaseListPage() {
   const navigate = useNavigate();
   const token = authStore.getToken() || '';
   const user = authStore.getUser();
-  const estateLocked = !!user && user.estateCode !== 'ALL';
+  // 所屬屋苑可多選：未含 ALL 且非空者視為受限範圍（可於自身屋苑間切換）
+  const scopeCodes = user && user.estateCodes && user.estateCodes.length && !user.estateCodes.includes('ALL')
+    ? user.estateCodes : null;
+  const estateLocked = !!scopeCodes;
   const canExport = !!user?.permissions?.includes('case:export');
   const estates = useEstates();
 
@@ -215,18 +218,18 @@ export function CaseListPage() {
         <Box sx={{ flex: 1 }} />
         {user && (
           <Typography variant="body2" color="text.secondary" sx={{ mr: 1.5 }}>
-            {user.fullName} · {estateLocked ? estates.nameOf(user.estateCode) : '全部屋苑'}
+            {user.fullName} · {scopeCodes ? scopeCodes.map((c) => estates.nameOf(c)).join('、') : '全部屋苑'}
           </Typography>
         )}
         <NotificationCenter />
         <IconButton title="登出" onClick={logout}><LogoutIcon /></IconButton>
       </Toolbar>
 
-      <Box sx={{ px: { xs: 1.5, md: 3 }, pt: 1.5 }} maxWidth="lg" mx="auto">
+      <Box sx={{ px: { xs: 1.5, md: 3 }, pt: 1.5 }} maxWidth="xl" mx="auto">
         <AdminNav current="cases" />
       </Box>
 
-      <Box sx={{ p: { xs: 1.5, md: 3 } }} maxWidth="lg" mx="auto">
+      <Box sx={{ p: { xs: 1.5, md: 3 } }} maxWidth="xl" mx="auto">
         {/* 批次工具列（F-004） */}
         {selected.size > 0 && (
           <Box sx={{ mb: 2 }}>
@@ -242,13 +245,16 @@ export function CaseListPage() {
             <Stack spacing={2}>
               <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} flexWrap="wrap" useFlexGap>
                 <TextField
-                  select size="small" label="屋苑" sx={{ minWidth: 170 }} disabled={estateLocked}
+                  select size="small" label="屋苑" sx={{ minWidth: 170 }} disabled={!!scopeCodes && scopeCodes.length <= 1}
                   value={filters.estate || ''}
                   onChange={(e) => setFilter('estate', e.target.value)}
                 >
-                  <MenuItem value="">全部</MenuItem>
-                  {estates.activeOptions.map((o) => (
-                    <MenuItem key={o.estateCode} value={o.estateCode}>{o.estateNameZh}</MenuItem>
+                  {!scopeCodes && <MenuItem value="">全部</MenuItem>}
+                  {(scopeCodes
+                    ? scopeCodes.map((c) => ({ code: c, zh: estates.nameOf(c) }))
+                    : estates.activeOptions.map((o) => ({ code: o.estateCode, zh: o.estateNameZh }))
+                  ).map((o) => (
+                    <MenuItem key={o.code} value={o.code}>{o.zh}</MenuItem>
                   ))}
                 </TextField>
                 <TextField

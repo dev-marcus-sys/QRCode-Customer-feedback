@@ -12,11 +12,12 @@ const { getConfig } = require('../db/configStore');
 const { generateCaseId } = require('./numbering');
 const { findDuplicate, findSecondComplaint } = require('./dedupe');
 const { computeEvent, computeDueDates } = require('./sla');
-const { enqueueClassify } = require('./aiService');
+const { enqueueClassify, enqueueSimilar } = require('./aiService');
 const { submissionKey } = require('../utils/hash');
 const { toDb, now, parseDb, dbToIso8, dateRangeUtc } = require('../utils/time');
 const { notifyUser, enqueueEmail, reviewersForCase } = require('./notificationService');
 const logger = require('../utils/logger');
+const { inEstates, isAllEstates, estateInClause } = require('../utils/estateScope');
 
 const SYSTEM_USER_ID = 0;
 const CLOSED_STATUSES = ['CLOSED', 'RESOLVED'];
@@ -57,7 +58,7 @@ function getRawCase(db, caseId) {
 }
 
 function assertEstateScope(user, row) {
-  if (user && user.estateCode && user.estateCode !== 'ALL' && row.estate_code !== user.estateCode) {
+  if (!inEstates(user && user.estateCode, row.estate_code)) {
     throw new ApiError(ERR.DATA_SCOPE, null, 403);
   }
 }
@@ -71,7 +72,7 @@ function assertState(row, allowed, actionLabel) {
 function userBrief(db, userId) {
   if (!userId) return null;
   return db.prepare(
-    'SELECT user_id AS userId, full_name AS fullName, email AS email FROM sys_user WHERE user_id = ?'
+    'SELECT user_id AS userId, full_name AS fullName, email AS email, estate_code AS estateCode FROM sys_user WHERE user_id = ?'
   ).get(userId);
 }
 
@@ -142,9 +143,9 @@ function notifySupervisor(db, estateCode, { caseId, title, body, template }) {
        FROM sys_user u
        JOIN sys_user_role ur ON ur.user_id = u.user_id
        JOIN sys_role r ON r.role_id = ur.role_id
-      WHERE r.role_code = 'ESTATE_SUPERVISOR' AND u.estate_code = ? AND u.is_active = 1
+      WHERE r.role_code = 'ESTATE_SUPERVISOR' AND (',' || u.estate_code || ',') LIKE ? AND u.is_active = 1
       LIMIT 1`
-  ).get(estateCode);
+      ).get(`%,${estateCode},%`);
   if (!sup) return;
   db.prepare(
     'INSERT INTO notification (user_id, title, body, notif_type, ref_type, ref_id, channel) VALUES (?, ?, ?, ?, ?, ?, ?)'
@@ -256,6 +257,12 @@ function createCaseFromFeedback(db, payload, lang = 'zh-Hant') {
   } catch (e) {
     logger.warn('caseService', `AI-01 建議入隊失敗 ${created.caseId}: ${e.message}`);
   }
+  // M0 AI-02：語意防重／相似個案建議（失敗不影響建案）
+  try {
+    enqueueSimilar(db, created.caseId);
+  } catch (e) {
+    logger.warn('caseService', `AI-02 建議入隊失敗 ${created.caseId}: ${e.message}`);
+  }
 
   const promise = getConfig(db, 'form.promise', {})[lang === 'en' ? 'en' : 'zh'];
   logger.info('caseService', `CASE_CREATE ${created.caseId} eventType=${eventType}`);
@@ -285,9 +292,10 @@ function parseCaseFilters(query, user) {
   const params = [];
   const q = query || {};
 
-  if (user && user.estateCode && user.estateCode !== 'ALL') {
-    where.push('c.estate_code = ?');
-    params.push(user.estateCode);
+  if (user && !isAllEstates(user.estateCode)) {
+    const sc = estateInClause('c.estate_code', user.estateCode);
+    where.push(sc.clause);
+    params.push(...sc.params);
   }
   if (q.estate) {
     where.push('c.estate_code = ?');
@@ -431,7 +439,7 @@ function listCases(db, filters, user, { page = 1, pageSize = 20, noPaging = fals
 function getCaseDetail(db, caseId, user) {
   const row = db.prepare(`${SELECT_SQL} WHERE c.case_id = ?`).get(caseId);
   if (!row) throw new ApiError(ERR.CASE_NOT_FOUND, null, 404);
-  if (user && user.estateCode && user.estateCode !== 'ALL' && row.estate_code !== user.estateCode) {
+  if (!inEstates(user && user.estateCode, row.estate_code)) {
     throw new ApiError(ERR.DATA_SCOPE, null, 403);
   }
   const timeline = db.prepare(
@@ -497,12 +505,12 @@ function getAssignees(db, caseId, user) {
        JOIN sys_role r ON r.role_id = ur.role_id
       WHERE u.is_active = 1 AND r.is_active = 1
         AND r.role_code IN ('ESTATE_STAFF','ESTATE_SUPERVISOR','CC_STAFF')
-        AND (r.data_scope = 'ALL' OR u.estate_code = ?)
+        AND (r.data_scope = 'ALL' OR (',' || u.estate_code || ',') LIKE ?)
       GROUP BY u.user_id
       ORDER BY (SELECT COUNT(*) FROM sys_user_role ur3
                   JOIN sys_role r3 ON r3.role_id = ur3.role_id
                  WHERE ur3.user_id = u.user_id AND r3.role_code = 'ESTATE_SUPERVISOR') DESC, u.full_name`
-  ).all(row.estate_code);
+  ).all(`%,${row.estate_code},%`);
   const supRow = rows.find((x) => String(x.roleNames || '').includes('主管')) || null;
   return {
     caseId,
@@ -875,7 +883,7 @@ function batchAssignCases(db, user, body) {
         skipped.push({ caseId: id, reason: `狀態 ${row.case_status} 不允許分派` });
         continue;
       }
-      if (assignee.estateCode && assignee.estateCode !== 'ALL' && row.estate_code !== assignee.estateCode) {
+      if (!inEstates(assignee.estateCode, row.estate_code)) {
         skipped.push({ caseId: id, reason: '個案屋苑與處理人員不符' });
         continue;
       }

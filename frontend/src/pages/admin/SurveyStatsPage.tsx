@@ -11,6 +11,8 @@ import FactCheckIcon from '@mui/icons-material/FactCheck';
 import { api, ApiRequestError, authStore, SurveyStatsData } from '../../api/client';
 import { useEstates } from '../../admin/useEstates';
 import { NotificationCenter } from '../../components/NotificationCenter';
+import { SurveyInsightsCard } from '../../components/SurveyInsightsCard';
+import { useAiFeatures, featureOn } from '../../aiFeatures';
 
 const AVG_LABELS: { key: 'overall' | 'response' | 'attitude' | 'resolution'; zh: string }[] = [
   { key: 'overall', zh: '整體滿意度' },
@@ -37,18 +39,23 @@ export function SurveyStatsPage() {
   const navigate = useNavigate();
   const user = authStore.getUser();
   const token = authStore.getToken() || '';
-  const locked = !!user && user.estateCode !== 'ALL';
+  // 所屬屋苑可多選：未含 ALL 且非空者視為受限範圍（可於自身屋苑間切換）
+  const scopeCodes = user && user.estateCodes && user.estateCodes.length && !user.estateCodes.includes('ALL')
+    ? user.estateCodes : null;
+  const locked = !!scopeCodes;
   const estates = useEstates();
   const [estate, setEstate] = useState('');
   const [data, setData] = useState<SurveyStatsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const { features } = useAiFeatures();
+  const showFeedback = featureOn(features, 'feedback'); // AI-05 問卷意見分析
 
   useEffect(() => {
     let alive = true;
     setLoading(true);
     api
-      .surveyStats(token, locked ? user.estateCode : estate)
+      .surveyStats(token, scopeCodes ? (estate || scopeCodes[0]) : estate)
       .then((d) => alive && setData(d))
       .catch((e) => {
         if (alive) {
@@ -100,16 +107,19 @@ export function SurveyStatsPage() {
         <IconButton title="登出" onClick={logout}><LogoutIcon /></IconButton>
       </Toolbar>
 
-      <Box sx={{ p: { xs: 1.5, md: 3 } }} maxWidth="lg" mx="auto">
+      <Box sx={{ p: { xs: 1.5, md: 3 } }} maxWidth="xl" mx="auto">
         <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 2 }} flexWrap="wrap" useFlexGap>
           <TextField
-            select size="small" label="屋苑" sx={{ minWidth: 180 }} disabled={locked}
-            value={locked ? user.estateCode : estate}
+            select size="small" label="屋苑" sx={{ minWidth: 180 }} disabled={!!scopeCodes && scopeCodes.length <= 1}
+            value={scopeCodes ? (estate || scopeCodes[0]) : estate}
             onChange={(e) => setEstate(e.target.value)}
           >
-            <MenuItem value="">全部屋苑</MenuItem>
-            {estates.activeOptions.map((x) => (
-              <MenuItem key={x.estateCode} value={x.estateCode}>{x.estateNameZh}</MenuItem>
+            {!scopeCodes && <MenuItem value="">全部屋苑</MenuItem>}
+            {(scopeCodes
+              ? scopeCodes.map((c) => ({ code: c, zh: estates.nameOf(c) }))
+              : estates.activeOptions.map((x) => ({ code: x.estateCode, zh: x.estateNameZh }))
+            ).map((x) => (
+              <MenuItem key={x.code} value={x.code}>{x.zh}</MenuItem>
             ))}
           </TextField>
           <Chip icon={<FactCheckIcon />} label="匿名問卷，僅顯示統計" variant="outlined" size="small" />
@@ -187,6 +197,11 @@ export function SurveyStatsPage() {
               {loading && <Box sx={{ display: 'grid', placeItems: 'center', py: 6 }}><CircularProgress /></Box>}
             </Paper>
           </>
+        )}
+
+        {/* AI-05 問卷開放意見分析（§4.5） */}
+        {showFeedback && (
+        <SurveyInsightsCard estate={scopeCodes ? (estate || scopeCodes[0]) : estate} />
         )}
       </Box>
     </Box>

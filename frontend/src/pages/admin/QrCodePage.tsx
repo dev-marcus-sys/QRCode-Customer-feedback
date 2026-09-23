@@ -3,13 +3,15 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   Alert, Box, Button, Card, CardContent, Chip, CircularProgress, Dialog, DialogActions,
   DialogContent, DialogContentText, DialogTitle, IconButton, Paper, Stack, Table, TableBody,
-  TableCell, TableContainer, TableHead, TableRow, TextField, Toolbar, Typography,
+  TableCell, TableContainer, TableHead, TableRow, TextField, Toolbar, Tooltip, Typography,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import DownloadIcon from '@mui/icons-material/Download';
 import LogoutIcon from '@mui/icons-material/Logout';
 import QrCode2Icon from '@mui/icons-material/QrCode2';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import CheckIcon from '@mui/icons-material/Check';
 import {
   api, ApiRequestError, authStore, downloadQrFile, qrImageBlob, QrItem, QrOverviewData,
 } from '../../api/client';
@@ -31,8 +33,8 @@ function statusMeta(item: QrItem): { label: string; color: string } {
   if (item.expired) return { label: '已過期', color: '#d32f2f' };
   if (item.active === true) return { label: '啟用', color: '#2E7D32' };
   if (item.active === false) {
-    if (isDeadContent(item.qrContent)) return { label: '過期（舊連結）', color: '#ED6C02' };
-    return { label: '停用', color: '#9E9E9E' };
+    const dead = isDeadContent(item.qrContent);
+    return { label: dead ? '停用（舊連結）' : '停用', color: dead ? '#ED6C02' : '#9E9E9E' };
   }
   return { label: '未生成', color: '#ED6C02' };
 }
@@ -62,6 +64,51 @@ function QrThumb({ qrId, token }: { qrId: number; token: string }) {
     );
   }
   return <img src={url} alt="QR Code" style={{ width: 88, height: 88, borderRadius: 6, border: '1px solid #e5eaf2' }} />;
+}
+
+/** 可一鍵複製的 QR 連結單元格 */
+function CopyableLink({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
+  const onCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(value);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = value;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); } catch { /* ignore */ }
+      document.body.removeChild(ta);
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+  return (
+    <Stack direction="row" spacing={0.5} alignItems="flex-start">
+      <Typography
+        variant="body2"
+        title={value}
+        sx={{
+          fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+          fontSize: 12,
+          lineHeight: 1.5,
+          wordBreak: 'break-all',
+          whiteSpace: 'normal',
+          flex: 1,
+          minWidth: 0,
+        }}
+      >
+        {value}
+      </Typography>
+      <Tooltip title={copied ? '已複製' : '複製連結'}>
+        <IconButton size="small" onClick={onCopy} color={copied ? 'success' : 'default'} sx={{ flexShrink: 0, mt: -0.25 }}>
+          {copied ? <CheckIcon fontSize="small" /> : <ContentCopyIcon fontSize="small" />}
+        </IconButton>
+      </Tooltip>
+    </Stack>
+  );
 }
 
 export function QrCodePage() {
@@ -231,7 +278,7 @@ export function QrCodePage() {
         <IconButton title="登出" onClick={logout}><LogoutIcon /></IconButton>
       </Toolbar>
 
-      <Box sx={{ p: { xs: 1.5, md: 3 } }} maxWidth="lg" mx="auto">
+      <Box sx={{ p: { xs: 1.5, md: 3 } }} maxWidth="xl" mx="auto">
         {notice && <Alert severity={notice.severity} sx={{ mb: 2 }} onClose={() => setNotice(null)}>{notice.text}</Alert>}
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
@@ -269,7 +316,7 @@ export function QrCodePage() {
             <Box sx={{ display: 'grid', placeItems: 'center', minHeight: 200 }}><CircularProgress /></Box>
           ) : (
             <TableContainer>
-              <Table size="small" sx={{ minWidth: 1180 }}>
+              <Table size="small" sx={{ minWidth: 1340 }}>
                 <TableHead>
                   <TableRow sx={{ bgcolor: '#f7f9fc' }}>
                     <TableCell sx={{ fontWeight: 600 }}>屋苑</TableCell>
@@ -309,11 +356,9 @@ export function QrCodePage() {
                             </Box>
                           )}
                         </TableCell>
-                        <TableCell sx={{ maxWidth: 300 }}>
+                        <TableCell sx={{ minWidth: 300, maxWidth: 460 }}>
                           {item.qrContent ? (
-                            <Typography variant="body2" sx={{ wordBreak: 'break-all' }} title={item.qrContent}>
-                              {item.qrContent.length > 46 ? `${item.qrContent.slice(0, 46)}…` : item.qrContent}
-                            </Typography>
+                            <CopyableLink value={item.qrContent} />
                           ) : <Typography variant="body2" color="text.secondary">尚未生成</Typography>}
                         </TableCell>
                         <TableCell sx={{ whiteSpace: 'nowrap', color: 'text.secondary' }}>

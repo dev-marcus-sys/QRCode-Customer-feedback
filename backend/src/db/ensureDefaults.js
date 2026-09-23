@@ -30,6 +30,14 @@ const NEW_COLUMNS = [
   ['case', 'closure_escalated_at', 'TEXT'],
   // QR Code 有效日期（NULL = 永不自動停用）
   ['qr_code', 'valid_until', 'TEXT'],
+  // QR Code 短亂數連結令牌（既有 DB 相容；新庫由 schema.sql 建表時已含）
+  ['qr_code', 'link_token', 'TEXT'],
+  // AI-06 週報 AI 摘要（新庫由 schema.sql 建表時已含）
+  ['weekly_report', 'ai_summary', 'TEXT'],
+  ['weekly_report', 'ai_summary_model', 'TEXT'],
+  ['weekly_report', 'ai_summary_at', 'TEXT'],
+  // AI-07 附件影像理解（OCR 文字另存）
+  ['case_log_attachment', 'ocr_text', 'TEXT'],
 ];
 
 /** 權限碼、名稱 → 需綁定之角色（維持 seed 一致，舊 DB 靠此補齊） */
@@ -55,6 +63,8 @@ const PERM_BINDINGS = [
   // 屋苑主檔管理（後台「屋苑」頁；下拉用 GET 僅需登入，不需本權限）
   { code: 'estate:list', module: 'estate', name: '屋苑查閱', roles: ['ADMIN', 'CC_SUPERVISOR', 'ESTATE_SUPERVISOR'] },
   { code: 'estate:manage', module: 'estate', name: '屋苑管理', roles: ['ADMIN'] },
+  // AI-09 RAG 知識庫（§4.9；管理權限，讀取沿用 case:view / dashboard:view）
+  { code: 'kb:manage', module: 'kb', name: '知識庫管理', roles: ['ADMIN'] },
 ];
 
 /** 需確保存在之系統參數（INSERT OR IGNORE） */
@@ -75,6 +85,36 @@ const CONFIG_DEFAULTS = [
   // AI API 連線設定（非敏感值；金鑰只存環境變數，見 aiService.saveAiApiKey）
   ['ai.api.base_url', 'AI'],
   ['ai.api.model', 'AI'],
+  // AI-02 語意防重（§4.2）
+  ['ai.similar.enabled', 'AI'],
+  ['ai.similar.lookback_days', 'AI'],
+  ['ai.similar.threshold', 'AI'],
+  ['ai.similar.max_matches', 'AI'],
+  // AI-03 智能分派建議（§4.3）
+  ['ai.assign.enabled', 'AI'],
+  ['ai.assign.category_role', 'AI'],
+  ['ai.assign.lookback_days', 'AI'],
+  // AI-04 草擬回覆與個案摘要（§4.4）
+  ['ai.draft.enabled', 'AI'],
+  ['ai.draft.style_guide', 'AI'],
+  // AI-05 問卷開放意見分析（§4.5）
+  ['ai.feedback.enabled', 'AI'],
+  ['ai.feedback.lookback_days', 'AI'],
+  // AI-06 週報 AI 摘要（§4.6）
+  ['ai.weekly_summary.enabled', 'AI'],
+  ['ai.weekly_summary.style', 'AI'],
+  // AI-07 附件影像理解（§4.7）
+  ['ai.attachment.enabled', 'AI'],
+  ['ai.vision.local_only', 'AI'],
+  // AI-08 逾期風險預警（§4.8）
+  ['ai.risk.enabled', 'AI'],
+  ['ai.risk.lookback_days', 'AI'],
+  ['ai.risk.notify_roles', 'AI'],
+  // AI-09 RAG 知識庫（§4.9；讀取入口預設關閉，由 kb:manage 啟用與入庫）
+  ['ai.kb.enabled', 'AI'],
+  ['ai.kb.top_k', 'AI'],
+  ['ai.kb.threshold', 'AI'],
+  ['ai.kb.answer_enabled', 'AI'],
 ];
 
 function configValue(key) {
@@ -108,6 +148,45 @@ function configValue(key) {
     // 空白＝跟隨環境變數／provider 預設值
     'ai.api.base_url': '',
     'ai.api.model': '',
+    // AI-02：先導預設關閉；開啟後以本地詞彙向量（零依賴）比對近 30 日未關閉個案
+    'ai.similar.enabled': false,
+    'ai.similar.lookback_days': 30,
+    'ai.similar.threshold': 0.82,
+    'ai.similar.max_matches': 3,
+    // AI-03：級一純規則＋SQL 統計（無需 LLM）
+    'ai.assign.enabled': false,
+    'ai.assign.category_role': {
+      SECURITY: 'ESTATE_SUPERVISOR',
+      MAINTENANCE: 'ESTATE_STAFF',
+      CLEANLINESS: 'ESTATE_STAFF',
+      NUISANCE: 'ESTATE_SUPERVISOR',
+      MO_SERVICE: 'CC_STAFF',
+      OTHER: 'ESTATE_SUPERVISOR',
+    },
+    'ai.assign.lookback_days': 90,
+    // AI-04：rules provider 以範本產生（零外部依賴）；風格指引留空即用內建預設
+    'ai.draft.enabled': false,
+    'ai.draft.style_guide': '',
+    // AI-05：對已提交問卷之開放文字做主題＋情緒分析（批次）
+    'ai.feedback.enabled': false,
+    'ai.feedback.lookback_days': 180,
+    // AI-06：週報 AI 摘要（預設開啟；輸入為彙總數字，私隱風險最低，適合 P0 示範）
+    'ai.weekly_summary.enabled': true,
+    'ai.weekly_summary.style': '',
+    // AI-07：附件影像理解（預設關閉；需視覺模型，且影像私隱敏感度高）
+    'ai.attachment.enabled': false,
+    // true＝影像只走本地模型（ollama），雲端供應商一律拒絕分析，避免人樣／車牌外送
+    'ai.vision.local_only': true,
+    // AI-08：逾期風險預警（級一純統計，零外部依賴，預設開啟以早日提供「未逾期先預測」價值）
+    'ai.risk.enabled': true,
+    'ai.risk.lookback_days': 90,
+    // 預警通知角色（逗號分隔；ESTATE_SUPERVISOR 依個案屋苑過濾，避免跨屋苑轟炸）
+    'ai.risk.notify_roles': 'ESTATE_SUPERVISOR,CC_SUPERVISOR',
+    // AI-09 RAG 知識庫（§4.9）
+    'ai.kb.enabled': false,        // 知識庫檢索總開關（管理員入庫後開啟）
+    'ai.kb.top_k': 5,              // 檢索返回最多塊數
+    'ai.kb.threshold': 0.0,        // 最低相似度（0＝不過濾，取 top_k）
+    'ai.kb.answer_enabled': false, // 是否以 LLM 生成附引用答案（需雲端/ollama 供應商）
   };
   return values[key];
 }

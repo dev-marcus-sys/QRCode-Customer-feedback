@@ -79,6 +79,7 @@ router.post('/auth/login', (req, res) => {
       fullName: ctx.fullName,
       email: ctx.email,
       estateCode: ctx.estateCode,
+      estateCodes: ctx.estateCodes,
       roles: ctx.roles,
       permissions: ctx.permissions,
     },
@@ -92,6 +93,7 @@ router.get('/me', requireAuth, (req, res) => {
     fullName: req.user.fullName,
     email: req.user.email,
     estateCode: req.user.estateCode,
+    estateCodes: req.user.estateCodes,
     roles: req.user.roles,
     permissions: req.user.permissions,
   });

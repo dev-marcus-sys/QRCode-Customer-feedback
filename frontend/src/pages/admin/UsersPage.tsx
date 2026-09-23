@@ -47,13 +47,13 @@ export function UsersPage() {
   const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState<UserRow | null>(null);
   const [form, setForm] = useState({
-    username: '', fullName: '', email: '', phone: '', estateCode: 'ALL', roles: [] as string[], password: '',
+    username: '', fullName: '', email: '', phone: '', estateCodes: ['ALL'] as string[], roles: [] as string[], password: '',
   });
   const [saving, setSaving] = useState(false);
 
   const [resetDlg, setResetDlg] = useState<{ username: string; temp: string } | null>(null);
   const [confirm, setConfirm] = useState<{ userId: number; username: string; disable: boolean } | null>(null);
-  const [menuFor, setMenuFor] = useState<{ userId: number; anchor: HTMLElement } | null>(null);
+  const [menuFor, setMenuFor] = useState<{ user: UserRow; anchor: HTMLElement } | null>(null);
 
   const estates = useEstates();
   // 選項：ALL（全屋苑）+ 啟用中屋苑；若正在編輯的用戶所屬屋苑已停用，仍列入以保留原值
@@ -61,8 +61,13 @@ export function UsersPage() {
     { code: 'ALL', zh: '全屋苑（ALL）' },
     ...estates.activeOptions.map((o) => ({ code: o.estateCode, zh: `${o.estateNameZh}（${o.estateCode}）` })),
   ];
-  if (editing && editing.estateCode !== 'ALL' && !estates.activeOptions.some((o) => o.estateCode === editing.estateCode)) {
-    estateChoices.push({ code: editing.estateCode, zh: `${estates.nameOf(editing.estateCode)}（${editing.estateCode}）` });
+  if (editing) {
+    for (const code of editing.estateCodes || []) {
+      if (code === 'ALL') continue;
+      if (!estates.activeOptions.some((o) => o.estateCode === code)) {
+        estateChoices.push({ code, zh: `${estates.nameOf(code)}（${code}）` });
+      }
+    }
   }
 
   const load = useCallback(() => {
@@ -106,7 +111,7 @@ export function UsersPage() {
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ username: '', fullName: '', email: '', phone: '', estateCode: 'ALL', roles: [], password: '' });
+    setForm({ username: '', fullName: '', email: '', phone: '', estateCodes: ['ALL'], roles: [], password: '' });
     setEditOpen(true);
   };
 
@@ -117,7 +122,7 @@ export function UsersPage() {
       fullName: u.fullName,
       email: u.email || '',
       phone: u.phone || '',
-      estateCode: u.estateCode,
+      estateCodes: u.estateCodes && u.estateCodes.length ? u.estateCodes : ['ALL'],
       roles: u.roles.map((r) => r.code),
       password: '',
     });
@@ -129,7 +134,7 @@ export function UsersPage() {
     setError('');
     const body: Record<string, unknown> = {
       fullName: form.fullName, email: form.email || undefined, phone: form.phone || undefined,
-      estateCode: form.estateCode, roles: form.roles,
+      estateCodes: form.estateCodes, roles: form.roles,
     };
     if (!editing && form.password) body.password = form.password;
     const p = editing
@@ -138,6 +143,12 @@ export function UsersPage() {
     p.then(() => { setToast(editing ? '已更新用戶' : '已新增用戶'); setEditOpen(false); return load(); })
       .catch((e) => setError(e instanceof ApiRequestError ? e.message : '儲存失敗'))
       .finally(() => setSaving(false));
+  };
+
+  // 所屬屋苑多選：選「全屋苑」與其他互斥；全部取消時回退為全屋苑
+  const onEstateChange = (values: string[]) => {
+    if (values.includes('ALL')) { setForm({ ...form, estateCodes: ['ALL'] }); return; }
+    setForm({ ...form, estateCodes: values.length ? values : ['ALL'] });
   };
 
   const doReset = (userId: number) => {
@@ -170,7 +181,7 @@ export function UsersPage() {
         <IconButton title="登出" onClick={logout}><LogoutIcon /></IconButton>
       </Toolbar>
 
-      <Box sx={{ p: { xs: 1.5, md: 3 } }} maxWidth="lg" mx="auto">
+      <Box sx={{ p: { xs: 1.5, md: 3 } }} maxWidth="xl" mx="auto">
         <AdminNav current="users" />
 
         <Stack direction="row" spacing={1} sx={{ mb: 2, mt: 1 }} alignItems="center" flexWrap="wrap" useFlexGap>
@@ -214,7 +225,12 @@ export function UsersPage() {
                   <TableRow key={u.userId} hover>
                     <TableCell sx={{ fontWeight: 600 }}>{u.username}</TableCell>
                     <TableCell>{u.fullName}</TableCell>
-                    <TableCell>{estates.nameOf(u.estateCode)}{u.estateCode !== 'ALL' ? `（${u.estateCode}）` : ''}</TableCell>
+                    <TableCell>
+                      {(u.estateCodes && u.estateCodes.length ? u.estateCodes : ['ALL']).map((code) => (
+                        <Chip key={code} size="small" variant="outlined" sx={{ mr: 0.5, mb: 0.5 }}
+                          label={code === 'ALL' ? '全屋苑' : `${estates.nameOf(code)}（${code}）`} />
+                      ))}
+                    </TableCell>
                     <TableCell>{u.roles.map((r) => <Chip key={r.code} size="small" label={r.name} sx={{ mr: 0.5 }} />)}</TableCell>
                     <TableCell>
                       {u.isActive ? <Chip size="small" color="success" label="啟用" /> : <Chip size="small" label="停用" />}
@@ -223,7 +239,7 @@ export function UsersPage() {
                     </TableCell>
                     <TableCell><Typography variant="caption">{u.lastLoginAt || '—'}</Typography></TableCell>
                     <TableCell>
-                      <IconButton size="small" onClick={(e) => setMenuFor({ userId: u.userId, anchor: e.currentTarget })}>
+                      <IconButton size="small" onClick={(e) => setMenuFor({ user: u, anchor: e.currentTarget })}>
                         <MoreVertIcon fontSize="small" />
                       </IconButton>
                     </TableCell>
@@ -242,14 +258,14 @@ export function UsersPage() {
       </Box>
 
       <Menu anchorEl={menuFor?.anchor} open={!!menuFor} onClose={() => setMenuFor(null)}>
-        {canUpdate && <MenuItem onClick={() => { const u = rows.find((r) => r.userId === menuFor?.userId); if (u) openEdit(u); }}>修改</MenuItem>}
-        {canReset && <MenuItem onClick={() => menuFor && doReset(menuFor.userId)}><LockResetIcon fontSize="small" style={{ marginRight: 8 }} />重設密碼</MenuItem>}
-        {canLock && <MenuItem onClick={() => menuFor && doLock(menuFor.userId, !rows.find((r) => r.userId === menuFor?.userId)?.lockedUntil)}>
-          {menuFor && rows.find((r) => r.userId === menuFor.userId)?.lockedUntil ? '解鎖' : '鎖定'}
+        {canUpdate && <MenuItem onClick={() => { if (menuFor) openEdit(menuFor.user); }}>修改</MenuItem>}
+        {canReset && <MenuItem onClick={() => menuFor && doReset(menuFor.user.userId)}><LockResetIcon fontSize="small" style={{ marginRight: 8 }} />重設密碼</MenuItem>}
+        {canLock && <MenuItem onClick={() => menuFor && doLock(menuFor.user.userId, !menuFor.user.lockedUntil)}>
+          {menuFor?.user.lockedUntil ? '解鎖' : '鎖定'}
         </MenuItem>}
         {canDisable && (
-          <MenuItem onClick={() => { const u = rows.find((r) => r.userId === menuFor?.userId); if (u && menuFor) setConfirm({ userId: u.userId, username: u.username, disable: u.isActive === 1 }); }}>
-            {menuFor && rows.find((r) => r.userId === menuFor.userId)?.isActive ? '停用' : '啟用'}
+          <MenuItem onClick={() => { if (menuFor) setConfirm({ userId: menuFor.user.userId, username: menuFor.user.username, disable: menuFor.user.isActive === 1 }); }}>
+            {menuFor?.user.isActive ? '停用' : '啟用'}
           </MenuItem>
         )}
       </Menu>
@@ -263,7 +279,9 @@ export function UsersPage() {
             <TextField size="small" label="姓名" value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} fullWidth />
             <TextField size="small" label="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} fullWidth />
             <TextField size="small" label="電話" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} fullWidth />
-            <TextField size="small" select label="所屬屋苑" value={form.estateCode} onChange={(e) => setForm({ ...form, estateCode: e.target.value })} fullWidth>
+            <TextField size="small" select label="所屬屋苑（可多選）" SelectProps={{ multiple: true }} value={form.estateCodes}
+              onChange={(e) => onEstateChange(e.target.value as unknown as string[])} fullWidth
+              helperText="可指定多個屋苑；選「全屋苑（ALL）」代表不受屋苑限制">
               {estateChoices.map((o) => <MenuItem key={o.code} value={o.code}>{o.zh}</MenuItem>)}
             </TextField>
             <TextField size="small" select label="角色（可多選）" SelectProps={{ multiple: true }} value={form.roles}

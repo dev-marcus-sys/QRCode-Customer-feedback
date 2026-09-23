@@ -35,6 +35,8 @@ type FieldErrors = Record<string, string>;
 export function FormPage() {
   const [params] = useSearchParams();
   const estate = params.get('estate') || 'CHNG';
+  // 短亂數 QR 連結令牌（舊格式連結無此參數 → 後端會回傳「連結已失效」）
+  const qrToken = params.get('t') || undefined;
   const navigate = useNavigate();
 
   const [lang, setLang] = useState<Lang>(params.get('lang') === 'en' ? 'en' : 'zh-Hant');
@@ -49,7 +51,7 @@ export function FormPage() {
   // 載入表單設定（含該語系標籤）
   useEffect(() => {
     api
-      .getMeta(estate, lang)
+      .getMeta(estate, lang, qrToken)
       .then((m) => setMeta(m))
       .catch((e) => setMetaError(e instanceof ApiRequestError ? e.message : '載入失敗'));
   }, [estate, lang]);
@@ -115,8 +117,8 @@ export function FormPage() {
     setSubmitting(true);
     let token: string;
     try {
-      const t = await api.getToken(estate);
-      token = t.token;
+      const tk = await api.getToken(estate, qrToken);
+      token = tk.token;
     } catch {
       setTopError(translate(lang, 'common.error').replace('{msg}', 'token'));
       setSubmitting(false);
@@ -137,6 +139,7 @@ export function FormPage() {
       surveyConsent: form.surveyConsent,
       formToken: token,
       lang,
+      ...(qrToken ? { t: qrToken } : {}),
     };
     try {
       const res = await api.submitFeedback(payload);
@@ -197,8 +200,13 @@ export function FormPage() {
 
   if (metaError) {
     return (
-      <Box sx={{ minHeight: '100vh', display: 'grid', placeItems: 'center', p: 3 }}>
-        <Alert severity="error">{metaError}</Alert>
+      <Box sx={{ minHeight: '100vh', display: 'grid', placeItems: 'center', p: 3, bgcolor: '#eef2f7' }}>
+        <Card sx={{ maxWidth: 420, width: '100%', borderRadius: 3, boxShadow: 3 }}>
+          <CardContent sx={{ textAlign: 'center', py: 4 }}>
+            <Box component="img" src="/logo.png" alt="CRLPM" sx={{ height: 44, mb: 2 }} />
+            <Alert severity="error" sx={{ textAlign: 'left' }}>{metaError}</Alert>
+          </CardContent>
+        </Card>
       </Box>
     );
   }

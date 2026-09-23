@@ -6,12 +6,14 @@
  * 見 docs/AI_利用方案.md §7.1。
  */
 import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Box, Button, Card, CardContent, Chip, CircularProgress, Stack, Typography, Tooltip,
 } from '@mui/material';
 import {
-  AiSuggestionItem, api, ApiRequestError, authStore,
+  AiSuggestionItem, AiSimilarMatch, api, ApiRequestError, authStore,
 } from '../api/client';
+import { useAiFeatures, featureOn } from '../aiFeatures';
 import { CATEGORY_OPTIONS, EVENT_OPTIONS, labelOf } from '../admin/options';
 
 const INTENT_LABEL: Record<string, string> = {
@@ -50,10 +52,14 @@ interface Props {
 
 export function AiSuggestionsCard({ caseId, canUpdate, caseClosed, onChanged, onMessage }: Props) {
   const [items, setItems] = useState<AiSuggestionItem[]>([]);
+  const [similarItems, setSimilarItems] = useState<AiSuggestionItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [busyId, setBusyId] = useState<number | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const { features } = useAiFeatures();
+  const showClassify = featureOn(features, 'classify'); // AI-01
+  const showSimilar = featureOn(features, 'similar');   // AI-02
 
   const load = useCallback(() => {
     if (!caseId) return;
@@ -62,6 +68,7 @@ export function AiSuggestionsCard({ caseId, canUpdate, caseClosed, onChanged, on
       .listAiSuggestions(caseId, authStore.getToken() || '')
       .then((rows) => {
         setItems(rows.filter((r) => r.aiType === 'classify'));
+        setSimilarItems(rows.filter((r) => r.aiType === 'similar_case'));
         setError('');
       })
       .catch((e) => setError(e instanceof ApiRequestError ? e.message : 'AI 建議載入失敗'))
@@ -105,8 +112,23 @@ export function AiSuggestionsCard({ caseId, canUpdate, caseClosed, onChanged, on
       .finally(() => setBusyId(null));
   };
 
+  /** AI-02 確認相似個案為重複 → 關聯 original_case_id（標記二次投訴；case:update） */
+  const linkCase = (s: AiSuggestionItem, targetCaseId: string) => {
+    setBusyId(s.suggestionId);
+    api.linkSimilarCase(caseId, s.suggestionId, targetCaseId, authStore.getToken() || '')
+      .then(() => {
+        onMessage(`已關聯至相似個案 ${targetCaseId}（本個案標記為二次投訴）`);
+        load();
+        onChanged();
+      })
+      .catch((e) => onMessage(e instanceof ApiRequestError ? `關聯失敗：${e.message}` : '關聯失敗'))
+      .finally(() => setBusyId(null));
+  };
+
   const shownCount = items.filter((i) => i.status === 'shown').length;
   const actionable = canUpdate && !caseClosed;
+
+  if (!showClassify && !showSimilar) return null;
 
   return (
     <Card elevation={0} sx={{ borderRadius: 2, border: '1px solid #e5eaf2', mb: 2 }}>
@@ -129,12 +151,13 @@ export function AiSuggestionsCard({ caseId, canUpdate, caseClosed, onChanged, on
         {error && (
           <Typography variant="caption" color="error" sx={{ display: 'block', mb: 1 }}>{error}</Typography>
         )}
-        {!loading && items.length === 0 && (
+        {showClassify && !loading && items.length === 0 && (
           <Typography variant="body2" color="text.secondary">
             暫無 AI 分類建議（啟用「系統參數 → AI 參數」的 AI 總開關後，新個案會自動分析；有差異才會顯示建議）。
             想為此個案立即產生建議，可按右上角「重新分析」。
           </Typography>
         )}
+        {showClassify && (
         <Stack spacing={1.5}>
           {items.map((s) => {
             const meta = STATUS_META[s.status] || STATUS_META.pending;
@@ -229,6 +252,53 @@ export function AiSuggestionsCard({ caseId, canUpdate, caseClosed, onChanged, on
             );
           })}
         </Stack>
+        )}
+        {/* AI-02 相似個案建議（語意防重；docs/AI_利用方案.md §4.2） */}
+        {showSimilar && similarItems.length > 0 && (
+          <Box sx={{ mt: 2, pt: 1.5, borderTop: '1px dashed #e3e9f2' }}>
+            <Typography variant="subtitle2" sx={{ mb: 1, color: '#b26a00' }}>相似個案建議（AI-02 語意防重）</Typography>
+            <Stack spacing={1.5}>
+              {similarItems.map((s) => {
+                const meta = STATUS_META[s.status] || STATUS_META.pending;
+                const pl = (s.payload || {}) as { matches?: AiSimilarMatch[]; threshold?: number };
+                const matches = pl.matches || [];
+                return (
+                  <Box key={s.suggestionId} sx={{ border: '1px solid #e8edf4', borderRadius: 1.5, p: 1.6, bgcolor: s.status === 'shown' ? '#fff7f5' : '#fafbfd' }}>
+                    <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.8 }}>
+                      <Chip size="small" label={meta.label} color={meta.color} />
+                      <Typography variant="caption" color="text.secondary">相似度閾值 {pl.threshold != null ? pl.threshold : '—'}</Typography>
+                      <Box sx={{ flex: 1 }} />
+                      <Typography variant="caption" color="text.secondary">{s.model ? s.model : ''}{s.createdAt ? ` · ${fmt(s.createdAt)}` : ''}</Typography>
+                    </Stack>
+                    {matches.length === 0 && s.status === 'shown' && (
+                      <Typography variant="body2" color="text.secondary">暫無達到閾值的相似個案。</Typography>
+                    )}
+                    {matches.map((m) => (
+                      <Box key={m.caseId} sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1, rowGap: 0.5, minWidth: 0, py: 0.6, borderTop: '1px dashed #eef1f6' }}>
+                        <Link to={`/admin/cases/${encodeURIComponent(m.caseId)}`} style={{ fontFamily: '"Roboto Mono", monospace', fontWeight: 700, color: '#1a5aa6', wordBreak: 'break-all' }}>{m.caseId}</Link>
+                        <Chip size="small" variant="outlined" label={labelOf(CATEGORY_OPTIONS, m.category, 'zh-Hant')} />
+                        <Chip size="small" color="primary" label={`相似度 ${Math.round(m.score * 100)}%`} />
+                        <Box sx={{ flex: 1, minWidth: 0 }} />
+                        {s.status === 'shown' && (
+                          <Button size="small" variant="contained" color="warning" sx={{ flexShrink: 0, whiteSpace: 'nowrap' }} disabled={!actionable || busyId === s.suggestionId} onClick={() => linkCase(s, m.caseId)}>關聯為原案</Button>
+                        )}
+                      </Box>
+                    ))}
+                    {matches.length > 0 && s.status === 'accepted' && (
+                      <Typography variant="caption" color="success.main" sx={{ display: 'block', mt: 0.5 }}>已由人員確認關聯（本個案標記為二次投訴，見個案頂部提示）。</Typography>
+                    )}
+                    {s.status === 'shown' && !canUpdate && (
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>需要 case:update 權限才能關聯。</Typography>
+                    )}
+                    {s.status === 'shown' && caseClosed && (
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>個案已關閉，不能關聯。</Typography>
+                    )}
+                  </Box>
+                );
+              })}
+            </Stack>
+          </Box>
+        )}
       </CardContent>
     </Card>
   );

@@ -9,6 +9,7 @@ const { ERR } = require('../config/constants');
 const { messageFor } = require('../config/i18n');
 const { ApiError } = require('./error');
 const { getDb } = require('../db/connection');
+const { parseEstates } = require('../utils/estateScope');
 
 function jwtSecret() {
   return process.env.JWT_SECRET || 'qr-feedback-dev-secret-change-me';
@@ -34,6 +35,8 @@ function loadUserContext(db, userId) {
   ).all(userId).map((r) => r.permCode);
   user.roles = roles;
   user.permissions = [...new Set(permissions)];
+  // 所屬屋苑可多選：estateCode 為逗號清單，estateCodes 為解析後陣列（['ALL'] 或 [] 表示全屋苑）
+  user.estateCodes = parseEstates(user.estateCode);
   return user;
 }
 

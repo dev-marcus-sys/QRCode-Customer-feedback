@@ -48,6 +48,7 @@ const PERMISSIONS = [
   ['dashboard:view', 'dashboard', '儀表板'],
   ['estate:list', 'estate', '屋苑查閱'],
   ['estate:manage', 'estate', '屋苑管理'],
+  ['kb:manage', 'kb', '知識庫管理'],
 ];
 
 const ROLE_PERMISSIONS = {

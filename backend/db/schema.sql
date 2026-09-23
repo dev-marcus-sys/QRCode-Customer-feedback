@@ -158,6 +158,7 @@ CREATE TABLE IF NOT EXISTS qr_code (
   estate_code    TEXT NOT NULL,
   qr_type        TEXT NOT NULL DEFAULT 'FORM' CHECK (qr_type IN ('FORM','PRINT')),
   qr_content     TEXT NOT NULL,
+  link_token     TEXT,                 -- 短亂數連結令牌（?estate=..&t=..）；取代明文 qr_id/sig，連結更短更易掃描
   file_url       TEXT NOT NULL,
   is_active      INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0,1)),
   generated_by   INTEGER NOT NULL,
@@ -223,6 +224,9 @@ CREATE TABLE IF NOT EXISTS case_log_attachment (
   storage_key   TEXT NOT NULL,
   uploaded_by   INTEGER NOT NULL,
   uploaded_at   TEXT NOT NULL DEFAULT (datetime('now')),
+  -- ---------- AI-07 附件影像理解（docs/AI_利用方案.md §4.7） ----------
+  -- OCR 文字另存於此欄；完整結果（類別／描述／信心值）寫入 ai_suggestion(attachment_insight)。
+  ocr_text      TEXT NULL,
   FOREIGN KEY (log_id) REFERENCES case_log(log_id),
   FOREIGN KEY (case_id) REFERENCES `case`(case_id)
 );
@@ -275,7 +279,13 @@ CREATE TABLE IF NOT EXISTS weekly_report (
   summary_json  TEXT NOT NULL,
   anomaly_json  TEXT NOT NULL DEFAULT '[]',
   generated_by  INTEGER NOT NULL,
-  generated_at  TEXT NOT NULL DEFAULT (datetime('now'))
+  generated_at  TEXT NOT NULL DEFAULT (datetime('now')),
+  -- ---------- AI-06 週報 AI 摘要（docs/AI_利用方案.md §4.6） ----------
+  -- 由 summary_json + anomaly_json 之彙總數字生成敘事摘要（唔含個案原文／PII）；
+  -- ai_summary 附於郵件內文頂部，並於週報查閱 API 回傳。
+  ai_summary     TEXT NULL,
+  ai_summary_model TEXT NULL,
+  ai_summary_at  TEXT NULL
 );
 CREATE INDEX IF NOT EXISTS ix_weekly_period ON weekly_report(period_start DESC);
 
@@ -316,3 +326,92 @@ CREATE TABLE IF NOT EXISTS ai_usage_log (
   created_at    TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS ix_ai_usage_task ON ai_usage_log(task, created_at);
+
+-- ---------- AI-08 逾期風險預警（docs/AI_利用方案.md §4.8） ----------
+-- 每個未結案個案一列（最新一次掃描之結果；UPSERT 更新），已確認由 acknowledged_by/at 記錄。
+-- 級一＝純統計（剩餘 SLA vs 同屋苑＋同類別歷史 P75 處理時長）；級二＝LLM 一句預警理由＋建議動作（可選）。
+CREATE TABLE IF NOT EXISTS ai_case_risk (
+  risk_id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  case_id         TEXT NOT NULL UNIQUE,
+  estate_code     TEXT NOT NULL,
+  risk_level      TEXT NOT NULL CHECK (risk_level IN ('HIGH','MEDIUM','LOW')),
+  risk_score      REAL NOT NULL,
+  reason          TEXT,
+  suggested_action TEXT,
+  model           TEXT,
+  computed_at     TEXT NOT NULL DEFAULT (datetime('now')),
+  notified_at     TEXT,
+  acknowledged_by INTEGER,
+  acknowledged_at TEXT,
+  FOREIGN KEY (case_id) REFERENCES `case`(case_id)
+);
+CREATE INDEX IF NOT EXISTS ix_ai_risk_level ON ai_case_risk(risk_level, computed_at);
+CREATE INDEX IF NOT EXISTS ix_ai_risk_estate ON ai_case_risk(estate_code);
+
+-- ---------- AI-02 語意防重：內嵌向量（每案一列；量小時暴力 cosine，見 docs/AI_利用方案.md §4.2） ----------
+-- vector 以 JSON 陣列存放；雲端路線只送 de-PII 後文字，本地路線優先。
+CREATE TABLE IF NOT EXISTS ai_embedding (
+  embedding_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  case_id      TEXT NOT NULL,
+  model        TEXT NOT NULL,
+  dim          INTEGER NOT NULL,
+  vector       TEXT NOT NULL,
+  text_hash    TEXT,
+  created_at   TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (case_id) REFERENCES `case`(case_id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_emb_case_model ON ai_embedding(case_id, model);
+CREATE INDEX IF NOT EXISTS ix_ai_emb_case ON ai_embedding(case_id);
+
+-- ---------- AI-05 問卷開放意見分析（docs/AI_利用方案.md §4.5） ----------
+-- 每份問卷一列（survey_id UNIQUE）；topics 存 JSON 陣列。原文保留於 satisfaction_survey.feedback，不另複製。
+CREATE TABLE IF NOT EXISTS ai_feedback_insight (
+  insight_id   INTEGER PRIMARY KEY AUTOINCREMENT,
+  survey_id    INTEGER NOT NULL UNIQUE,
+  case_id      TEXT NOT NULL,
+  estate_code  TEXT NOT NULL,
+  topics       TEXT NOT NULL,
+  sentiment    TEXT NOT NULL CHECK (sentiment IN ('positive','neutral','negative')),
+  summary      TEXT,
+  confidence   REAL,
+  model        TEXT,
+  created_at   TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (survey_id) REFERENCES satisfaction_survey(survey_id),
+  FOREIGN KEY (case_id) REFERENCES `case`(case_id)
+);
+CREATE INDEX IF NOT EXISTS ix_ai_fb_estate ON ai_feedback_insight(estate_code, created_at);
+CREATE INDEX IF NOT EXISTS ix_ai_fb_case ON ai_feedback_insight(case_id);
+
+-- ---------- AI-09 RAG 知識庫（docs/AI_利用方案.md §4.9） ----------
+-- 知識文件主檔：入庫前須審批（status=pending_review→active）；owner＋版本治理。
+CREATE TABLE IF NOT EXISTS kb_document (
+  doc_id          TEXT PRIMARY KEY,
+  title           TEXT NOT NULL,
+  source          TEXT NOT NULL,            -- wiki 路徑／檔案名／URL（來源可追溯）
+  version         TEXT NOT NULL DEFAULT '1',
+  status          TEXT NOT NULL DEFAULT 'active'
+                  CHECK (status IN ('active','disabled','pending_review')),
+  owner           TEXT,
+  chunk_count     INTEGER NOT NULL DEFAULT 0,
+  embedding_model TEXT,                     -- 入庫時所用向量模型（檢索只比對同模型）
+  ingested_at     TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS ix_kb_doc_status ON kb_document(status, updated_at);
+
+-- 知識塊：按標題結構分塊；vector 以 JSON 存放（起步量細，SQLite 內暴力 cosine）。
+CREATE TABLE IF NOT EXISTS kb_chunk (
+  chunk_id        INTEGER PRIMARY KEY AUTOINCREMENT,
+  doc_id          TEXT NOT NULL,
+  seq             INTEGER NOT NULL,
+  heading         TEXT,                      -- 該塊所屬標題（不含 # 符號）
+  heading_path    TEXT,                      -- JSON 陣列：祖先標題鏈（grounding 顯示章節用）
+  level           INTEGER,
+  content         TEXT NOT NULL,             -- 含標題之原文塊
+  embedding_model TEXT,
+  vector          TEXT NOT NULL,             -- JSON 向量
+  created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (doc_id) REFERENCES kb_document(doc_id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS ix_kb_chunk_doc ON kb_chunk(doc_id);
+CREATE INDEX IF NOT EXISTS ix_kb_chunk_model ON kb_chunk(embedding_model);

@@ -34,6 +34,14 @@ export const PRIORITY_OPTIONS: { code: string; labelZh: string; labelEn: string 
   { code: 'MEDIUM', labelZh: '中', labelEn: 'Medium' },
   { code: 'LOW', labelZh: '低', labelEn: 'Low' },
 ];
+export const ROLE_OPTIONS: { code: string; labelZh: string; labelEn: string }[] = [
+  { code: 'ADMIN', labelZh: '系統管理員', labelEn: 'Administrator' },
+  { code: 'CC_SUPERVISOR', labelZh: '客服中心主管', labelEn: 'CC Supervisor' },
+  { code: 'CC_STAFF', labelZh: '客服中心人員', labelEn: 'CC Staff' },
+  { code: 'ESTATE_SUPERVISOR', labelZh: '物業管理處主管', labelEn: 'Estate Supervisor' },
+  { code: 'ESTATE_STAFF', labelZh: '物業前線人員', labelEn: 'Estate Staff' },
+];
+
 
 export const RESOLUTION_OPTIONS: { code: string; labelZh: string; labelEn: string }[] = [
   { code: 'RESOLVED_FULL', labelZh: '已徹底解決', labelEn: 'Fully Resolved' },

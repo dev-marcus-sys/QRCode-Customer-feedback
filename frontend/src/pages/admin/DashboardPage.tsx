@@ -15,11 +15,13 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import DownloadIcon from '@mui/icons-material/Download';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import EventRepeatIcon from '@mui/icons-material/EventRepeat';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import {
   AnomalyData, AnomalyRow, AnomalyType, ApiRequestError, authStore, DashboardSummaryData,
-  DistributionData, HandlerRow, KpiCard, RangePreset, TrendPoint, WeeklyReportItem, api,
+  DistributionData, HandlerRow, KpiCard, RangePreset, TrendPoint, WeeklyReportItem, RiskCaseItem, api,
   downloadDashboardCsv,
 } from '../../api/client';
+import { useAiFeatures, featureOn } from '../../aiFeatures';
 import { STATUS_COLORS } from '../../admin/options';
 import { useEstates } from '../../admin/useEstates';
 import { NotificationCenter } from '../../components/NotificationCenter';
@@ -145,14 +147,17 @@ export function DashboardPage() {
   const navigate = useNavigate();
   const user = authStore.getUser();
   const token = authStore.getToken() || '';
-  const locked = !!user && user.estateCode !== 'ALL';
+  // 所屬屋苑可多選：未含 ALL 且非空者視為受限範圍（可於自身屋苑間切換）
+  const scopeCodes = user && user.estateCodes && user.estateCodes.length && !user.estateCodes.includes('ALL')
+    ? user.estateCodes : null;
+  const locked = !!scopeCodes;
   const estates = useEstates();
 
   const [range, setRange] = useState<RangePreset>('thisMonth');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [estate, setEstate] = useState('');
-  const effectiveEstate = locked ? user?.estateCode || '' : estate;
+  const effectiveEstate = scopeCodes ? (estate || scopeCodes[0]) : estate;
   const [summary, setSummary] = useState<DashboardSummaryData | null>(null);
   const [trend, setTrend] = useState<TrendPoint[]>([]);
   const [dist, setDist] = useState<DistributionData | null>(null);
@@ -163,7 +168,15 @@ export function DashboardPage() {
   const [error, setError] = useState('');
   const [toast, setToast] = useState('');
   const [running, setRunning] = useState(false);
+  const [regening, setRegening] = useState(false);
   const [reportOpen, setReportOpen] = useState<WeeklyReportItem | null>(null);
+  /* AI-08 逾期風險預警 */
+  const [risks, setRisks] = useState<RiskCaseItem[]>([]);
+  const [riskScanning, setRiskScanning] = useState(false);
+  const canUpdate = !!user?.permissions?.includes('case:update');
+  const { features } = useAiFeatures();
+  const showRisk = featureOn(features, 'risk');             // AI-08 逾期風險預警
+  const showWeeklySummary = featureOn(features, 'weeklySummary'); // AI-06 週報 AI 摘要
 
   const query = { range, from: range === 'custom' ? from : undefined, to: range === 'custom' ? to : undefined, estate: effectiveEstate };
 
@@ -185,14 +198,16 @@ export function DashboardPage() {
       api.dashboardHandlers(query, token),
       api.dashboardAnomalies(effectiveEstate, token),
       api.weeklyReportList(token),
+      api.listCaseRisks(token).catch(() => ({ items: [] as RiskCaseItem[] })), // AI-08 停用時靜默略過
     ])
-      .then(([s, t, d, h, a, w]) => {
+      .then(([s, t, d, h, a, w, rk]) => {
         setSummary(s);
         setTrend(t.items);
         setDist(d);
         setHandlers(h.items);
         setAnomalies(a);
         setReports(w.items);
+        setRisks(rk.items);
       })
       .catch((e) => {
         setError(e instanceof ApiRequestError ? e.message : '載入儀表板失敗');
@@ -243,6 +258,53 @@ export function DashboardPage() {
     downloadDashboardCsv(query, token).catch((e) => setError(e instanceof ApiRequestError ? e.message : '匯出失敗'));
   };
 
+  // AI-08 手動觸發風險掃描（等同排程 tick）
+  const runRiskScan = () => {
+    setRiskScanning(true);
+    setError('');
+    api
+      .runRiskScan(token)
+      .then((r) => {
+        setToast(r.skipped ? 'AI-08 風險預警未啟用，已略過' : `風險掃描完成：${r.scanned} 案（高 ${r.high}／中 ${r.medium}／低 ${r.low}），新預警 ${r.notified} 宗`);
+        return api.listCaseRisks(token);
+      })
+      .then((r) => setRisks(r.items))
+      .catch((e) => setError(e instanceof ApiRequestError ? e.message : '風險掃描失敗'))
+      .finally(() => setRiskScanning(false));
+  };
+
+  // AI-08 主管確認預警
+  const ackRisk = (caseId: string) => {
+    api
+      .ackCaseRisk(caseId, token)
+      .then(() => {
+        setRisks((prev) => prev.map((x) => (x.caseId === caseId
+          ? { ...x, acknowledgedAt: new Date().toISOString(), acknowledgedByName: user?.fullName || null }
+          : x)));
+        setToast(`已確認個案 ${caseId} 之風險預警`);
+      })
+      .catch((e) => setError(e instanceof ApiRequestError ? e.message : '確認失敗'));
+  };
+
+  // AI-06（重新）生成週報摘要（開關開啟後可補跑舊報表）
+  const regenAi = (reportId: number) => {
+    setRegening(true);
+    setError('');
+    api
+      .weeklyReportAiSummary(reportId, token)
+      .then((r) => {
+        setReports((prev) => prev.map((x) => (x.reportId === reportId
+          ? { ...x, aiSummary: r.aiSummary, aiSummaryModel: r.aiSummaryModel, aiSummaryAt: r.aiSummaryAt }
+          : x)));
+        setReportOpen((prev) => (prev && prev.reportId === reportId
+          ? { ...prev, aiSummary: r.aiSummary, aiSummaryModel: r.aiSummaryModel, aiSummaryAt: r.aiSummaryAt }
+          : prev));
+        setToast(r.aiSummary ? 'AI 週報摘要已重新生成' : 'AI 摘要未生成（請檢查 AI-06 開關）');
+      })
+      .catch((e) => setError(e instanceof ApiRequestError ? e.message : '重新生成失敗'))
+      .finally(() => setRegening(false));
+  };
+
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#f4f6fa', pb: 4 }}>
       <Toolbar sx={{ position: 'sticky', top: 0, zIndex: 10, bgcolor: '#fff', borderBottom: '1px solid #e5eaf2', boxShadow: '0 1px 3px rgba(15,40,80,.06)' }}>
@@ -272,11 +334,14 @@ export function DashboardPage() {
                 InputLabelProps={{ shrink: true }} sx={{ maxWidth: 160 }} />
             </>
           )}
-          <TextField select size="small" label="屋苑" sx={{ minWidth: 160 }} disabled={locked}
+          <TextField select size="small" label="屋苑" sx={{ minWidth: 160 }} disabled={!!scopeCodes && scopeCodes.length <= 1}
             value={effectiveEstate}
             onChange={(e) => setEstate(e.target.value)}>
-            <MenuItem value="">全部屋苑</MenuItem>
-            {estates.activeOptions.map((x) => (<MenuItem key={x.estateCode} value={x.estateCode}>{x.estateNameZh}</MenuItem>))}
+            {!scopeCodes && <MenuItem value="">全部屋苑</MenuItem>}
+            {(scopeCodes
+              ? scopeCodes.map((c) => ({ code: c, zh: estates.nameOf(c) }))
+              : estates.activeOptions.map((x) => ({ code: x.estateCode, zh: x.estateNameZh }))
+            ).map((x) => (<MenuItem key={x.code} value={x.code}>{x.zh}</MenuItem>))}
           </TextField>
           <Button size="small" variant="outlined" startIcon={<RefreshIcon />} onClick={load}>重新整理</Button>
           <Button size="small" variant="outlined" startIcon={<DownloadIcon />} onClick={exportCsv}>匯出 CSV</Button>
@@ -334,6 +399,37 @@ export function DashboardPage() {
                 <CardContent>
                   {dist?.estate.map((r) => (<BarRow key={r.code} label={`${r.labelZh}（${r.code}）`} value={r.count} rate={r.rate} color="#2e7d32" />))}
                   {!dist?.estate.length && <Typography variant="body2" color="text.secondary">本期暫無數據</Typography>}
+                </CardContent>
+              </Card>
+            </Stack>
+
+            <Stack direction={{ xs: 'column', lg: 'row' }} spacing={2} sx={{ mb: 2 }}>
+              <Card elevation={0} sx={{ borderRadius: 2, border: '1px solid #e5eaf2', flex: 1 }}>
+                <Box sx={{ px: 2.5, py: 1.6, borderBottom: '1px solid #eef1f6' }}>
+                  <Typography fontWeight={600}>滿意度調查接受情況（共 {summary.surveyConsent?.total || 0} 宗）</Typography>
+                </Box>
+                <CardContent>
+                  {summary.surveyConsent ? (
+                    <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} flexWrap="wrap" useFlexGap>
+                      <Box sx={{ flex: 1, minWidth: 200 }}>
+                        <BarRow label="願意接受滿意度調查" value={summary.surveyConsent.willing.count}
+                          rate={summary.surveyConsent.willing.rate ?? 0} color="#2e7d32" />
+                        <Typography variant="caption" color="text.secondary">佔總個案 {fmt(summary.surveyConsent.willing.rate, 1)}%</Typography>
+                      </Box>
+                      <Box sx={{ flex: 1, minWidth: 200 }}>
+                        <BarRow label="已完成滿意度調查" value={summary.surveyConsent.completed.count}
+                          rate={summary.surveyConsent.completed.rate ?? 0} color="#1a5aa6" />
+                        <Typography variant="caption" color="text.secondary">佔願意接受 {fmt(summary.surveyConsent.completed.rate, 1)}%</Typography>
+                      </Box>
+                      <Box sx={{ flex: 1, minWidth: 200 }}>
+                        <BarRow label="不願意接受滿意度調查" value={summary.surveyConsent.unwilling.count}
+                          rate={summary.surveyConsent.unwilling.rate ?? 0} color="#c62828" />
+                        <Typography variant="caption" color="text.secondary">佔總個案 {fmt(summary.surveyConsent.unwilling.rate, 1)}%</Typography>
+                      </Box>
+                    </Stack>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">本期暫無數據</Typography>
+                  )}
                 </CardContent>
               </Card>
             </Stack>
@@ -417,6 +513,60 @@ export function DashboardPage() {
               </Card>
             </Stack>
 
+            {/* AI-08 逾期風險預警（docs/AI_利用方案.md §4.8） */}
+            {showRisk && (
+            <Card elevation={0} sx={{ borderRadius: 2, border: '1px solid #e5eaf2' }}>
+              <Box sx={{ px: 2.5, py: 1.6, borderBottom: '1px solid #eef1f6', display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                <Typography fontWeight={600}>AI 逾期風險預警（AI-08）</Typography>
+                <Chip size="small" color={risks.some((r) => r.riskLevel === 'HIGH') ? 'error' : 'default'} variant="outlined"
+                  label={`高風險 ${risks.filter((r) => r.riskLevel === 'HIGH').length} 宗`} />
+                <Button size="small" variant="outlined" startIcon={<WarningAmberIcon />} disabled={riskScanning} onClick={runRiskScan}>
+                  {riskScanning ? '掃描中…' : '立即掃描'}
+                </Button>
+              </Box>
+              <CardContent>
+                {risks.length === 0 ? (
+                  <Typography variant="body2" color="text.secondary">
+                    目前未結案個案暫無風險預警（可能係 AI-08 未啟用、或未結案個案為零）。
+                  </Typography>
+                ) : (
+                  <Stack spacing={1}>
+                    {risks.slice(0, 8).map((r) => (
+                      <Box key={r.caseId} sx={{ p: 1.2, borderRadius: 1.5, bgcolor: r.riskLevel === 'HIGH' ? '#fff5f5' : '#f7fafd', border: '1px solid #e5eaf2' }}>
+                        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                          <Typography variant="body2" fontWeight={600} sx={{ cursor: 'pointer', color: '#1a5aa6' }}
+                            onClick={() => navigate(`/admin/cases/${encodeURIComponent(r.caseId)}`)}>
+                            {r.caseId}
+                          </Typography>
+                          <Chip size="small" sx={{ height: 20, fontSize: 11 }}
+                            color={r.riskLevel === 'HIGH' ? 'error' : r.riskLevel === 'MEDIUM' ? 'warning' : 'default'}
+                            label={r.riskLevel === 'HIGH' ? '高' : r.riskLevel === 'MEDIUM' ? '中' : '低'} />
+                          <Typography variant="caption" color="text.secondary">
+                            {r.estateNameZh}　{r.overdue ? '已逾期' : `剩餘 ${r.remainingHours ?? '—'} 小時`}
+                          </Typography>
+                          {r.acknowledgedAt && (
+                            <Chip size="small" variant="outlined" color="success" sx={{ height: 20, fontSize: 11 }}
+                              label={`已確認（${r.acknowledgedByName || '—'}）`} />
+                          )}
+                          <Box sx={{ flex: 1 }} />
+                          {canUpdate && !r.acknowledgedAt && (
+                            <Button size="small" onClick={() => ackRisk(r.caseId)}>確認</Button>
+                          )}
+                        </Stack>
+                        {r.reason && <Typography variant="body2" sx={{ fontSize: 13, mt: 0.4 }}>{r.reason}</Typography>}
+                        {r.suggestedAction && (
+                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                            建議：{r.suggestedAction}
+                          </Typography>
+                        )}
+                      </Box>
+                    ))}
+                  </Stack>
+                )}
+              </CardContent>
+            </Card>
+            )}
+
             <Card elevation={0} sx={{ borderRadius: 2, border: '1px solid #e5eaf2' }}>
               <Box sx={{ px: 2.5, py: 1.6, borderBottom: '1px solid #eef1f6', display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
                 <Typography fontWeight={600}>自動週報（每週一 09:00 產生上週摘要）</Typography>
@@ -427,6 +577,7 @@ export function DashboardPage() {
                 {reports.slice(0, 3).map((r) => (
                   <Button key={r.reportId} size="small" onClick={() => setReportOpen(r)}>
                     {r.periodStart}（{r.anomalyCount} 異常）
+                    {r.aiSummary ? ' · AI' : ''}
                   </Button>
                 ))}
               </Box>
@@ -448,7 +599,18 @@ export function DashboardPage() {
         <DialogContent dividers>
           <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
             產生時間：{reportOpen?.generatedAt}　異常宗數：{reportOpen?.anomalyCount}
+            {reportOpen?.aiSummaryAt ? `　AI 摘要：${reportOpen.aiSummaryAt}` : ''}
           </Typography>
+          {reportOpen?.aiSummary ? (
+            <Alert severity="info" sx={{ mb: 2, whiteSpace: 'pre-line', '& .MuiAlert-message': { width: '100%' } }}>
+              <Typography variant="subtitle2" sx={{ mb: 0.5, color: 'inherit' }}>
+                AI 週報摘要{reportOpen.aiSummaryModel ? `（${reportOpen.aiSummaryModel}）` : ''}
+              </Typography>
+              {reportOpen.aiSummary}
+            </Alert>
+          ) : (
+            <Alert severity="warning" sx={{ mb: 2 }}>此週報尚無 AI 摘要（AI-06 未啟用或其時未生成）。可按下方「重新生成 AI 摘要」補跑。</Alert>
+          )}
           <Table size="small">
             <TableHead>
               <TableRow sx={{ bgcolor: '#f7f9fc' }}>
@@ -469,6 +631,12 @@ export function DashboardPage() {
           </Table>
         </DialogContent>
         <DialogActions>
+          {showWeeklySummary && (
+          <Button disabled={regening} onClick={() => reportOpen && regenAi(reportOpen.reportId)}>
+            {regening ? '生成中…' : '重新生成 AI 摘要'}
+          </Button>
+          )}
+          <Box sx={{ flex: 1 }} />
           <Button onClick={() => setReportOpen(null)}>關閉</Button>
         </DialogActions>
       </Dialog>
