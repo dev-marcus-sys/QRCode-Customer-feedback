@@ -9,11 +9,10 @@ import {
   TableContainer, TableHead, TableRow, TextField, Toolbar, Typography,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import LogoutIcon from '@mui/icons-material/Logout';
 import {
   ApiRequestError, AuditRow, authStore, api,
 } from '../../api/client';
-import { NotificationCenter } from '../../components/NotificationCenter';
+import { TopBarUser } from '../../components/TopBarUser';
 import AdminNav from '../../admin/AdminNav';
 
 const ACTION_LABEL: Record<string, string> = {
@@ -52,7 +51,7 @@ export function AuditPage() {
       .then((d) => { setRows(d.items); setTotal(d.total); setActions(d.actions); })
       .catch((e) => {
         setError(e instanceof ApiRequestError ? e.message : '載入失敗');
-        if (e instanceof ApiRequestError && (e.code === 2001 || e.code === 2005)) { authStore.clear(); navigate('/admin/login', { replace: true }); }
+        if (e instanceof ApiRequestError && e.code === 2001) { authStore.clear(); navigate('/admin/login', { replace: true }); }
       })
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -69,8 +68,6 @@ export function AuditPage() {
     );
   }
 
-  const logout = () => { authStore.clear(); navigate('/admin/login', { replace: true }); };
-
   const detailText = (r: AuditRow) => {
     if (!r.detail) return '';
     try { return JSON.stringify(r.detail); } catch { return String(r.detail); }
@@ -82,8 +79,7 @@ export function AuditPage() {
         <IconButton title="返回個案列表" onClick={() => navigate('/admin/cases')}><ArrowBackIcon /></IconButton>
         <Typography variant="h6" sx={{ color: '#1a5aa6', ml: 1 }}>操作審計</Typography>
         <Box sx={{ flex: 1 }} />
-        <NotificationCenter />
-        <IconButton title="登出" onClick={logout}><LogoutIcon /></IconButton>
+        <TopBarUser />
       </Toolbar>
 
       <Box sx={{ p: { xs: 1.5, md: 3 } }} maxWidth="xl" mx="auto">

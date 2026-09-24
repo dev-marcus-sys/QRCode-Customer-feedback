@@ -53,6 +53,10 @@ function requireAuth(req, res, next) {
   } catch {
     return next(new ApiError(ERR.UNAUTH, messageFor(ERR.UNAUTH, lang), 401));
   }
+  if (payload.scope === 'pwd-change') {
+    // FR-010-04：強制改密用臨時 token 不得存取一般 API（僅 /auth/change-password 可用）
+    return next(new ApiError(ERR.UNAUTH, messageFor(ERR.UNAUTH, lang), 401));
+  }
   const db = getDb();
   const user = loadUserContext(db, payload.userId);
   if (!user || !user.isActive) {

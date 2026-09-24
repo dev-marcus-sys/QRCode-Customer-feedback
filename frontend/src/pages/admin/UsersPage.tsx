@@ -6,19 +6,18 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Alert, Box, Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogContentText,
-  DialogTitle, IconButton, Menu, MenuItem, Snackbar, Stack, Table, TableBody, TableCell, TableContainer,
+  Alert, Box, Button, Checkbox, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogContentText,
+  DialogTitle, IconButton, ListItemText, Menu, MenuItem, Snackbar, Stack, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, TextField, Toolbar, Typography,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import LogoutIcon from '@mui/icons-material/Logout';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import LockResetIcon from '@mui/icons-material/LockReset';
 import {
   ApiRequestError, authStore, PermissionRow, RoleRow, UserRow, api,
 } from '../../api/client';
-import { NotificationCenter } from '../../components/NotificationCenter';
+import { TopBarUser } from '../../components/TopBarUser';
 import AdminNav from '../../admin/AdminNav';
 import { useEstates } from '../../admin/useEstates';
 
@@ -46,6 +45,7 @@ export function UsersPage() {
 
   const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState<UserRow | null>(null);
+  const [dlgMsg, setDlgMsg] = useState<string>(''); // 對話框內專屬訊息（儲存結果）
   const [form, setForm] = useState({
     username: '', fullName: '', email: '', phone: '', estateCodes: ['ALL'] as string[], roles: [] as string[], password: '',
   });
@@ -87,7 +87,7 @@ export function UsersPage() {
       })
       .catch((e) => {
         setError(e instanceof ApiRequestError ? e.message : '載入失敗');
-        if (e instanceof ApiRequestError && (e.code === 2001 || e.code === 2005)) {
+        if (e instanceof ApiRequestError && e.code === 2001) {
           authStore.clear();
           navigate('/admin/login', { replace: true });
         }
@@ -107,11 +107,10 @@ export function UsersPage() {
     );
   }
 
-  const logout = () => { authStore.clear(); navigate('/admin/login', { replace: true }); };
-
   const openCreate = () => {
     setEditing(null);
     setForm({ username: '', fullName: '', email: '', phone: '', estateCodes: ['ALL'], roles: [], password: '' });
+    setDlgMsg('');
     setEditOpen(true);
   };
 
@@ -126,29 +125,40 @@ export function UsersPage() {
       roles: u.roles.map((r) => r.code),
       password: '',
     });
+    setDlgMsg('');
     setEditOpen(true);
   };
 
   const save = () => {
     setSaving(true);
-    setError('');
+    setDlgMsg('');
     const body: Record<string, unknown> = {
       fullName: form.fullName, email: form.email || undefined, phone: form.phone || undefined,
       estateCodes: form.estateCodes, roles: form.roles,
     };
+    if (!editing) body.username = form.username.trim(); // 新增時必須送出帳號（編輯時帳號不可改）
     if (!editing && form.password) body.password = form.password;
     const p = editing
       ? api.updateUser(editing.userId, body, token)
       : api.createUser(body, token);
     p.then(() => { setToast(editing ? '已更新用戶' : '已新增用戶'); setEditOpen(false); return load(); })
-      .catch((e) => setError(e instanceof ApiRequestError ? e.message : '儲存失敗'))
+      .catch((e) => setDlgMsg(e instanceof ApiRequestError ? e.message : '儲存失敗'))
       .finally(() => setSaving(false));
   };
 
-  // 所屬屋苑多選：選「全屋苑」與其他互斥；全部取消時回退為全屋苑
+  // 所屬屋苑多選：「全屋苑（ALL）」與具體屋苑互斥。
+  // - 勾選 ALL：切換為全屋苑（清掉具體屋苑）；
+  // - 已選 ALL 時再勾具體屋苑：視為取消 ALL、改選具體屋苑；
+  // - 全部取消時回退為全屋苑（空值非合法狀態）
   const onEstateChange = (values: string[]) => {
-    if (values.includes('ALL')) { setForm({ ...form, estateCodes: ['ALL'] }); return; }
-    setForm({ ...form, estateCodes: values.length ? values : ['ALL'] });
+    const prev = form.estateCodes;
+    let next: string[];
+    if (values.includes('ALL')) {
+      next = prev.includes('ALL') ? values.filter((v) => v !== 'ALL') : ['ALL'];
+    } else {
+      next = values.length ? values : ['ALL'];
+    }
+    setForm({ ...form, estateCodes: next });
   };
 
   const doReset = (userId: number) => {
@@ -177,8 +187,7 @@ export function UsersPage() {
         <IconButton title="返回個案列表" onClick={() => navigate('/admin/cases')}><ArrowBackIcon /></IconButton>
         <Typography variant="h6" sx={{ color: '#1a5aa6', ml: 1 }}>用戶管理</Typography>
         <Box sx={{ flex: 1 }} />
-        <NotificationCenter />
-        <IconButton title="登出" onClick={logout}><LogoutIcon /></IconButton>
+        <TopBarUser />
       </Toolbar>
 
       <Box sx={{ p: { xs: 1.5, md: 3 } }} maxWidth="xl" mx="auto">
@@ -273,21 +282,54 @@ export function UsersPage() {
       <Dialog open={editOpen} onClose={() => setEditOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>{editing ? `修改用戶 ${editing.username}` : '新增用戶'}</DialogTitle>
         <DialogContent dividers>
+          {dlgMsg && <Alert severity="error" sx={{ mb: 2 }}>{dlgMsg}</Alert>}
           <Stack spacing={2} sx={{ mt: 0.5 }}>
             <TextField size="small" label="登入帳號" value={form.username} disabled={!!editing}
               onChange={(e) => setForm({ ...form, username: e.target.value })} fullWidth />
             <TextField size="small" label="姓名" value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} fullWidth />
             <TextField size="small" label="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} fullWidth />
             <TextField size="small" label="電話" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} fullWidth />
-            <TextField size="small" select label="所屬屋苑（可多選）" SelectProps={{ multiple: true }} value={form.estateCodes}
+            <TextField size="small" select label="所屬屋苑（可多選）"
+              SelectProps={{
+                multiple: true,
+                renderValue: (selected: unknown) => (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    {(selected as string[]).map((code) => (
+                      <Chip key={code} size="small" label={estateChoices.find((o) => o.code === code)?.zh || code} />
+                    ))}
+                  </Box>
+                ),
+              }}
+              value={form.estateCodes}
               onChange={(e) => onEstateChange(e.target.value as unknown as string[])} fullWidth
               helperText="可指定多個屋苑；選「全屋苑（ALL）」代表不受屋苑限制">
-              {estateChoices.map((o) => <MenuItem key={o.code} value={o.code}>{o.zh}</MenuItem>)}
+              {estateChoices.map((o) => (
+                <MenuItem key={o.code} value={o.code}>
+                  <Checkbox checked={form.estateCodes.includes(o.code)} />
+                  <ListItemText primary={o.zh} />
+                </MenuItem>
+              ))}
             </TextField>
-            <TextField size="small" select label="角色（可多選）" SelectProps={{ multiple: true }} value={form.roles}
+            <TextField size="small" select label="角色（可多選）"
+              SelectProps={{
+                multiple: true,
+                renderValue: (selected: unknown) => (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    {(selected as string[]).map((code) => (
+                      <Chip key={code} size="small" label={roles.find((r) => r.roleCode === code)?.roleName || code} />
+                    ))}
+                  </Box>
+                ),
+              }}
+              value={form.roles}
               onChange={(e) => setForm({ ...form, roles: e.target.value as unknown as string[] })} fullWidth
               helperText="角色決定該用戶的權限集合">
-              {roles.map((r) => <MenuItem key={r.roleCode} value={r.roleCode}>{r.roleName}（{r.roleCode}）</MenuItem>)}
+              {roles.map((r) => (
+                <MenuItem key={r.roleCode} value={r.roleCode}>
+                  <Checkbox checked={form.roles.includes(r.roleCode)} />
+                  <ListItemText primary={`${r.roleName}（${r.roleCode}）`} />
+                </MenuItem>
+              ))}
             </TextField>
             {!editing && (
               <TextField size="small" label="初始密碼（留空則產生一次性密碼並要求首登改密）"

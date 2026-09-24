@@ -17,7 +17,7 @@ import { SurveyStatusCard } from '../../components/SurveyStatusCard';
 import { AiSuggestionsCard } from '../../components/AiSuggestionsCard';
 import { AiAssigneeCard } from '../../components/AiAssigneeCard';
 import { AiDraftCard } from '../../components/AiDraftCard';
-import { NotificationCenter } from '../../components/NotificationCenter';
+import { TopBarUser } from '../../components/TopBarUser';
 
 const LOG_TYPE_ZH: Record<string, string> = {
   CREATE: '建立個案', ASSIGN: '分派', REASSIGN: '轉派', UPDATE: '更新',
@@ -155,7 +155,7 @@ export function CaseDetailPage() {
         </Box>
         <Box sx={{ ml: 1.5 }}><StatusChip status={c.caseStatus} lang="zh-Hant" /></Box>
         <Box sx={{ flex: 1 }} />
-        <NotificationCenter />
+        <TopBarUser />
         <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
           {c.estateNameZh} · {c.caseSource} 管道
         </Typography>

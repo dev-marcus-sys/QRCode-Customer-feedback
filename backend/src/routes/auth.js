@@ -55,7 +55,30 @@ router.post('/auth/login', (req, res) => {
   const pwdExpired = user.pwd_changed_at
     && (Date.now() - new Date(String(user.pwd_changed_at).replace(' ', 'T') + (String(user.pwd_changed_at).includes('+') ? '' : 'Z')).getTime()) / (24 * 3600 * 1000) > pwdMaxAgeDays;
   if (user.must_change_pwd === 1 || pwdExpired) {
-    throw new ApiError(ERR.MUST_CHANGE_PWD, messageFor(ERR.MUST_CHANGE_PWD, lang), 401);
+    // FR-010-04：首登/管理員重設後強制改密，或密碼過期。
+    // 簽發 10 分鐘限定 token（scope: 'pwd-change'），僅可用於 /auth/change-password；
+    // requireAuth 會拒絕此類 token 存取其他 API，前端據 mustChangePwd 導向改密畫面。
+    const token = jwt.sign(
+      { userId: user.user_id, username: user.username, estateCode: user.estate_code, scope: 'pwd-change' },
+      jwtSecret(),
+      { expiresIn: '10m' }
+    );
+    return ok(res, {
+      accessToken: token,
+      tokenType: 'Bearer',
+      expiresInMinutes: 10,
+      mustChangePwd: true,
+      user: {
+        userId: user.user_id,
+        username: user.username,
+        fullName: user.full_name,
+        email: user.email,
+        estateCode: user.estate_code,
+        estateCodes: [],
+        roles: [],
+        permissions: [],
+      },
+    });
   }
 
   const nowDb = toDb(now());
@@ -106,7 +129,27 @@ router.get('/me', requireAuth, (req, res) => {
  * - 新密碼須符合強度策略（≥8 位含大小寫＋數字）。
  * - 成功後清除 must_change_pwd、寫入 pwd_changed_at、重置失敗/鎖定計數，並寫入審計。
  */
-router.post('/auth/change-password', requireAuth, (req, res) => {
+/**
+ * 改密碼專用認證：接受一般 token 或登入時簽發的 pwd-change 限定 token（FR-010-04）。
+ * 僅解析 userId，不載入完整 RBAC 上下文（變更密碼只觸及本人帳號）。
+ */
+function requireSelfAuth(req, res, next) {
+  const lang = req.headers['accept-language'];
+  const header = req.headers.authorization || '';
+  if (!header.startsWith('Bearer ')) {
+    return next(new ApiError(ERR.UNAUTH, messageFor(ERR.UNAUTH, lang), 401));
+  }
+  let payload;
+  try {
+    payload = jwt.verify(header.slice(7).trim(), jwtSecret());
+  } catch {
+    return next(new ApiError(ERR.UNAUTH, messageFor(ERR.UNAUTH, lang), 401));
+  }
+  req.user = { userId: payload.userId, username: payload.username };
+  return next();
+}
+
+router.post('/auth/change-password', requireSelfAuth, (req, res) => {
   const lang = pickLang(req.headers['accept-language']);
   const db = getDb();
   const { currentPassword, newPassword } = req.body || {};

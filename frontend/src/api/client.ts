@@ -70,6 +70,33 @@ export interface FeedbackResult {
   message: string;
 }
 
+/** 客服人員手動新增個案之請求載荷（對應 POST /cases，case:create） */
+export interface CreateCasePayload {
+  estate: string;
+  title: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  block?: string;
+  floor?: string;
+  unit?: string;
+  category: string;
+  priority?: 'HIGH' | 'MEDIUM' | 'LOW';
+  incidentDate?: string;
+  incidentTime?: string;
+  content: string;
+  surveyConsent?: boolean;
+}
+
+export interface CreateCaseResult {
+  caseId: string;
+  status: string;
+  eventType: string;
+  responseSlaDue: string | null;
+  closureSlaDue: string | null;
+  message: string;
+}
+
 export interface AdminUser {
   userId: number;
   username: string;
@@ -85,6 +112,8 @@ export interface LoginResult {
   accessToken: string;
   tokenType: string;
   expiresInMinutes: number;
+  /** FR-010-04：首登/重設後/密碼過期強制改密，此時 token 僅可用於 change-password */
+  mustChangePwd?: boolean;
   user: AdminUser;
 }
 
@@ -893,9 +922,19 @@ export const api = {
     request<FeedbackResult>('/feedback', { method: 'POST', body }),
   login: (username: string, password: string) =>
     request<LoginResult>('/auth/login', { method: 'POST', body: { username, password } }),
+  /** 變更密碼（FR-010-04）。強制改密情境 currentPassword 可省略（後端對 must_change_pwd 用戶不驗原密碼） */
+  changePassword: (currentPassword: string | undefined, newPassword: string, token: string) =>
+    request<{ changed: boolean }>('/auth/change-password', {
+      method: 'POST',
+      body: { currentPassword, newPassword },
+      token,
+    }),
   me: (token: string) => request<AdminUser>('/me', { token }),
   listCases: (query: string, token: string) => request<CaseListData>(`/cases?${query}`, { token }),
   caseDetail: (caseId: string, token: string) => request<CaseDetailData>(`/cases/${encodeURIComponent(caseId)}`, { token }),
+  /** 客服人員手動新增個案（case:create） */
+  createCase: (body: CreateCasePayload, token: string) =>
+    request<CreateCaseResult>('/cases', { method: 'POST', body, token }),
   /* AI 建議（AI-01 影子模式；case:view 查閱、case:update 採納/忽略） */
   listAiSuggestions: (caseId: string, token: string) =>
     request<AiSuggestionItem[]>(`/cases/${encodeURIComponent(caseId)}/ai-suggestions`, { token }),

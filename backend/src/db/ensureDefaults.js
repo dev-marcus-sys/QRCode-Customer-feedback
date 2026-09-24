@@ -46,6 +46,8 @@ const PERM_BINDINGS = [
   { code: 'qr:view', module: 'qr', name: 'QR 查閱', roles: ['ADMIN', 'CC_SUPERVISOR'] },
   { code: 'sla:run', module: 'sla', name: 'SLA 提醒掃描', roles: ['ADMIN', 'CC_SUPERVISOR'] },
   { code: 'case:resolve', module: 'case', name: '完結申請', roles: ['ESTATE_STAFF', 'ESTATE_SUPERVISOR', 'CC_STAFF'] },
+  // 客服中心手動新增個案（來源 MANUAL）
+  { code: 'case:create', module: 'case', name: '個案新增', roles: ['ADMIN', 'CC_STAFF', 'CC_SUPERVISOR', 'ESTATE_STAFF', 'ESTATE_SUPERVISOR'] },
   // F-008/F-009（既有 DB 補齊權限碼與綁定）
   { code: 'dashboard:view', module: 'dashboard', name: '儀表板', roles: ['CC_STAFF', 'AUDITOR'] },
   { code: 'config:update', module: 'config', name: '參數更新', roles: ['ADMIN'] },

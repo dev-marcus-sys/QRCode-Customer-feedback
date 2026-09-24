@@ -116,7 +116,14 @@ export function NotificationCenter() {
         <List
           dense
           subheader={
-            <ListSubheader sx={{ bgcolor: 'transparent', pr: 1, py: 0.6, display: 'flex', alignItems: 'center' }}>
+            <ListSubheader
+              sx={{
+                // 捲動時固定於頂部，並以不透明底色避免清單內容透出蓋過標題
+                position: 'sticky', top: 0, zIndex: 2,
+                bgcolor: '#fff', borderBottom: '1px solid #eef1f6',
+                pr: 1, py: 0.6, display: 'flex', alignItems: 'center',
+              }}
+            >
               <Typography fontWeight={700} sx={{ fontSize: 14 }}>通知中心</Typography>
               <Box sx={{ flex: 1 }} />
               {unread > 0 && (

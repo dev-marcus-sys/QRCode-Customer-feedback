@@ -5,12 +5,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Alert, Box, Button, Card, CardContent, Chip, CircularProgress, Dialog, DialogActions,
-  DialogContent, DialogTitle, IconButton, LinearProgress, MenuItem, Paper, Snackbar, Stack,
+  Alert, Box, Button, Card, CardContent, Checkbox, Chip, CircularProgress, Dialog, DialogActions,
+  DialogContent, DialogTitle, IconButton, LinearProgress, ListItemText, MenuItem, Paper, Snackbar, Stack,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Toolbar, Typography,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import LogoutIcon from '@mui/icons-material/Logout';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import DownloadIcon from '@mui/icons-material/Download';
 import RefreshIcon from '@mui/icons-material/Refresh';
@@ -24,7 +23,7 @@ import {
 import { useAiFeatures, featureOn } from '../../aiFeatures';
 import { STATUS_COLORS } from '../../admin/options';
 import { useEstates } from '../../admin/useEstates';
-import { NotificationCenter } from '../../components/NotificationCenter';
+import { TopBarUser } from '../../components/TopBarUser';
 
 const RANGES: { code: RangePreset; label: string }[] = [
   { code: 'today', label: '本日' },
@@ -156,8 +155,8 @@ export function DashboardPage() {
   const [range, setRange] = useState<RangePreset>('thisMonth');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
-  const [estate, setEstate] = useState('');
-  const effectiveEstate = scopeCodes ? (estate || scopeCodes[0]) : estate;
+  const [estate, setEstate] = useState<string[]>([]); // 屋苑可多選；空陣列＝全部（在所屬範圍內）
+  const effectiveEstate = estate.join(',');
   const [summary, setSummary] = useState<DashboardSummaryData | null>(null);
   const [trend, setTrend] = useState<TrendPoint[]>([]);
   const [dist, setDist] = useState<DistributionData | null>(null);
@@ -211,7 +210,7 @@ export function DashboardPage() {
       })
       .catch((e) => {
         setError(e instanceof ApiRequestError ? e.message : '載入儀表板失敗');
-        if (e instanceof ApiRequestError && (e.code === 2001 || e.code === 2005)) {
+        if (e instanceof ApiRequestError && e.code === 2001) {
           authStore.clear();
           navigate('/admin/login', { replace: true });
         }
@@ -234,11 +233,6 @@ export function DashboardPage() {
       </Box>
     );
   }
-
-  const logout = () => {
-    authStore.clear();
-    navigate('/admin/login', { replace: true });
-  };
 
   const runWeekly = () => {
     setRunning(true);
@@ -311,9 +305,7 @@ export function DashboardPage() {
         <IconButton title="返回個案列表" onClick={() => navigate('/admin/cases')}><ArrowBackIcon /></IconButton>
         <Typography variant="h6" sx={{ color: '#1a5aa6', ml: 1 }}>數據分析儀表板</Typography>
         <Box sx={{ flex: 1 }} />
-        {user && <Typography variant="body2" color="text.secondary" sx={{ mr: 1.5 }}>{user.fullName}</Typography>}
-        <NotificationCenter />
-        <IconButton title="登出" onClick={logout}><LogoutIcon /></IconButton>
+        <TopBarUser />
       </Toolbar>
 
       <Box sx={{ p: { xs: 1.5, md: 3 } }} maxWidth="xl" mx="auto">
@@ -334,14 +326,44 @@ export function DashboardPage() {
                 InputLabelProps={{ shrink: true }} sx={{ maxWidth: 160 }} />
             </>
           )}
-          <TextField select size="small" label="屋苑" sx={{ minWidth: 160 }} disabled={!!scopeCodes && scopeCodes.length <= 1}
-            value={effectiveEstate}
-            onChange={(e) => setEstate(e.target.value)}>
-            {!scopeCodes && <MenuItem value="">全部屋苑</MenuItem>}
+          <TextField select size="small" label="屋苑（可多選）" sx={{ minWidth: 200 }} disabled={!!scopeCodes && scopeCodes.length <= 1}
+            SelectProps={{
+              multiple: true,
+              renderValue: (selected: unknown) => {
+                const sel = selected as string[];
+                const all = sel.length === 0 || sel.includes('ALL');
+                return (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    {all
+                      ? <Chip size="small" variant="outlined" label="全屋苑 (ALL)" />
+                      : sel.map((code) => (
+                          <Chip key={code} size="small" label={(scopeCodes
+                            ? scopeCodes.map((c) => ({ code: c, zh: estates.nameOf(c) }))
+                            : estates.activeOptions.map((x) => ({ code: x.estateCode, zh: x.estateNameZh }))
+                          ).find((o) => o.code === code)?.zh || code} />
+                        ))}
+                  </Box>
+                );
+              },
+            }}
+            value={estate}
+            onChange={(e) => {
+              const v = e.target.value as unknown as string[];
+              setEstate(v.includes('ALL') ? [] : v.filter((c) => c !== 'ALL'));
+            }}>
+            <MenuItem value="ALL">
+              <Checkbox checked={estate.length === 0} />
+              <ListItemText primary="全屋苑 (ALL)" />
+            </MenuItem>
             {(scopeCodes
               ? scopeCodes.map((c) => ({ code: c, zh: estates.nameOf(c) }))
               : estates.activeOptions.map((x) => ({ code: x.estateCode, zh: x.estateNameZh }))
-            ).map((x) => (<MenuItem key={x.code} value={x.code}>{x.zh}</MenuItem>))}
+            ).map((x) => (
+              <MenuItem key={x.code} value={x.code}>
+                <Checkbox checked={estate.includes(x.code)} />
+                <ListItemText primary={x.zh} />
+              </MenuItem>
+            ))}
           </TextField>
           <Button size="small" variant="outlined" startIcon={<RefreshIcon />} onClick={load}>重新整理</Button>
           <Button size="small" variant="outlined" startIcon={<DownloadIcon />} onClick={exportCsv}>匯出 CSV</Button>

@@ -10,7 +10,6 @@ import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Toolbar, Typography,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import LogoutIcon from '@mui/icons-material/Logout';
 import TuneIcon from '@mui/icons-material/Tune';
 import EditIcon from '@mui/icons-material/Edit';
 import HistoryIcon from '@mui/icons-material/History';
@@ -22,7 +21,7 @@ import {
 } from '../../api/client';
 import { invalidateAiFeatures } from '../../aiFeatures';
 import { CATEGORY_OPTIONS, EVENT_OPTIONS, labelOf } from '../../admin/options';
-import { NotificationCenter } from '../../components/NotificationCenter';
+import { TopBarUser } from '../../components/TopBarUser';
 
 const WEEKDAY_OPTIONS = [
   { code: 'MON', zh: '星期一' }, { code: 'TUE', zh: '星期二' }, { code: 'WED', zh: '星期三' },
@@ -94,7 +93,7 @@ export function ConfigPage() {
       .then((d) => setGroups(d.groups))
       .catch((e) => {
         setError(e instanceof ApiRequestError ? e.message : '載入配置失敗');
-        if (e instanceof ApiRequestError && (e.code === 2001 || e.code === 2005)) {
+        if (e instanceof ApiRequestError && e.code === 2001) {
           authStore.clear();
           navigate('/admin/login', { replace: true });
         }
@@ -227,11 +226,6 @@ export function ConfigPage() {
       </Box>
     );
   }
-
-  const logout = () => {
-    authStore.clear();
-    navigate('/admin/login', { replace: true });
-  };
 
   const setObj = (path: string, value: unknown) => {
     setDraft((prev) => {
@@ -369,9 +363,7 @@ export function ConfigPage() {
         <IconButton title="返回個案列表" onClick={() => navigate('/admin/cases')}><ArrowBackIcon /></IconButton>
         <Typography variant="h6" sx={{ color: '#1a5aa6', ml: 1 }}>系統參數配置</Typography>
         <Box sx={{ flex: 1 }} />
-        {user && <Typography variant="body2" color="text.secondary" sx={{ mr: 1.5 }}>{user.fullName}</Typography>}
-        <NotificationCenter />
-        <IconButton title="登出" onClick={logout}><LogoutIcon /></IconButton>
+        <TopBarUser />
       </Toolbar>
 
       <Box sx={{ p: { xs: 1.5, md: 3 } }} maxWidth="md" mx="auto">

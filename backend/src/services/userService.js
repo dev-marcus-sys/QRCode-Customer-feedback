@@ -29,6 +29,7 @@ function rowToUser(r) {
   void security_answer_hash;
   return {
     ...rest,
+    userId: r.user_id,
     estateCode: r.estate_code,
     estateCodes: parseEstates(r.estate_code),
     fullName: r.full_name,

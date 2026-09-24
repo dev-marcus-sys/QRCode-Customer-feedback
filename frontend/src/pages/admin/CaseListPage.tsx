@@ -6,16 +6,17 @@ import {
   TablePagination, TableRow, TableSortLabel, TextField, Toolbar, Typography,
 } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
-import LogoutIcon from '@mui/icons-material/Logout';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import FactCheckIcon from '@mui/icons-material/FactCheck';
 import QrCode2Icon from '@mui/icons-material/QrCode2';
 import InsightsIcon from '@mui/icons-material/Insights';
 import TuneIcon from '@mui/icons-material/Tune';
+import AddIcon from '@mui/icons-material/Add';
 import { api, ApiRequestError, authStore, CaseListData, downloadExport } from '../../api/client';
-import { NotificationCenter } from '../../components/NotificationCenter';
+import { TopBarUser } from '../../components/TopBarUser';
 import AdminNav from '../../admin/AdminNav';
 import { BatchActions } from '../../components/BatchActions';
+import { CreateCaseDialog } from '../../components/CreateCaseDialog';
 import {
   CATEGORY_OPTIONS, EVENT_OPTIONS, PRIORITY_OPTIONS,
   labelOf, STATUS_OPTIONS,
@@ -83,6 +84,7 @@ export function CaseListPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [tick, setTick] = useState(0);
   const [toast, setToast] = useState('');
+  const [createOpen, setCreateOpen] = useState(false);
 
   const pageIds = (data?.items || []).map((r) => r.caseId);
   const toggleSelect = (caseId: string) =>
@@ -134,7 +136,7 @@ export function CaseListPage() {
       .catch((e) => {
         if (alive) {
           setError(e instanceof ApiRequestError ? e.message : '載入失敗，請稍後再試');
-          if (e instanceof ApiRequestError && (e.code === 2001 || e.code === 2005)) {
+          if (e instanceof ApiRequestError && e.code === 2001) {
             authStore.clear();
             navigate('/admin/login', { replace: true });
           }
@@ -177,11 +179,6 @@ export function CaseListPage() {
     }
   };
 
-  const logout = () => {
-    authStore.clear();
-    navigate('/admin/login', { replace: true });
-  };
-
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#f4f6fa', pb: 4 }}>
       <Toolbar
@@ -215,14 +212,15 @@ export function CaseListPage() {
             系統參數
           </Button>
         )}
-        <Box sx={{ flex: 1 }} />
-        {user && (
-          <Typography variant="body2" color="text.secondary" sx={{ mr: 1.5 }}>
-            {user.fullName} · {scopeCodes ? scopeCodes.map((c) => estates.nameOf(c)).join('、') : '全部屋苑'}
-          </Typography>
+        {user?.permissions?.includes('case:create') && (
+          <Button size="small" variant="contained" startIcon={<AddIcon />}
+            sx={{ ml: 1, whiteSpace: 'nowrap' }}
+            onClick={() => setCreateOpen(true)}>
+            新增個案
+          </Button>
         )}
-        <NotificationCenter />
-        <IconButton title="登出" onClick={logout}><LogoutIcon /></IconButton>
+        <Box sx={{ flex: 1 }} />
+        <TopBarUser />
       </Toolbar>
 
       <Box sx={{ px: { xs: 1.5, md: 3 }, pt: 1.5 }} maxWidth="xl" mx="auto">
@@ -459,6 +457,17 @@ export function CaseListPage() {
           />
         </Paper>
       </Box>
+
+      <CreateCaseDialog
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreated={(caseId) => {
+          setCreateOpen(false);
+          setToast(`個案 ${caseId} 已建立`);
+          setTick((t) => t + 1);
+          window.setTimeout(() => setToast(''), 6000);
+        }}
+      />
     </Box>
   );
 }

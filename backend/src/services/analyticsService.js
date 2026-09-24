@@ -11,7 +11,7 @@ const { STATUS_META, EVENT_TYPE } = require('../config/constants');
 const { ApiError } = require('../middlewares/error');
 const { ERR } = require('../config/constants');
 const { parseDb, toDb, dateRangeUtc } = require('../utils/time');
-const { estateScope: resolveEstates, estateInClause } = require('../utils/estateScope');
+const { estateScope: resolveEstates, estateInClause, parseEstates } = require('../utils/estateScope');
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const HK_MS = 8 * 60 * 60 * 1000;
@@ -156,14 +156,18 @@ function effectiveEstate(user, filters) {
 }
 
 function estateScope(user, filters) {
-  const codes = resolveEstates(user && user.estateCode);
-  if (codes) {
-    const sc = estateInClause('c.estate_code', user.estateCode);
-    return { where: sc.clause ? ` AND ${sc.clause}` : '', params: sc.params };
+  const userCodes = resolveEstates(user && user.estateCode); // null＝全屋苑
+  const filterCodes = filters && filters.estate ? parseEstates(filters.estate) : [];
+  let codes;
+  if (userCodes) {
+    // 受限用戶：選擇必須落在所屬範圍內（取交集）；未選＝全部所屬範圍
+    codes = filterCodes.length ? userCodes.filter((c) => filterCodes.includes(c)) : userCodes;
+    if (!codes.length) codes = userCodes; // 防呆：選了範圍外則退回全範圍
+  } else {
+    codes = filterCodes.length ? filterCodes : null; // 全屋苑且未選＝不限
   }
-  const estate = filters && filters.estate ? filters.estate : '';
-  if (!estate) return { where: '', params: [] };
-  return { where: ' AND c.estate_code = ?', params: [estate] };
+  const sc = estateInClause('c.estate_code', codes ? codes.join(',') : 'ALL');
+  return { where: sc.clause ? ` AND ${sc.clause}` : '', params: sc.params };
 }
 
 function nowDbAt(nowMs) {

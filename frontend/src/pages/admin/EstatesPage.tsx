@@ -12,11 +12,10 @@ import {
   TableContainer, TableHead, TableRow, TextField, Toolbar, Typography,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import LogoutIcon from '@mui/icons-material/Logout';
 import ApartmentIcon from '@mui/icons-material/Apartment';
 import EditIcon from '@mui/icons-material/Edit';
 import { ApiRequestError, api, authStore, EstateItem } from '../../api/client';
-import { NotificationCenter } from '../../components/NotificationCenter';
+import { TopBarUser } from '../../components/TopBarUser';
 import AdminNav from '../../admin/AdminNav';
 import { invalidateEstates } from '../../admin/useEstates';
 
@@ -55,11 +54,6 @@ export function EstatesPage() {
     if (!canView) return;
     load();
   }, [canView, load]);
-
-  const logout = () => {
-    authStore.clear();
-    navigate('/admin/login', { replace: true });
-  };
 
   const openCreate = () => {
     setEditing(null);
@@ -138,8 +132,7 @@ export function EstatesPage() {
         <IconButton title="返回個案列表" onClick={() => navigate('/admin/cases')}><ArrowBackIcon /></IconButton>
         <Typography variant="h6" sx={{ color: '#1a5aa6', ml: 1 }}>屋苑管理</Typography>
         <Box sx={{ flex: 1 }} />
-        <NotificationCenter />
-        <IconButton title="登出" onClick={logout}><LogoutIcon /></IconButton>
+        <TopBarUser />
       </Toolbar>
 
       <Box sx={{ p: { xs: 1.5, md: 3 } }} maxWidth="xl" mx="auto">

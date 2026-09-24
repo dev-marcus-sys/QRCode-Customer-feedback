@@ -7,7 +7,6 @@ import {
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import DownloadIcon from '@mui/icons-material/Download';
-import LogoutIcon from '@mui/icons-material/Logout';
 import QrCode2Icon from '@mui/icons-material/QrCode2';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
@@ -15,6 +14,7 @@ import CheckIcon from '@mui/icons-material/Check';
 import {
   api, ApiRequestError, authStore, downloadQrFile, qrImageBlob, QrItem, QrOverviewData,
 } from '../../api/client';
+import { TopBarUser } from '../../components/TopBarUser';
 
 type Notice = { severity: 'success' | 'error'; text: string };
 type ConfirmKind = 'deactivate' | 'reactivate' | 'regenerate';
@@ -132,7 +132,7 @@ export function QrCodePage() {
 
   const toMessage = (e: unknown): string => {
     if (e instanceof ApiRequestError) {
-      if (e.code === 2001 || e.code === 2005) {
+      if (e.code === 2001) {
         authStore.clear();
         navigate('/admin/login', { replace: true });
       }
@@ -166,11 +166,6 @@ export function QrCodePage() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const logout = () => {
-    authStore.clear();
-    navigate('/admin/login', { replace: true });
-  };
 
   const runAction = async (busyKey: string, fn: () => Promise<void>, successText: string) => {
     setBusy(busyKey);
@@ -270,12 +265,7 @@ export function QrCodePage() {
         </Button>
         <Typography variant="h6" sx={{ color: '#1a5aa6', fontWeight: 600 }}>QR Code 管理</Typography>
         <Box sx={{ flex: 1 }} />
-        {user && (
-          <Typography variant="body2" color="text.secondary" sx={{ mr: 1.5 }}>
-            {user.fullName}
-          </Typography>
-        )}
-        <IconButton title="登出" onClick={logout}><LogoutIcon /></IconButton>
+        <TopBarUser />
       </Toolbar>
 
       <Box sx={{ p: { xs: 1.5, md: 3 } }} maxWidth="xl" mx="auto">

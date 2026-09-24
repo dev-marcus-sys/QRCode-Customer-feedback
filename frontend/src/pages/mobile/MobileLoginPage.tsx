@@ -1,11 +1,11 @@
 import { FormEvent, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Alert, Box, Button, Card, CardContent, Stack, TextField, Typography } from '@mui/material';
-import SmartphoneIcon from '@mui/icons-material/Smartphone';
 import { api, ApiRequestError, authStore, LoginResult } from '../../api/client';
 import { ForceChangePassword } from '../../components/ForceChangePassword';
 
-export function LoginPage() {
+/** 手機版專用登入頁 /m/login（大字、單欄、觸控友善）。 */
+export function MobileLoginPage() {
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -26,7 +26,7 @@ export function LoginPage() {
       }
       authStore.setToken(res.accessToken);
       authStore.setUser(res.user);
-      navigate('/admin/cases', { replace: true });
+      navigate('/m', { replace: true });
     } catch (err) {
       setError(err instanceof ApiRequestError ? err.message : '登入失敗，請稍後再試');
     } finally {
@@ -38,50 +38,43 @@ export function LoginPage() {
     setForce(null);
     authStore.setToken(res.accessToken);
     authStore.setUser(res.user);
-    navigate('/admin/cases', { replace: true });
+    navigate('/m', { replace: true });
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f4f6fa', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2 }}>
-      <Card sx={{ maxWidth: 420, width: '100%', borderRadius: 3 }}>
-        <CardContent sx={{ p: 4 }}>
-          <Stack spacing={2} alignItems="center">
-            <Box component="img" src="/logo.png" alt="CRLPM" sx={{ height: 64, width: 'auto' }} />
+    <Box sx={{ minHeight: '100vh', bgcolor: '#1a5aa6', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2 }}>
+      <Card sx={{ maxWidth: 400, width: '100%', borderRadius: 3 }}>
+        <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
+          <Stack spacing={2.5} alignItems="center">
+            <Box component="img" src="/logo.png" alt="CRLPM" sx={{ height: 56, width: 'auto' }} />
             <Box textAlign="center">
-              <Typography variant="h5">個案管理系統</Typography>
-              <Typography color="text.secondary" variant="body2" sx={{ mt: 0.5 }}>
-                QRCode 客戶意見反饋 · 後台
-              </Typography>
+              <Typography variant="h6" sx={{ color: '#1a5aa6' }}>個案管理系統</Typography>
+              <Typography color="text.secondary" variant="body2">手機版 · QRCode 客戶意見反饋</Typography>
             </Box>
-            {error && <Alert severity="error">{error}</Alert>}
+            {error && <Alert severity="error" sx={{ width: '100%' }}>{error}</Alert>}
             {force ? (
-              <ForceChangePassword
-                username={force.username}
-                currentPassword={force.password}
-                token={force.token}
-                onLogin={handleForceLogin}
-              />
+              <Box sx={{ width: '100%' }}>
+                <ForceChangePassword
+                  username={force.username}
+                  currentPassword={force.password}
+                  token={force.token}
+                  onLogin={handleForceLogin}
+                />
+              </Box>
             ) : (
-              <form onSubmit={submit}>
+              <form onSubmit={submit} style={{ width: '100%' }}>
                 <Stack spacing={2}>
                   <TextField label="帳號" value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" fullWidth required />
                   <TextField label="密碼" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" fullWidth required />
-                  <Button type="submit" variant="contained" size="large" disabled={loading}>
+                  <Button type="submit" variant="contained" size="large" disabled={loading} fullWidth>
                     {loading ? '登入中…' : '登入'}
                   </Button>
                 </Stack>
               </form>
             )}
-            <Button
-              fullWidth size="small" color="primary" startIcon={<SmartphoneIcon />}
-              onClick={() => navigate('/m')}
-              sx={{ textTransform: 'none' }}
-            >
-              開啟手機版（現場／外勤使用）
+            <Button size="small" color="inherit" onClick={() => navigate('/admin/login')}>
+              返回桌面版
             </Button>
-            <Alert severity="info" sx={{ fontSize: 12 }}>
-              演示帳號：admin / Admin@2026、chng_sup / ChngSup@2026、chng_staff / ChngSt@2026
-            </Alert>
           </Stack>
         </CardContent>
       </Card>

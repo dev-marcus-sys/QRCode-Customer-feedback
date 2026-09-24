@@ -5,24 +5,30 @@
 import { Box, Stack, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useAiFeatures, featureOn } from '../aiFeatures';
+import { authStore } from '../api/client';
 
-const SECTIONS = [
-  { key: 'cases', label: '個案', path: '/admin/cases' },
-  { key: 'qr', label: 'QR Code', path: '/admin/qr' },
-  { key: 'surveys', label: '問卷', path: '/admin/surveys' },
-  { key: 'dashboard', label: '儀表板', path: '/admin/dashboard' },
-  { key: 'config', label: '參數', path: '/admin/config' },
-  { key: 'users', label: '用戶', path: '/admin/users' },
-  { key: 'roles', label: '角色', path: '/admin/roles' },
-  { key: 'audit', label: '審計', path: '/admin/audit' },
-  { key: 'estates', label: '屋苑', path: '/admin/estates' },
+/** 各選單項所需的權限碼（任一符合即顯示；未設定則不受限） */
+const SECTIONS: { key: string; label: string; path: string; perms?: string[] }[] = [
+  { key: 'cases', label: '個案', path: '/admin/cases', perms: ['case:list'] },
+  { key: 'qr', label: 'QR Code', path: '/admin/qr', perms: ['qr:view', 'qr:generate'] },
+  { key: 'surveys', label: '問卷', path: '/admin/surveys', perms: ['dashboard:view'] },
+  { key: 'dashboard', label: '儀表板', path: '/admin/dashboard', perms: ['dashboard:view'] },
+  { key: 'config', label: '參數', path: '/admin/config', perms: ['config:view'] },
+  { key: 'users', label: '用戶', path: '/admin/users', perms: ['user:list'] },
+  { key: 'roles', label: '角色', path: '/admin/roles', perms: ['role:list'] },
+  { key: 'audit', label: '審計', path: '/admin/audit', perms: ['audit:view'] },
+  { key: 'estates', label: '屋苑', path: '/admin/estates', perms: ['estate:list'] },
   { key: 'kb', label: '知識庫', path: '/admin/kb' },
 ];
 
 export default function AdminNav({ current }: { current: string }) {
   const navigate = useNavigate();
   const { features } = useAiFeatures();
+  const user = authStore.getUser();
+  const permissions: string[] = user?.permissions || [];
   const kbEnabled = featureOn(features, 'kb'); // AI-09 知識庫：未啟用則隱藏導覽項
+  const allowed = (s: { key: string; perms?: string[] }) =>
+    (!s.perms || s.perms.some((p) => permissions.includes(p))) && (s.key !== 'kb' || kbEnabled);
   return (
     <Stack spacing={1.5}>
       <Stack direction="row" spacing={2} alignItems="center">
@@ -44,7 +50,7 @@ export default function AdminNav({ current }: { current: string }) {
         }}
         sx={{ flexWrap: 'wrap' }}
       >
-        {SECTIONS.filter((s) => s.key !== 'kb' || kbEnabled).map((s) => (
+        {SECTIONS.filter(allowed).map((s) => (
           <ToggleButton key={s.key} value={s.key}>
             {s.label}
           </ToggleButton>

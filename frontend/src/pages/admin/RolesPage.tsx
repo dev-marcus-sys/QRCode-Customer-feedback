@@ -11,13 +11,12 @@ import {
   TableRow, TextField, Toolbar, Typography,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import LogoutIcon from '@mui/icons-material/Logout';
 import AddIcon from '@mui/icons-material/Add';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import {
   ApiRequestError, authStore, PermissionRow, RoleRow, api,
 } from '../../api/client';
-import { NotificationCenter } from '../../components/NotificationCenter';
+import { TopBarUser } from '../../components/TopBarUser';
 import AdminNav from '../../admin/AdminNav';
 
 export function RolesPage() {
@@ -51,7 +50,7 @@ export function RolesPage() {
       .then((d) => { setRoles(d.roles); setCatalog(d.permissions); })
       .catch((e) => {
         setError(e instanceof ApiRequestError ? e.message : '載入失敗');
-        if (e instanceof ApiRequestError && (e.code === 2001 || e.code === 2005)) { authStore.clear(); navigate('/admin/login', { replace: true }); }
+        if (e instanceof ApiRequestError && e.code === 2001) { authStore.clear(); navigate('/admin/login', { replace: true }); }
       })
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -67,8 +66,6 @@ export function RolesPage() {
       </Box>
     );
   }
-
-  const logout = () => { authStore.clear(); navigate('/admin/login', { replace: true }); };
 
   const openCreate = () => {
     setEditing(null);
@@ -125,8 +122,7 @@ export function RolesPage() {
         <IconButton title="返回個案列表" onClick={() => navigate('/admin/cases')}><ArrowBackIcon /></IconButton>
         <Typography variant="h6" sx={{ color: '#1a5aa6', ml: 1 }}>角色與權限</Typography>
         <Box sx={{ flex: 1 }} />
-        <NotificationCenter />
-        <IconButton title="登出" onClick={logout}><LogoutIcon /></IconButton>
+        <TopBarUser />
       </Toolbar>
 
       <Box sx={{ p: { xs: 1.5, md: 3 } }} maxWidth="xl" mx="auto">

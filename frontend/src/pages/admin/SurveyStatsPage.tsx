@@ -6,11 +6,10 @@ import {
   TextField, Toolbar, Typography,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import LogoutIcon from '@mui/icons-material/Logout';
 import FactCheckIcon from '@mui/icons-material/FactCheck';
 import { api, ApiRequestError, authStore, SurveyStatsData } from '../../api/client';
 import { useEstates } from '../../admin/useEstates';
-import { NotificationCenter } from '../../components/NotificationCenter';
+import { TopBarUser } from '../../components/TopBarUser';
 import { SurveyInsightsCard } from '../../components/SurveyInsightsCard';
 import { useAiFeatures, featureOn } from '../../aiFeatures';
 
@@ -60,7 +59,7 @@ export function SurveyStatsPage() {
       .catch((e) => {
         if (alive) {
           setError(e instanceof ApiRequestError ? e.message : '載入統計失敗');
-          if (e instanceof ApiRequestError && (e.code === 2001 || e.code === 2005)) {
+          if (e instanceof ApiRequestError && e.code === 2001) {
             authStore.clear();
             navigate('/admin/login', { replace: true });
           }
@@ -84,11 +83,6 @@ export function SurveyStatsPage() {
     );
   }
 
-  const logout = () => {
-    authStore.clear();
-    navigate('/admin/login', { replace: true });
-  };
-
   const o = data?.overall;
 
   return (
@@ -102,9 +96,7 @@ export function SurveyStatsPage() {
         <IconButton title="返回個案列表" onClick={() => navigate('/admin/cases')}><ArrowBackIcon /></IconButton>
         <Typography variant="h6" sx={{ color: '#1a5aa6', ml: 1 }}>問卷統計</Typography>
         <Box sx={{ flex: 1 }} />
-        {user && <Typography variant="body2" color="text.secondary" sx={{ mr: 1.5 }}>{user.fullName}</Typography>}
-        <NotificationCenter />
-        <IconButton title="登出" onClick={logout}><LogoutIcon /></IconButton>
+        <TopBarUser />
       </Toolbar>
 
       <Box sx={{ p: { xs: 1.5, md: 3 } }} maxWidth="xl" mx="auto">

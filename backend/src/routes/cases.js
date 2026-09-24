@@ -28,7 +28,8 @@ const { getDb } = require('../db/connection');
 const { listCases, getCaseDetail, getAssignees, assignCase, reassignCase,
   startCase, setWaitingCase, resumeCase, addCaseNote, changeCasePriority,
   submitResolution, approveResolution, rejectResolution, reopenCase,
-  uploadCaseAttachment, downloadCaseAttachment, batchAssignCases, batchUpdateCases } = require('../services/caseService');
+  uploadCaseAttachment, downloadCaseAttachment, batchAssignCases, batchUpdateCases,
+  createManualCase } = require('../services/caseService');
 const { exportFile } = require('../services/exportService');
 const { listAiSuggestions, decideAiSuggestion, reanalyzeCase, linkSimilarCase, suggestAssignee,
   createDraft, useDraft, caseFeedbackInsight, analyzeAttachment, attachmentInsights } = require('../services/aiService');
@@ -36,6 +37,11 @@ const logger = require('../utils/logger');
 
 const router = express.Router();
 router.use(requireAuth);
+
+/** 客服人員手動新增個案（case:create） */
+router.post('/', requirePerm('case:create'), (req, res) => {
+  ok(res, createManualCase(getDb(), req.user, req.body || {}), 201);
+});
 
 router.get('/', requirePerm('case:list'), (req, res) => {
   const db = getDb();

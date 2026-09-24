@@ -115,10 +115,11 @@ function cleanPayload(body) {
     phone: String(body.phone || '').replace(/[\s\-()]/g, ''),
     incidentDate: body.incidentDate,
     incidentTime: body.incidentTime || null,
+    // 公眾表單送 address 物件；客服手動建案（CreateCasePayload）送平面 block/floor/unit
     address: {
-      block: address.block || null,
-      floor: address.floor || null,
-      unit: address.unit || null,
+      block: address.block || body.block || null,
+      floor: address.floor || body.floor || null,
+      unit: address.unit || body.unit || null,
     },
     categories: Array.isArray(body.categories) ? body.categories : [],
     otherText: body.otherText || '',
@@ -285,6 +286,111 @@ const SORT_COLUMNS = {
   responseSlaDue: { col: 'c.response_sla_due', nullsLast: true },
   closureSlaDue: { col: 'c.closure_sla_due', nullsLast: true },
 };
+
+/**
+ * 客服人員手動建案（case:create）。
+ * 與公眾 QR 建案共用編號／SLA／主管通知／AI 入隊邏輯，但來源標 CC（客服）、建立人為登入人員。
+ * 回傳：{ caseId, status, eventType, responseSlaDue, closureSlaDue, message }
+ */
+function createManualCase(db, actor, payload) {
+  const p = cleanPayload(payload);
+  const categoryCode = String(payload.category || '').trim();
+  const priority = ['HIGH', 'MEDIUM', 'LOW'].includes(payload.priority) ? payload.priority : 'MEDIUM';
+  const incidentDate = payload.incidentDate || null;
+  const incidentTime = payload.incidentTime || null;
+
+  if (!p.estate) throw new ApiError(ERR.VALIDATION, '請選擇屋苑', 400);
+  if (!p.name) throw new ApiError(ERR.VALIDATION, '請填寫客戶姓名', 400);
+  if (!categoryCode) throw new ApiError(ERR.VALIDATION, '請選擇意見類別', 400);
+  if (!p.content) throw new ApiError(ERR.VALIDATION, '請填寫內容', 400);
+
+  const estate = estateOf(db, p.estate);
+  // 資料範圍：受限用戶只能在其所屬屋苑建案
+  if (!inEstates(actor && actor.estateCode, p.estate)) {
+    throw new ApiError(ERR.DATA_SCOPE, null, 403);
+  }
+
+  const rules = getConfig(db, 'sla.rules', {});
+  const mapping = getConfig(db, 'category.event_mapping', {});
+  const { intentType, eventType } = computeEvent(
+    { categories: [categoryCode], content: p.content, isSecondComplaint: false },
+    rules, mapping
+  );
+
+  const nowDate = now();
+  const actorId = actor ? actor.userId : SYSTEM_USER_ID;
+  const actorName = actor ? (actor.fullName || actor.username || 'USER') : 'SYSTEM';
+  let created = null;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      created = db.transaction(() => {
+        const caseId = generateCaseId(db, estate, nowDate);
+        const { responseDue, closureDue } = computeDueDates(db, nowDate, eventType);
+
+        db.prepare(
+          `INSERT INTO \`case\`
+           (case_id, case_source, case_status, event_type, priority, intent_type, category_code,
+            estate_code, customer_title, customer_name, customer_email, customer_phone,
+            customer_block, customer_floor, customer_unit, incident_date, incident_time,
+            comment_content, satisfaction_consent, is_second_complaint, original_case_id,
+            response_sla_due, closure_sla_due, source_submission_id, created_at, updated_at)
+           VALUES (?, 'CC', 'PENDING', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        ).run(
+          caseId, eventType, priority, intentType, categoryCode,
+          p.estate, p.title || null, p.name, p.email || null, p.phone || null,
+          p.address.block || null, p.address.floor || null, p.address.unit || null,
+          incidentDate, incidentTime,
+          p.content, p.surveyConsent, 0, null,
+          responseDue, closureDue, null, toDb(nowDate), toDb(nowDate)
+        );
+
+        const summary = `由 ${actorName} 手動建立個案（來源 CC）。客戶：${p.title || ''} ${p.name}；主類別：${categoryCode}；事件類型：${eventType}。內容摘要：${p.content.slice(0, 200)}`;
+        db.prepare(
+          'INSERT INTO case_log (case_id, log_type, log_content, old_status, new_status, action_by, action_at) VALUES (?, ?, ?, NULL, ?, ?, ?)'
+        ).run(caseId, 'CREATE', summary, 'PENDING', actorId, toDb(nowDate));
+
+        if (p.email) {
+          const promiseZh = getConfig(db, 'form.promise', {})['zh'];
+          const subject = `[${estate.estate_name_zh}] 客戶意見反饋已收悉 — 個案編號 ${caseId}`;
+          const body = `caseId: ${caseId}\ncategory: ${categoryCode}\npromise: ${promiseZh}`;
+          db.prepare('INSERT INTO email_outbox (case_id, template, recipient, lang, subject, body) VALUES (?, ?, ?, ?, ?, ?)')
+            .run(caseId, 'feedback_confirmation', p.email, 'zh-Hant', subject, body);
+        }
+
+        const title = `新增個案 ${caseId}`;
+        const body = `屋苑 ${estate.estate_name_zh} 收到客戶意見（${categoryCode}），請於待辦處理。`;
+        notifySupervisor(db, p.estate, { caseId, title, body, template: 'case_notify_supervisor' });
+
+        db.prepare('INSERT INTO audit_log (user_id, username, action, target_type, target_id, detail) VALUES (?, ?, ?, ?, ?, ?)')
+          .run(actorId, actor ? (actor.username || 'USER') : 'SYSTEM', 'CASE_CREATE', 'CASE', caseId,
+            JSON.stringify({ estate: p.estate, eventType, manual: true, source: 'MANUAL' }));
+
+        return { caseId, responseDue, closureDue };
+      })();
+      break;
+    } catch (e) {
+      if (isConstraintError(e) && attempt < 2) {
+        logger.warn('caseService', `manual caseId 衝突重試 ${attempt + 1}`);
+        continue;
+      }
+      throw e;
+    }
+  }
+
+  // M0 AI-01 / AI-02：失敗不影響建案
+  try { enqueueClassify(db, created.caseId); } catch (e) { logger.warn('caseService', `AI-01 建議入隊失敗 ${created.caseId}: ${e.message}`); }
+  try { enqueueSimilar(db, created.caseId); } catch (e) { logger.warn('caseService', `AI-02 建議入隊失敗 ${created.caseId}: ${e.message}`); }
+
+  logger.info('caseService', `CASE_CREATE(MANUAL) ${created.caseId} eventType=${eventType} by=${actorName}`);
+  return {
+    caseId: created.caseId,
+    status: 'PENDING',
+    eventType,
+    responseSlaDue: dbToIso8(created.responseDue),
+    closureSlaDue: dbToIso8(created.closureDue),
+    message: '個案已建立',
+  };
+}
 
 /** 解析篩選 Query → SQL 片段 */
 function parseCaseFilters(query, user) {
@@ -924,6 +1030,7 @@ function batchUpdateCases(db, user, body) {
 
 module.exports = {
   createCaseFromFeedback,
+  createManualCase,
   listCases,
   getCaseDetail,
   parseCaseFilters,
