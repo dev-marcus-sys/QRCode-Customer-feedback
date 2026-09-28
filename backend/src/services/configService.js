@@ -23,6 +23,18 @@ const CATALOG = [
     kind: 'minutesMap', fields: RESPONSE_KEYS,
   },
   {
+    key: 'sla.dispatch', group: 'SLA', labelZh: '派單時限（分鐘）',
+    kind: 'minutesMap', fields: RESPONSE_KEYS,
+  },
+  {
+    key: 'sla.processing', group: 'SLA', labelZh: '處理時限（分鐘）',
+    kind: 'minutesMap', fields: RESPONSE_KEYS,
+  },
+  {
+    key: 'sla.followup_interval_hours', group: 'SLA', labelZh: '跟進週期（小時，空白＝不適用）',
+    kind: 'hoursMap', fields: RESPONSE_KEYS,
+  },
+  {
     key: 'sla.closure_days', group: 'SLA', labelZh: '關閉期限（天）',
     kind: 'int', min: 1, max: 30,
   },
@@ -202,10 +214,19 @@ function validate(key, value) {
   if (kind === 'int') {
     assertIntRange(value, def.min, def.max, def.labelZh);
   } else if (kind === 'minutesMap') {
+    // 分鐘數：空白＝該事件類型不適用（如 INSTANT 無需派單/處理）
     if (!value || typeof value !== 'object') throw VALUE_ERROR(def.labelZh);
     for (const k of def.fields) {
+      if (value[k] == null) continue;
       if (!RESPONSE_KEYS.includes(k)) throw VALUE_ERROR(def.labelZh);
       assertIntRange(value[k], 1, 1440, `${def.labelZh}（${k}）`);
+    }
+  } else if (kind === 'hoursMap') {
+    // 跟進週期（小時）：空白＝該事件類型不適用跟進
+    if (!value || typeof value !== 'object') throw VALUE_ERROR(def.labelZh);
+    for (const k of def.fields) {
+      if (value[k] == null) continue;
+      assertIntRange(value[k], 1, 720, `${def.labelZh}（${k}）`);
     }
   } else if (kind === 'reminder') {
     if (!value || typeof value !== 'object') throw VALUE_ERROR(def.labelZh);

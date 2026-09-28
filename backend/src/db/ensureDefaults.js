@@ -28,6 +28,19 @@ const NEW_COLUMNS = [
   ['case', 'closure_reminded_at', 'TEXT'],
   ['case', 'response_escalated_at', 'TEXT'],
   ['case', 'closure_escalated_at', 'TEXT'],
+  // SLA 五維擴充（指引二 2.2）：派單/處理/跟進
+  ['case', 'dispatch_sla_due', 'TEXT'],
+  ['case', 'dispatch_sla_met', 'INTEGER'],
+  ['case', 'processing_sla_due', 'TEXT'],
+  ['case', 'processing_sla_met', 'INTEGER'],
+  ['case', 'followup_sla_due', 'TEXT'],
+  ['case', 'followup_sla_met', 'INTEGER'],
+  ['case', 'dispatch_reminded_at', 'TEXT'],
+  ['case', 'dispatch_escalated_at', 'TEXT'],
+  ['case', 'processing_reminded_at', 'TEXT'],
+  ['case', 'processing_escalated_at', 'TEXT'],
+  ['case', 'followup_reminded_at', 'TEXT'],
+  ['case', 'followup_escalated_at', 'TEXT'],
   // QR Code 有效日期（NULL = 永不自動停用）
   ['qr_code', 'valid_until', 'TEXT'],
   // QR Code 短亂數連結令牌（既有 DB 相容；新庫由 schema.sql 建表時已含）
@@ -73,6 +86,9 @@ const PERM_BINDINGS = [
 const CONFIG_DEFAULTS = [
   ['form.site_base_url', 'FORM_STYLE'],
   ['sla.reminder', 'SLA'],
+  ['sla.dispatch', 'SLA'],
+  ['sla.processing', 'SLA'],
+  ['sla.followup_interval_hours', 'SLA'],
   ['survey.expiry_days', 'SLA'],
   ['survey.questions', 'SLA'],
   ['weekly_report.schedule', 'SYSTEM'],
@@ -123,6 +139,10 @@ function configValue(key) {
   const values = {
     'form.site_base_url': '',
     'sla.reminder': { responseLeadMinutes: { URGENT: 10, NORMAL: 30, COMPLEX: 30, INSTANT: 30 }, closureLeadDays: 1 },
+    // 五維 SLA：派單/處理時限（分鐘）、跟進週期（小時）；null＝該事件類型不適用（見 sla.js 預設）
+    'sla.dispatch': { URGENT: 15, NORMAL: 240, COMPLEX: 1440, INSTANT: null },
+    'sla.processing': { URGENT: null, NORMAL: 2880, COMPLEX: 10080, INSTANT: 1440 },
+    'sla.followup_interval_hours': { URGENT: null, NORMAL: null, COMPLEX: 48, INSTANT: 168 },
     'weekly_report.schedule': { dayOfWeek: 'MON', time: '09:00' },
     'pwd.max_age_days': 90,
     'survey.expiry_days': 14,
@@ -194,8 +214,14 @@ function configValue(key) {
 }
 
 function ensureDefaults(db) {
-  // 1) case 標記欄位（既有 DB 相容）
+  // 1) case SLA 五維欄位（既有 DB 相容；新庫由 schema.sql 建表時已含）
   for (const [table, col, ddl] of NEW_COLUMNS) ensureColumn(db, table, col, ddl);
+  // 1b) 新欄位索引（避免寫入 schema.sql 於既有 DB 建表時引用尚未 ALTER 的欄位）
+  for (const idx of [
+    'CREATE INDEX IF NOT EXISTS ix_dispatch_due ON `case`(dispatch_sla_due)',
+    'CREATE INDEX IF NOT EXISTS ix_processing_due ON `case`(processing_sla_due)',
+    'CREATE INDEX IF NOT EXISTS ix_followup_due ON `case`(followup_sla_due)',
+  ]) db.exec(idx);
 
   // 2) 權限碼
   const insPerm = db.prepare('INSERT OR IGNORE INTO sys_permission (perm_code, module, perm_name, perm_type) VALUES (?, ?, ?, ?)');

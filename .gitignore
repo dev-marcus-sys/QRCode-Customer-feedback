@@ -12,6 +12,11 @@ backend/data/
 *.log
 *.out.log
 *.err.log
+*.err
+*.out
+_xlsx_dump.txt
+.playwright-cli/
+mlogin.yaml
 .DS_Store
 
 # IDE

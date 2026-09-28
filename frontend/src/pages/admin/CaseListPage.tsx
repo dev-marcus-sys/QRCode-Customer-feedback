@@ -17,6 +17,7 @@ import { TopBarUser } from '../../components/TopBarUser';
 import AdminNav from '../../admin/AdminNav';
 import { BatchActions } from '../../components/BatchActions';
 import { CreateCaseDialog } from '../../components/CreateCaseDialog';
+import { ImportCasesDialog } from '../../components/ImportCasesDialog';
 import {
   CATEGORY_OPTIONS, EVENT_OPTIONS, PRIORITY_OPTIONS,
   labelOf, STATUS_OPTIONS,
@@ -85,6 +86,7 @@ export function CaseListPage() {
   const [tick, setTick] = useState(0);
   const [toast, setToast] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
 
   const pageIds = (data?.items || []).map((r) => r.caseId);
   const toggleSelect = (caseId: string) =>
@@ -217,6 +219,13 @@ export function CaseListPage() {
             sx={{ ml: 1, whiteSpace: 'nowrap' }}
             onClick={() => setCreateOpen(true)}>
             新增個案
+          </Button>
+        )}
+        {user?.permissions?.includes('case:create') && (
+          <Button size="small" variant="outlined" startIcon={<FileDownloadIcon />}
+            sx={{ ml: 1, whiteSpace: 'nowrap' }}
+            onClick={() => setImportOpen(true)}>
+            匯入 Excel
           </Button>
         )}
         <Box sx={{ flex: 1 }} />
@@ -467,6 +476,13 @@ export function CaseListPage() {
           setTick((t) => t + 1);
           window.setTimeout(() => setToast(''), 6000);
         }}
+      />
+
+      <ImportCasesDialog
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        token={token}
+        onImported={() => setTick((t) => t + 1)}
       />
     </Box>
   );

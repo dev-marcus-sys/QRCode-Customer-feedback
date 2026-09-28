@@ -6,7 +6,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const { ERR, STATUS_ACTIONS, PRIORITY, EVENT_TYPE, RESOLUTION_RESULT, REOPEN_TYPE } = require('../config/constants');
+const { ERR, STATUS_ACTIONS, PRIORITY, EVENT_TYPE, RESOLUTION_RESULT, REOPEN_TYPE, CATEGORY_CODE } = require('../config/constants');
 const { ApiError } = require('../middlewares/error');
 const { getConfig } = require('../db/configStore');
 const { generateCaseId } = require('./numbering');
@@ -18,6 +18,7 @@ const { toDb, now, parseDb, dbToIso8, dateRangeUtc } = require('../utils/time');
 const { notifyUser, enqueueEmail, reviewersForCase } = require('./notificationService');
 const logger = require('../utils/logger');
 const { inEstates, isAllEstates, estateInClause } = require('../utils/estateScope');
+const ExcelJS = require('exceljs');
 
 const SYSTEM_USER_ID = 0;
 const CLOSED_STATUSES = ['CLOSED', 'RESOLVED'];
@@ -28,7 +29,12 @@ function uploadsDir() {
 
 const PRIORITY_LABEL = { HIGH: '高', MEDIUM: '中', LOW: '低' };
 const RESOLUTION_LABEL = { RESOLVED_FULL: '完全解決', RESOLVED_PART: '部分解決', UNRESOLVED: '無法解決', WITHDRAWN: '客戶撤回', REFERRED: '轉介處理' };
-const EVENT_LABEL = { URGENT: '緊急', NORMAL: '一般', COMPLEX: '複雜', INSTANT: '即辦', 'N/A': '不適用' };
+const EVENT_LABEL = { URGENT: '緊急', NORMAL: '一般', COMPLEX: '複雜', INSTANT: '即時', 'N/A': '不適用' };
+/** 類別代碼 → 中文名（時間軸／通知等純文字場景；與前端 options.ts 一致） */
+const CATEGORY_LABEL_ZH = {
+  MO_SERVICE: '管理處人員服務', SECURITY: '保安人員服務', MAINTENANCE: '維修事宜',
+  CLEANLINESS: '衞生事宜', NUISANCE: '滋擾事宜', OTHER: '其他',
+};
 const REOPEN_LABEL = { SECOND_COMPLAINT: '二次投訴', INSUFFICIENT_FOLLOWUP: '跟進不足' };
 const ACTIONABLE_STATUSES = ['ASSIGNED', 'IN_PROGRESS', 'WAITING', 'REOPENED'];
 
@@ -191,7 +197,7 @@ function createCaseFromFeedback(db, payload, lang = 'zh-Hant') {
     try {
       created = db.transaction(() => {
         const caseId = generateCaseId(db, estate, nowDate);
-        const { responseDue, closureDue } = computeDueDates(db, nowDate, eventType);
+        const { responseDue, dispatchDue, processingDue, followupDue, closureDue } = computeDueDates(db, nowDate, eventType);
         const isSecond = !!secondRow;
         const priority = isSecond ? 'HIGH' : 'MEDIUM';
         // category_code 為單欄位（規格書 7.3.1）：多選時以首選為主類別
@@ -203,19 +209,20 @@ function createCaseFromFeedback(db, payload, lang = 'zh-Hant') {
             estate_code, customer_title, customer_name, customer_email, customer_phone,
             customer_block, customer_floor, customer_unit, incident_date, incident_time,
             comment_content, satisfaction_consent, is_second_complaint, original_case_id,
-            response_sla_due, closure_sla_due, source_submission_id, created_at, updated_at)
-           VALUES (?, 'QR', 'PENDING', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+            response_sla_due, dispatch_sla_due, processing_sla_due, followup_sla_due,
+            closure_sla_due, source_submission_id, created_at, updated_at)
+           VALUES (?, 'QR', 'PENDING', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
         ).run(
           caseId, eventType, priority, intentType, categoryCode,
           p.estate, p.title, p.name, p.email || null, p.phone || null,
           p.address.block || null, p.address.floor || null, p.address.unit || null,
           p.incidentDate, p.incidentTime,
           p.content, p.surveyConsent, isSecond ? 1 : 0, secondRow ? secondRow.case_id : null,
-          responseDue, closureDue, submissionKey(p, nowMs), toDb(nowDate), toDb(nowDate)
+          responseDue, dispatchDue, processingDue, followupDue, closureDue, submissionKey(p, nowMs), toDb(nowDate), toDb(nowDate)
         );
 
         // 首筆時間軸（FR-002-07）
-        const summary = `系統自動建立個案（來源 QR）。客戶：${p.title} ${p.name}；主類別：${categoryCode}；事件類型：${eventType}。內容摘要：${p.content.slice(0, 200)}`;
+        const summary = `系統自動建立個案（來源 QR）。客戶：${p.title} ${p.name}；主類別：${CATEGORY_LABEL_ZH[categoryCode] || categoryCode}；事件類型：${EVENT_LABEL[eventType] || eventType}。內容摘要：${p.content.slice(0, 200)}`;
         db.prepare(
           'INSERT INTO case_log (case_id, log_type, log_content, old_status, new_status, action_by, action_at) VALUES (?, ?, ?, NULL, ?, ?, ?)'
         ).run(caseId, 'CREATE', summary, 'PENDING', SYSTEM_USER_ID, toDb(nowDate));
@@ -240,7 +247,7 @@ function createCaseFromFeedback(db, payload, lang = 'zh-Hant') {
         db.prepare('INSERT INTO audit_log (user_id, username, action, target_type, target_id, detail) VALUES (?, ?, ?, ?, ?, ?)')
           .run(SYSTEM_USER_ID, 'SYSTEM', 'CASE_CREATE', 'CASE', caseId, JSON.stringify({ estate: p.estate, eventType, second: isSecond }));
 
-        return { caseId, responseDue, closureDue };
+        return { caseId, responseDue, dispatchDue, processingDue, followupDue, closureDue };
       })();
       break;
     } catch (e) {
@@ -273,6 +280,9 @@ function createCaseFromFeedback(db, payload, lang = 'zh-Hant') {
     status: 'PENDING',
     eventType,
     responseSlaDue: dbToIso8(created.responseDue),
+    dispatchSlaDue: dbToIso8(created.dispatchDue),
+    processingSlaDue: dbToIso8(created.processingDue),
+    followupSlaDue: dbToIso8(created.followupDue),
     closureSlaDue: dbToIso8(created.closureDue),
     isSecondComplaint: !!secondRow,
     originalCaseId: secondRow ? secondRow.case_id : null,
@@ -284,6 +294,9 @@ const SORT_COLUMNS = {
   caseId: { col: 'c.case_id', nullsLast: false },
   createdAt: { col: 'c.created_at', nullsLast: false },
   responseSlaDue: { col: 'c.response_sla_due', nullsLast: true },
+  dispatchSlaDue: { col: 'c.dispatch_sla_due', nullsLast: true },
+  processingSlaDue: { col: 'c.processing_sla_due', nullsLast: true },
+  followupSlaDue: { col: 'c.followup_sla_due', nullsLast: true },
   closureSlaDue: { col: 'c.closure_sla_due', nullsLast: true },
 };
 
@@ -296,7 +309,8 @@ function createManualCase(db, actor, payload) {
   const p = cleanPayload(payload);
   const categoryCode = String(payload.category || '').trim();
   const priority = ['HIGH', 'MEDIUM', 'LOW'].includes(payload.priority) ? payload.priority : 'MEDIUM';
-  const incidentDate = payload.incidentDate || null;
+  // incident_date 為 NOT NULL；表單未填時預設為今天
+  const incidentDate = payload.incidentDate || ymd(new Date());
   const incidentTime = payload.incidentTime || null;
 
   if (!p.estate) throw new ApiError(ERR.VALIDATION, '請選擇屋苑', 400);
@@ -325,7 +339,7 @@ function createManualCase(db, actor, payload) {
     try {
       created = db.transaction(() => {
         const caseId = generateCaseId(db, estate, nowDate);
-        const { responseDue, closureDue } = computeDueDates(db, nowDate, eventType);
+        const { responseDue, dispatchDue, processingDue, followupDue, closureDue } = computeDueDates(db, nowDate, eventType);
 
         db.prepare(
           `INSERT INTO \`case\`
@@ -333,18 +347,19 @@ function createManualCase(db, actor, payload) {
             estate_code, customer_title, customer_name, customer_email, customer_phone,
             customer_block, customer_floor, customer_unit, incident_date, incident_time,
             comment_content, satisfaction_consent, is_second_complaint, original_case_id,
-            response_sla_due, closure_sla_due, source_submission_id, created_at, updated_at)
-           VALUES (?, 'CC', 'PENDING', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+            response_sla_due, dispatch_sla_due, processing_sla_due, followup_sla_due,
+            closure_sla_due, source_submission_id, created_at, updated_at)
+           VALUES (?, 'CC', 'PENDING', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
         ).run(
           caseId, eventType, priority, intentType, categoryCode,
           p.estate, p.title || null, p.name, p.email || null, p.phone || null,
           p.address.block || null, p.address.floor || null, p.address.unit || null,
           incidentDate, incidentTime,
           p.content, p.surveyConsent, 0, null,
-          responseDue, closureDue, null, toDb(nowDate), toDb(nowDate)
+          responseDue, dispatchDue, processingDue, followupDue, closureDue, null, toDb(nowDate), toDb(nowDate)
         );
 
-        const summary = `由 ${actorName} 手動建立個案（來源 CC）。客戶：${p.title || ''} ${p.name}；主類別：${categoryCode}；事件類型：${eventType}。內容摘要：${p.content.slice(0, 200)}`;
+        const summary = `由 ${actorName} 手動建立個案（來源 CC）。客戶：${p.title || ''} ${p.name}；主類別：${CATEGORY_LABEL_ZH[categoryCode] || categoryCode}；事件類型：${EVENT_LABEL[eventType] || eventType}。內容摘要：${p.content.slice(0, 200)}`;
         db.prepare(
           'INSERT INTO case_log (case_id, log_type, log_content, old_status, new_status, action_by, action_at) VALUES (?, ?, ?, NULL, ?, ?, ?)'
         ).run(caseId, 'CREATE', summary, 'PENDING', actorId, toDb(nowDate));
@@ -365,7 +380,7 @@ function createManualCase(db, actor, payload) {
           .run(actorId, actor ? (actor.username || 'USER') : 'SYSTEM', 'CASE_CREATE', 'CASE', caseId,
             JSON.stringify({ estate: p.estate, eventType, manual: true, source: 'MANUAL' }));
 
-        return { caseId, responseDue, closureDue };
+        return { caseId, responseDue, dispatchDue, processingDue, followupDue, closureDue };
       })();
       break;
     } catch (e) {
@@ -387,6 +402,9 @@ function createManualCase(db, actor, payload) {
     status: 'PENDING',
     eventType,
     responseSlaDue: dbToIso8(created.responseDue),
+    dispatchSlaDue: dbToIso8(created.dispatchDue),
+    processingSlaDue: dbToIso8(created.processingDue),
+    followupSlaDue: dbToIso8(created.followupDue),
     closureSlaDue: dbToIso8(created.closureDue),
     message: '個案已建立',
   };
@@ -474,8 +492,12 @@ const SELECT_SQL = `
          c.is_second_complaint AS is_second_complaint,
          c.original_case_id AS original_case_id,
          c.assigned_to AS assigned_to, u.full_name AS assigned_name,
-         c.response_sla_due AS response_sla_due, c.closure_sla_due AS closure_sla_due,
-         c.response_sla_met AS response_sla_met, c.closed_at AS closed_at,
+         c.response_sla_due AS response_sla_due,
+         c.dispatch_sla_due AS dispatch_sla_due, c.processing_sla_due AS processing_sla_due,
+         c.followup_sla_due AS followup_sla_due, c.closure_sla_due AS closure_sla_due,
+         c.response_sla_met AS response_sla_met, c.dispatch_sla_met AS dispatch_sla_met,
+         c.processing_sla_met AS processing_sla_met, c.followup_sla_met AS followup_sla_met,
+         c.closed_at AS closed_at,
          c.closure_sla_met AS closure_sla_met, c.handling_days AS handling_days,
          c.first_response_at AS first_response_at, c.resolution_result AS resolution_result,
          c.resolution_summary AS resolution_summary,
@@ -487,6 +509,9 @@ const SELECT_SQL = `
 function rowToDto(row) {
   const overdue = !CLOSED_STATUSES.includes(row.case_status) && (
     (row.response_sla_due && !row.first_response_at && dueMs(row.response_sla_due) < Date.now()) ||
+    (row.dispatch_sla_due && !row.assigned_to && dueMs(row.dispatch_sla_due) < Date.now()) ||
+    (row.processing_sla_due && !row.closed_at && dueMs(row.processing_sla_due) < Date.now()) ||
+    (row.followup_sla_due && !row.closed_at && dueMs(row.followup_sla_due) < Date.now()) ||
     (row.closure_sla_due && !row.closed_at && dueMs(row.closure_sla_due) < Date.now())
   );
   return {
@@ -517,9 +542,15 @@ function rowToDto(row) {
     originalCaseId: row.original_case_id,
     assignedTo: row.assigned_to ? { id: row.assigned_to, fullName: row.assigned_name || '' } : null,
     responseSlaDue: dbToIso8(row.response_sla_due),
+    dispatchSlaDue: dbToIso8(row.dispatch_sla_due),
+    processingSlaDue: dbToIso8(row.processing_sla_due),
+    followupSlaDue: dbToIso8(row.followup_sla_due),
     closureSlaDue: dbToIso8(row.closure_sla_due),
     slaOverdue: overdue,
     responseSlaMet: row.response_sla_met,
+    dispatchSlaMet: row.dispatch_sla_met,
+    processingSlaMet: row.processing_sla_met,
+    followupSlaMet: row.followup_sla_met,
     closedAt: dbToIso8(row.closed_at),
     closureSlaMet: row.closure_sla_met,
     handlingDays: row.handling_days,
@@ -644,6 +675,11 @@ function doAssign(db, row, assignee, user, opts, kind) {
   const atDb = dbNow();
   const parts = ["case_status = 'ASSIGNED'", 'assigned_to = ?', 'assigned_by = ?', 'assigned_at = ?', 'updated_at = ?'];
   const vals = [assignee.userId, user.userId, atDb, atDb];
+  // 派單 SLA：指派時間未逾派單期限即達標（指引二 2.2）
+  if (row.dispatch_sla_due != null) {
+    parts.push('dispatch_sla_met = ?');
+    vals.push(dueMs(row.dispatch_sla_due) >= atDb.getTime() ? 1 : 0);
+  }
   if (opts.priority && PRIORITY.includes(opts.priority) && opts.priority !== row.priority) {
     parts.push('priority = ?');
     vals.push(opts.priority);
@@ -837,9 +873,10 @@ function approveResolution(db, caseId, user, body) {
   const handlingDays = createdMs ? Math.round(((closedMs - createdMs) / 86400000) * 100) / 100 : null;
   const closureSlaMet = row.closure_sla_due ? (closedMs <= dueMs(row.closure_sla_due) ? 1 : 0) : null;
   db.transaction(() => {
+    const processingSlaMet = row.processing_sla_due ? (dueMs(row.processing_sla_due) >= atDb.getTime() ? 1 : 0) : null;
     db.prepare(
-      'UPDATE `case` SET case_status = ?, closed_at = ?, closure_sla_met = ?, handling_days = ?, updated_at = ? WHERE case_id = ?'
-    ).run('CLOSED', atDb, closureSlaMet, handlingDays, atDb, row.case_id);
+      'UPDATE `case` SET case_status = ?, closed_at = ?, closure_sla_met = ?, processing_sla_met = ?, followup_sla_met = ?, handling_days = ?, updated_at = ? WHERE case_id = ?'
+    ).run('CLOSED', atDb, closureSlaMet, processingSlaMet, 1, handlingDays, atDb, row.case_id);
     const note = body.note ? `\n審核意見：${body.note}` : '';
     insertLog(db, row.case_id, 'RESOLVE_APPROVE', `審核通過並關閉（處理 ${handlingDays} 天${closureSlaMet === 1 ? '，於關閉期限內' : closureSlaMet === 0 ? '，超出關閉期限' : ''}）${note}`, 'RESOLVED', 'CLOSED', user.userId, atDb, null);
     audit(db, user, 'CASE_APPROVE_CLOSE', row.case_id, { handlingDays, closureSlaMet });
@@ -1052,4 +1089,200 @@ module.exports = {
   downloadCaseAttachment,
   batchAssignCases,
   batchUpdateCases,
+  importCasesFromWorkbook,
+  importTemplateBuffer,
 };
+
+/** ===== Excel 批量匯入個案（case:create） ===== */
+const IMPORT_HEADER_ALIASES = (() => {
+  const raw = {
+    '屋苑': 'estate', 'estate': 'estate', 'estate_code': 'estate', '屋苑代碼': 'estate', '屋邨': 'estate',
+    '事項類別': 'category', 'category': 'category', 'category_code': 'category', '類別': 'category', '意見類別': 'category',
+    '優先級': 'priority', 'priority': 'priority', '優先次序': 'priority', '優先順序': 'priority',
+    '稱謂': 'title', 'title': 'title', '客戶稱謂': 'title',
+    '姓名': 'name', 'name': 'name', '客戶姓名': 'name',
+    '電話': 'phone', 'phone': 'phone', '聯絡電話': 'phone', '手機': 'phone',
+    '電郵': 'email', 'email': 'email', '客戶電郵': 'email', '電子郵件': 'email',
+    '座': 'block', 'block': 'block', '座號': 'block', '幢': 'block',
+    '樓層': 'floor', 'floor': 'floor',
+    '單位': 'unit', 'unit': 'unit',
+    '事發日期': 'incidentDate', 'incident_date': 'incidentDate', 'incidentdate': 'incidentDate', '發生日期': 'incidentDate',
+    '事發時間': 'incidentTime', 'incident_time': 'incidentTime', 'incidenttime': 'incidentTime', '發生時間': 'incidentTime',
+    '意見內容': 'content', 'content': 'content', '內容': 'content', '個案內容': 'content', '備註': 'content', '描述': 'content',
+    '問卷同意': 'surveyConsent', 'survey_consent': 'surveyConsent', 'surveyconsent': 'surveyConsent', '問卷': 'surveyConsent',
+  };
+  const map = {};
+  Object.keys(raw).forEach((k) => { map[k.toLowerCase()] = raw[k]; });
+  return map;
+})();
+
+const CATEGORY_LABEL = {
+  '管理處服務': 'MO_SERVICE', '管理處': 'MO_SERVICE', '管服': 'MO_SERVICE', 'mo service': 'MO_SERVICE',
+  '保安': 'SECURITY', '安保': 'SECURITY', '安全': 'SECURITY', 'security': 'SECURITY',
+  '維修': 'MAINTENANCE', '維修保養': 'MAINTENANCE', '工程': 'MAINTENANCE', 'maintenance': 'MAINTENANCE',
+  '清潔': 'CLEANLINESS', '衛生': 'CLEANLINESS', 'cleanliness': 'CLEANLINESS',
+  '滋擾': 'NUISANCE', '噪音': 'NUISANCE', '鄰里': 'NUISANCE', 'nuisance': 'NUISANCE',
+  '其他': 'OTHER', '其它': 'OTHER', 'other': 'OTHER',
+};
+
+const PRIORITY_IMPORT_LABEL = { '高': 'HIGH', '中': 'MEDIUM', '低': 'LOW', 'high': 'HIGH', 'medium': 'MEDIUM', 'low': 'LOW' };
+
+function ymd(d) { const p = (n) => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`; }
+function hm(d) { const p = (n) => String(n).padStart(2, '0'); return `${p(d.getHours())}:${p(d.getMinutes())}`; }
+function isTruthy(v) {
+  const s = String(v == null ? '' : v).trim().toLowerCase();
+  return ['是', 'y', 'yes', 'true', '1', 't', '有'].includes(s);
+}
+
+/**
+ * 解析 Excel 活頁簿（base64 buffer）→ 逐列建案（複用 createManualCase 之校驗／SLA／通知）。
+ * 回傳 { total, created, failed, caseIds, errors:[{row,error}] }。
+ */
+async function importCasesFromWorkbook(db, actor, buffer) {
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.load(buffer);
+  const ws = wb.worksheets && wb.worksheets[0];
+  if (!ws) throw new ApiError(ERR.VALIDATION, 'Excel 檔案沒有工作表', 400);
+
+  // 屋苑對照（代碼 / 名稱 → 代碼）
+  const estates = db.prepare('SELECT estate_code, estate_name_zh, estate_name_en FROM sys_estate WHERE is_active = 1').all();
+  const estateByCode = new Map();
+  const estateByName = new Map();
+  estates.forEach((e) => {
+    estateByCode.set(String(e.estate_code).toLowerCase(), e.estate_code);
+    if (e.estate_name_zh) estateByName.set(String(e.estate_name_zh).toLowerCase(), e.estate_code);
+    if (e.estate_name_en) estateByName.set(String(e.estate_name_en).toLowerCase(), e.estate_code);
+  });
+  const resolveEstate = (raw) => {
+    const s = String(raw || '').trim();
+    if (!s) return '';
+    const lc = s.toLowerCase();
+    if (estateByCode.has(lc)) return estateByCode.get(lc);
+    if (estateByName.has(lc)) return estateByName.get(lc);
+    throw new ApiError(ERR.VALIDATION, `屋苑不存在或無效：${s}`, 400);
+  };
+  const resolveCategory = (raw) => {
+    const s = String(raw || '').trim();
+    if (!s) return '';
+    const up = s.toUpperCase();
+    if (CATEGORY_CODE.includes(up)) return up;
+    const lc = s.toLowerCase();
+    if (CATEGORY_LABEL[lc]) return CATEGORY_LABEL[lc];
+    throw new ApiError(ERR.VALIDATION, `意見類別不存在或無效：${s}`, 400);
+  };
+  const resolvePriority = (raw) => {
+    const s = String(raw || '').trim();
+    if (!s) return '';
+    const up = s.toUpperCase();
+    if (PRIORITY.includes(up)) return up;
+    const lc = s.toLowerCase();
+    if (PRIORITY_IMPORT_LABEL[lc]) return PRIORITY_IMPORT_LABEL[lc];
+    return ''; // 交給 createManualCase 預設 MEDIUM
+  };
+
+  // 表頭對應（首列）
+  const headerMap = {}; // colNumber -> internal key
+  ws.eachRow((row, rowNumber) => {
+    if (rowNumber !== 1) return;
+    row.eachCell((cell, colNumber) => {
+      const h = cell.value == null ? '' : String(cell.value).trim();
+      const key = IMPORT_HEADER_ALIASES[h.toLowerCase()];
+      if (key) headerMap[colNumber] = key;
+    });
+  });
+  if (Object.keys(headerMap).length === 0) {
+    throw new ApiError(ERR.VALIDATION, '未能識別欄位表頭，請使用範本或正確的中文／英文欄位名稱', 400);
+  }
+
+  // 資料列
+  const dataRows = [];
+  ws.eachRow((row, rowNumber) => {
+    if (rowNumber === 1) return;
+    const obj = {};
+    for (const colStr of Object.keys(headerMap)) {
+      const col = Number(colStr);
+      const key = headerMap[col];
+      let v = row.getCell(col).value;
+      let s;
+      if (v == null) s = '';
+      else if (v instanceof Date) s = (key === 'incidentTime') ? hm(v) : (key === 'incidentDate' ? ymd(v) : `${ymd(v)} ${hm(v)}`);
+      else if (typeof v === 'object') s = v.text != null ? String(v.text) : (v.result != null ? String(v.result) : '');
+      else s = String(v);
+      obj[key] = s.trim();
+    }
+    if (!Object.values(obj).some((x) => x)) return; // 空行跳過
+    dataRows.push(obj);
+  });
+
+  const errors = [];
+  const caseIds = [];
+  let created = 0;
+  let failed = 0;
+  for (let i = 0; i < dataRows.length; i += 1) {
+    const obj = dataRows[i];
+    const rowNo = i + 2; // Excel 列號（表頭=1）
+    try {
+      const payload = {
+        estate: resolveEstate(obj.estate),
+        category: resolveCategory(obj.category),
+        priority: resolvePriority(obj.priority),
+        title: obj.title || null,
+        name: obj.name,
+        email: obj.email || null,
+        phone: obj.phone || null,
+        block: obj.block || null,
+        floor: obj.floor || null,
+        unit: obj.unit || null,
+        incidentDate: obj.incidentDate || null,
+        incidentTime: obj.incidentTime || null,
+        content: obj.content,
+        surveyConsent: isTruthy(obj.surveyConsent),
+      };
+      const r = createManualCase(db, actor, payload);
+      created += 1;
+      caseIds.push(r.caseId);
+    } catch (e) {
+      failed += 1;
+      const msg = (e && e.message) ? e.message : '未知錯誤';
+      errors.push({ row: rowNo, error: msg });
+    }
+  }
+
+  return { total: dataRows.length, created, failed, caseIds, errors };
+}
+
+/** 生成匯入範本（xlsx buffer）：含欄位範例與填寫說明工作表 */
+async function importTemplateBuffer() {
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'QRCode 客戶意見反饋系統';
+  const ws = wb.addWorksheet('個案匯入範本');
+  const headers = ['屋苑', '事項類別', '優先級', '稱謂', '姓名', '電話', '電郵', '座', '樓層', '單位', '事發日期', '事發時間', '意見內容', '問卷同意'];
+  ws.addRow(headers);
+  ws.getRow(1).eachCell((c) => {
+    c.font = { bold: true };
+    c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEAF1F9' } };
+  });
+  ws.addRow(['CWC', 'MAINTENANCE', 'HIGH', '先生', '張三', '91234567', 'zhang@example.com', 'A', '12', '3', '2026-09-25', '10:00', '大堂燈管損壞，請安排維修', '否']);
+  ws.addRow(['美麗苑', 'SECURITY', 'MEDIUM', '女士', '李四', '98765432', '', 'B', '5', '2', '2026-09-24', '', '保安巡邏頻率不足', '是']);
+  ws.getColumn(13).width = 40;
+  const help = wb.addWorksheet('填寫說明');
+  const lines = [
+    ['欄位', '說明 / 允許值'],
+    ['屋苑', '屋苑代碼（如 CWC）或屋苑名稱'],
+    ['事項類別', 'MO_SERVICE / SECURITY / MAINTENANCE / CLEANLINESS / NUISANCE / OTHER（或中文：管理處服務/保安/維修/清潔/滋擾/其他）'],
+    ['優先級', 'HIGH / MEDIUM / LOW（或 高/中/低）'],
+    ['稱謂', '先生 / 女士 / 小姐 等（可留空）'],
+    ['姓名', '必填'],
+    ['電話', '可留空'],
+    ['電郵', '可留空；填寫會發送確認郵件'],
+    ['座 / 樓層 / 單位', '地址，可留空'],
+    ['事發日期', 'YYYY-MM-DD（可留空）'],
+    ['事發時間', 'HH:MM（可留空）'],
+    ['意見內容', '必填'],
+    ['問卷同意', '是 / 否（或 true/false）'],
+  ];
+  lines.forEach((r) => help.addRow(r));
+  help.getColumn(2).width = 80;
+  const buffer = await wb.xlsx.writeBuffer();
+  return Buffer.from(buffer);
+}

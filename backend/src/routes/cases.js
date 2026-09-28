@@ -22,14 +22,15 @@
  */
 'use strict';
 const express = require('express');
-const { ok } = require('../middlewares/error');
+const { ok, ApiError } = require('../middlewares/error');
 const { requireAuth, requirePerm } = require('../middlewares/auth');
 const { getDb } = require('../db/connection');
+const { ERR } = require('../config/constants');
 const { listCases, getCaseDetail, getAssignees, assignCase, reassignCase,
   startCase, setWaitingCase, resumeCase, addCaseNote, changeCasePriority,
   submitResolution, approveResolution, rejectResolution, reopenCase,
   uploadCaseAttachment, downloadCaseAttachment, batchAssignCases, batchUpdateCases,
-  createManualCase } = require('../services/caseService');
+  createManualCase, importCasesFromWorkbook, importTemplateBuffer } = require('../services/caseService');
 const { exportFile } = require('../services/exportService');
 const { listAiSuggestions, decideAiSuggestion, reanalyzeCase, linkSimilarCase, suggestAssignee,
   createDraft, useDraft, caseFeedbackInsight, analyzeAttachment, attachmentInsights } = require('../services/aiService');
@@ -41,6 +42,28 @@ router.use(requireAuth);
 /** 客服人員手動新增個案（case:create） */
 router.post('/', requirePerm('case:create'), (req, res) => {
   ok(res, createManualCase(getDb(), req.user, req.body || {}), 201);
+});
+
+/** 個案 Excel 批量匯入（case:create）；fileDataBase64 為 .xlsx/.xls 之 base64 */
+router.post('/import', requirePerm('case:create'), async (req, res, next) => {
+  try {
+    const b64 = (req.body && req.body.fileDataBase64) || '';
+    if (!b64 || typeof b64 !== 'string') throw new ApiError(ERR.VALIDATION, '缺少 Excel 檔案（fileDataBase64）', 400);
+    if (b64.length > 16 * 1024 * 1024) throw new ApiError(ERR.VALIDATION, '檔案過大（上限 12MB）', 400);
+    const buffer = Buffer.from(b64, 'base64');
+    const result = await importCasesFromWorkbook(getDb(), req.user, buffer);
+    ok(res, result);
+  } catch (e) { next(e); }
+});
+
+/** 匯入範本下載（case:create） */
+router.get('/import-template', requirePerm('case:create'), async (req, res, next) => {
+  try {
+    const buffer = await importTemplateBuffer();
+    res.set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.set('Content-Disposition', 'attachment; filename="case_import_template.xlsx"');
+    res.send(buffer);
+  } catch (e) { next(e); }
 });
 
 router.get('/', requirePerm('case:list'), (req, res) => {

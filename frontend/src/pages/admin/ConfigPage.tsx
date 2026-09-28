@@ -257,8 +257,19 @@ export function ConfigPage() {
         return (
           <Stack spacing={1.5} sx={{ mt: 1 }}>
             {RESPONSE_KEYS.map((k) => (
-              <TextField key={k} type="number" label={`${editItem.labelZh}（${RESPONSE_ZH[k]}，分鐘）`}
-                value={String((d[k] as number) ?? '')} onChange={(e) => setObj(k, num(e.target.value))} fullWidth />
+              <TextField key={k} type="number" label={`${editItem.labelZh}（${RESPONSE_ZH[k]}，分鐘；空白＝不適用）`}
+                value={String((d[k] as number) ?? '')}
+                onChange={(e) => setObj(k, e.target.value === '' ? null : num(e.target.value))} fullWidth />
+            ))}
+          </Stack>
+        );
+      case 'hoursMap':
+        return (
+          <Stack spacing={1.5} sx={{ mt: 1 }}>
+            {RESPONSE_KEYS.map((k) => (
+              <TextField key={k} type="number" label={`${editItem.labelZh}（${RESPONSE_ZH[k]}，小時；空白＝不適用）`}
+                value={String((d[k] as number) ?? '')}
+                onChange={(e) => setObj(k, e.target.value === '' ? null : num(e.target.value))} fullWidth />
             ))}
           </Stack>
         );

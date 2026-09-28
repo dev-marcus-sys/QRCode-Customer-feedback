@@ -141,9 +141,15 @@ export interface CaseItem {
   originalCaseId: string | null;
   assignedTo: { id: number; fullName: string } | null;
   responseSlaDue: string | null;
+  dispatchSlaDue: string | null;
+  processingSlaDue: string | null;
+  followupSlaDue: string | null;
   closureSlaDue: string | null;
   slaOverdue: boolean;
   responseSlaMet?: number | null;
+  dispatchSlaMet?: number | null;
+  processingSlaMet?: number | null;
+  followupSlaMet?: number | null;
   closureSlaMet?: number | null;
   closedAt?: string | null;
   handlingDays?: number | null;
@@ -1145,6 +1151,55 @@ export async function downloadExport(query: string, format: 'csv' | 'xlsx', toke
   const a = document.createElement('a');
   a.href = url;
   a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+/** 個案 Excel 匯入結果 */
+export interface ImportRowError {
+  row: number;
+  error: string;
+}
+export interface ImportResult {
+  total: number;
+  created: number;
+  failed: number;
+  caseIds: string[];
+  errors: ImportRowError[];
+}
+
+/** 個案 Excel 批量匯入（case:create）：fileDataBase64 為 .xlsx/.xls 之 base64 */
+export async function importCases(fileDataBase64: string, token: string): Promise<ImportResult> {
+  const res = await fetch(`${BASE}/cases/import`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ fileDataBase64 }),
+  });
+  if (!res.ok) {
+    const env = await parseEnvelope<null>(res);
+    throw new ApiRequestError(env.code, env.message, env.data);
+  }
+  const env = await parseEnvelope<ImportResult>(res);
+  if (env.code !== 0) throw new ApiRequestError(env.code, env.message, env.data);
+  return env.data as ImportResult;
+}
+
+/** 下載個案匯入範本（xlsx） */
+export async function downloadImportTemplate(token: string): Promise<void> {
+  const res = await fetch(`${BASE}/cases/import-template`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const env = await parseEnvelope<null>(res);
+    throw new ApiRequestError(env.code, env.message, env.data);
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'case_import_template.xlsx';
   document.body.appendChild(a);
   a.click();
   a.remove();

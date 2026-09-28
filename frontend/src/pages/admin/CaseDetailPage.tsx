@@ -206,11 +206,17 @@ export function CaseDetailPage() {
               <InfoRow label="處理人" value={c.assignedTo?.fullName || '尚未分派'} />
             </SectionCard>
 
-            <SectionCard title="SLA 時限" extra={c.slaOverdue && <Chip size="small" color="error" label="已逾期" />}>
+            <SectionCard title="SLA 時限（五維）" extra={c.slaOverdue && <Chip size="small" color="error" label="已逾期" />}>
               <InfoRow label="事件類型" value={labelOf(EVENT_OPTIONS, c.eventType, 'zh-Hant')} />
-              <InfoRow label="首次回應期限" value={fmt(c.responseSlaDue)} />
+              <InfoRow label="① 首次回應期限" value={fmt(c.responseSlaDue)} />
               <InfoRow label="首次回應時間" value={fmt(c.firstResponseAt || null)} />
-              <InfoRow label="關閉期限" value={fmt(c.closureSlaDue)} />
+              {c.responseSlaMet != null && <InfoRow label="回應達標" value={c.responseSlaMet ? '是' : '否'} />}
+              <InfoRow label="② 派單期限" value={fmt(c.dispatchSlaDue)} />
+              {c.dispatchSlaMet != null && <InfoRow label="派單達標" value={c.dispatchSlaMet ? '是' : '否'} />}
+              <InfoRow label="③ 處理期限" value={fmt(c.processingSlaDue)} />
+              {c.processingSlaMet != null && <InfoRow label="處理達標" value={c.processingSlaMet ? '是' : '否'} />}
+              <InfoRow label="④ 跟進期限" value={fmt(c.followupSlaDue)} />
+              <InfoRow label="⑤ 關閉期限" value={fmt(c.closureSlaDue)} />
               <InfoRow label="處理天數" value={c.handlingDays != null ? `${c.handlingDays} 天` : '—'} />
               {c.eventType === 'N/A' && (
                 <InfoRow label="備註" value="此個案不適用回覆期限（N/A）" />

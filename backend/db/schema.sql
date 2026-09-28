@@ -115,6 +115,19 @@ CREATE TABLE IF NOT EXISTS `case` (
   closure_reminded_at   TEXT,
   response_escalated_at TEXT,
   closure_escalated_at  TEXT,
+  -- SLA 五維擴充（指引二 2.2：響應/派單/處理/跟進/閉環；既有 DB 由 ensureDefaults 補列）
+  dispatch_sla_due      TEXT,
+  dispatch_sla_met      INTEGER CHECK (dispatch_sla_met IN (0,1)),
+  processing_sla_due    TEXT,
+  processing_sla_met    INTEGER CHECK (processing_sla_met IN (0,1)),
+  followup_sla_due      TEXT,
+  followup_sla_met      INTEGER CHECK (followup_sla_met IN (0,1)),
+  dispatch_reminded_at     TEXT,
+  dispatch_escalated_at    TEXT,
+  processing_reminded_at   TEXT,
+  processing_escalated_at  TEXT,
+  followup_reminded_at     TEXT,
+  followup_escalated_at    TEXT,
   FOREIGN KEY (estate_code) REFERENCES sys_estate(estate_code),
   FOREIGN KEY (original_case_id) REFERENCES `case`(case_id)
 );
