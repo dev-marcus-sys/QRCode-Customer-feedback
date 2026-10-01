@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Alert, Box, Chip, Divider, Stack, Typography } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { api, ApiRequestError, authStore, CaseDetailData, CaseItem } from '../../api/client';
@@ -43,6 +43,7 @@ export function MobileCaseDetailPage() {
   const rawCaseId = useParams().caseId;
   const caseId = rawCaseId ? decodeURIComponent(rawCaseId) : undefined;
   const navigate = useNavigate();
+  const location = useLocation();
   const me = authStore.getUser();
   const permissions = me?.permissions || [];
   const { features } = useAiFeatures();
@@ -75,7 +76,7 @@ export function MobileCaseDetailPage() {
     return () => {
       alive = false;
     };
-  }, [caseId]);
+  }, [caseId, location.key]);
 
   const refresh = () => {
     if (!caseId) return;
@@ -141,6 +142,11 @@ export function MobileCaseDetailPage() {
         {c.isSecondComplaint && c.originalCaseId && (
           <Alert severity="warning" sx={{ mt: 2, fontSize: 13 }}>
             此為二次投訴個案，原案：{c.originalCaseId}
+          </Alert>
+        )}
+        {c.isSecondComplaint && !c.originalCaseId && (
+          <Alert severity="warning" sx={{ mt: 2, fontSize: 13 }}>
+            本個案因二次投訴重新開啟，請優先跟進。
           </Alert>
         )}
       </SectionCard>

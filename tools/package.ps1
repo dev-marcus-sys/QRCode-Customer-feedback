@@ -20,7 +20,7 @@ $zip = [System.IO.Path]::Combine($root, 'deploy', "$name.zip")
 $xd = @('node_modules', 'dist', 'data', '.git', '.cache', 'coverage')
 # file exclusions
 $xfLiteral = @('.env')
-$xfWild = @('*.log', '*.local', '*.tsbuildinfo')
+$xfWild = @('*.log', '*.local', '*.tsbuildinfo', '._*', '*.db')
 
 function Copy-ItemTree($src, $dst) {
   New-Item -ItemType Directory -Force -Path $dst | Out-Null
@@ -75,8 +75,17 @@ $copied = (Get-ChildItem -Recurse $staging).Count
 if ($copied -eq 0) { throw 'staging is empty - copy failed' }
 
 # compress (contents of staging become zip root: backend/ and frontend/ siblings)
-Write-Host '==> Compressing to $zip'
-Compress-Archive -Path (Join-Path $staging '*') -DestinationPath $zip -Force
+Write-Host '==> Compressing to $zip (python, forward-slash entries for Linux)'
+python -c @"
+import zipfile, os, sys
+staging = sys.argv[1]; zipf = sys.argv[2]
+with zipfile.ZipFile(zipf, 'w', zipfile.ZIP_DEFLATED) as z:
+    for root, dirs, files in os.walk(staging):
+        for f in files:
+            full = os.path.join(root, f)
+            rel = os.path.relpath(full, staging).replace(os.sep, '/')
+            z.write(full, rel)
+"@ $staging $zip
 
 # cleanup staging
 Remove-Item $staging -Recurse -Force

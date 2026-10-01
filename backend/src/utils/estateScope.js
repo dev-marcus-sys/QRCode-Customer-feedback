@@ -39,14 +39,6 @@ function estateInClause(column, value) {
   return { clause: `${column} IN (${codes.map(() => '?').join(', ')})`, params: codes };
 }
 
-/**
- * SQL：判斷「多值屋苑欄位」（sys_user.estate_code 逗號清單）是否包含指定屋苑。
- * 回傳 { clause, params }；clause 例：`(',' || u.estate_code || ',') LIKE ?`。
- */
-function estateListMatch(column, code) {
-  return { clause: `(',' || ${column} || ',') LIKE ?`, params: [`%,${String(code || '').trim()},%`] };
-}
-
 /** 正規化屋苑輸入為 DB 儲存字串（ALL 與其他互斥）；未提供回傳 null */
 function normalizeEstateValue(input) {
   if (input === undefined || input === null) return null;
@@ -62,6 +54,5 @@ module.exports = {
   estateScope,
   inEstates,
   estateInClause,
-  estateListMatch,
   normalizeEstateValue,
 };

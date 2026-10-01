@@ -13,6 +13,9 @@ import { StatusChip } from '../../components/StatusChip';
 import { CreateCaseDialog } from '../../components/CreateCaseDialog';
 import { useEstates } from '../../admin/useEstates';
 
+// 與後端 CLOSED_STATUSES 對齊：終結狀態不顯示即時 SLA 倒數
+const TERMINAL_STATUSES = ['CLOSED', 'RESOLVED'];
+
 function remainText(iso: string | null): { text: string; overdue: boolean } | null {
   if (!iso) return null;
   const diff = new Date(iso).getTime() - Date.now();
@@ -41,6 +44,7 @@ export function MobileCaseListPage() {
   const [keyword, setKeyword] = useState('');
   const [status, setStatus] = useState('');
   const [estate, setEstate] = useState('');
+  const [slaOverdue, setSlaOverdue] = useState('');
   const [data, setData] = useState<CaseListData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -54,12 +58,13 @@ export function MobileCaseListPage() {
     if (keyword.trim()) p.set('keyword', keyword.trim());
     if (status) p.set('status', status);
     if (estate) p.set('estate', estate);
+    if (slaOverdue) p.set('slaOverdue', slaOverdue);
     p.set('sortBy', 'createdAt');
     p.set('sortDir', 'desc');
     p.set('page', String(page + 1));
     p.set('pageSize', String(pageSize));
     return p.toString();
-  }, [keyword, status, estate, page, refresh]);
+  }, [keyword, status, estate, slaOverdue, page, refresh]);
 
   useEffect(() => {
     let alive = true;
@@ -114,6 +119,15 @@ export function MobileCaseListPage() {
                 : estates.activeOptions.map((x) => ({ code: x.estateCode, zh: x.estateNameZh }))
               ).map((x) => (<MenuItem key={x.code} value={x.code}>{x.zh}</MenuItem>))}
             </TextField>
+            <TextField
+              select size="small" label="SLA 逾期" sx={{ flex: 1 }}
+              value={slaOverdue}
+              onChange={(e) => { setSlaOverdue(e.target.value); setPage(0); }}
+            >
+              <MenuItem value="">全部</MenuItem>
+              <MenuItem value="1">逾期</MenuItem>
+              <MenuItem value="0">未逾期</MenuItem>
+            </TextField>
           </Stack>
         </Stack>
       </Card>
@@ -131,7 +145,9 @@ export function MobileCaseListPage() {
           )}
           <Stack spacing={1.5}>
             {data.items.map((row) => {
-              const rem = remainText(row.responseSlaDue || row.closureSlaDue);
+              const rem = TERMINAL_STATUSES.includes(row.caseStatus)
+                ? null
+                : remainText(row.responseSlaDue || row.closureSlaDue);
               return (
                 <Card key={row.caseId} elevation={0} sx={{ borderRadius: 2, border: `1px solid ${row.slaOverdue ? '#f3c2c2' : '#e5eaf2'}`, bgcolor: row.slaOverdue ? '#fdf5f5' : '#fff' }}>
                   <CardActionArea onClick={() => navigate(`/m/cases/${encodeURIComponent(row.caseId)}`)} sx={{ p: 1.8 }}>

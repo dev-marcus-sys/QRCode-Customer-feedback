@@ -223,6 +223,8 @@ CREATE TABLE IF NOT EXISTS email_outbox (
   subject    TEXT NOT NULL,
   body       TEXT NOT NULL,
   status     TEXT NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING','SENT','FAILED')),
+  sent_at    TEXT,
+  error      TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

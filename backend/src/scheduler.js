@@ -10,6 +10,7 @@ const { scanSla } = require('./services/slaReminderService');
 const { maybeRunWeekly } = require('./services/weeklyReportService');
 const { applyExpiry } = require('./services/qrService');
 const { processClassifyQueue, processFeedbackQueue, scanCaseRisk } = require('./services/aiService');
+const { processOutbox } = require('./services/emailWorker');
 const { getDb } = require('./db/connection');
 const logger = require('./utils/logger');
 
@@ -18,6 +19,7 @@ let weeklyTimer = null;
 let qrExpiryTimer = null;
 let aiTimer = null;
 let riskTimer = null;
+let emailTimer = null;
 
 function intervalOf(raw, fallback) {
   const intervalMs = raw === undefined || raw === '' ? fallback : Number(raw);
@@ -175,10 +177,38 @@ function stopRiskScheduler() {
   }
 }
 
+/**
+ * 郵件佇列寄送定時器（F-007 實際寄信）：掃描 email_outbox 中 PENDING 並經 SMTP 送出。
+ * 間隔由 EMAIL_SCAN_INTERVAL_MS 控制（省略 → 15000；設 0 停用）。
+ */
+function startEmailScheduler() {
+  if (emailTimer) return;
+  const intervalMs = intervalOf(process.env.EMAIL_SCAN_INTERVAL_MS, 15000);
+  if (!intervalMs) {
+    logger.warn('scheduler', '郵件寄送定時器停用（EMAIL_SCAN_INTERVAL_MS 為 0/無效）');
+    return;
+  }
+  emailTimer = setInterval(() => {
+    processOutbox(getDb()).catch((e) => {
+      logger.error('scheduler', `郵件寄送失敗：${e.message}`);
+    });
+  }, intervalMs);
+  if (emailTimer.unref) emailTimer.unref();
+  logger.info('scheduler', `郵件寄送定時器已啟動（每 ${intervalMs}ms）`);
+}
+
+function stopEmailScheduler() {
+  if (emailTimer) {
+    clearInterval(emailTimer);
+    emailTimer = null;
+  }
+}
+
 module.exports = {
   startSlaScheduler, stopSlaScheduler,
   startWeeklyScheduler, stopWeeklyScheduler,
   startQrExpiryScheduler, stopQrExpiryScheduler,
   startAiScheduler, stopAiScheduler,
   startRiskScheduler, stopRiskScheduler,
+  startEmailScheduler, stopEmailScheduler,
 };

@@ -268,13 +268,6 @@ function surveyStats(db, user, filters = {}) {
   };
 }
 
-/** 個案是否已有問卷（詳情頁用） */
-function surveyOfCase(db, caseId) {
-  return db.prepare(
-    'SELECT survey_id AS surveyId, case_id AS caseId, status, resend_count AS resendCount, expires_at AS expiresAt FROM satisfaction_survey WHERE case_id = ? LIMIT 1'
-  ).get(caseId) || null;
-}
-
 module.exports = {
   createSurveyOnClose,
   getPublicSurvey,
@@ -282,5 +275,4 @@ module.exports = {
   expireSurveys,
   resendSurvey,
   surveyStats,
-  surveyOfCase,
 };

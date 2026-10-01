@@ -20,6 +20,18 @@ function nowDbAt(nowMs) {
 const RESPONSE_LEAD_DEFAULT = { URGENT: 10, NORMAL: 30, COMPLEX: 30, INSTANT: 30 };
 const CLOSURE_LEAD_DEFAULT = 1;
 
+/**
+ * 將至提醒的有效提前量：不超過設定提前量，且最多只取 SLA 窗口的一半。
+ * 避免「設定提前量 ≥ SLA 窗口」（如 NORMAL：窗口 30 分、提前 30 分）時，
+ * 建案當下 remaining 已 ≤ 提前量而被誤判為「期限將至」、一建案就發通知。
+ * @param {number|null} windowMs SLA 窗口長度（到期 - 建案）
+ * @param {number} configuredLeadMs 設定提前量（毫秒）
+ */
+function effectiveLeadMs(windowMs, configuredLeadMs) {
+  if (windowMs == null || !Number.isFinite(windowMs)) return configuredLeadMs;
+  return Math.min(configuredLeadMs, Math.max(0, windowMs * 0.5));
+}
+
 function fetchCases(db) {
   return db.prepare(
     `SELECT c.case_id AS caseId, c.case_status AS status, c.estate_code AS estateCode,
@@ -32,7 +44,8 @@ function fetchCases(db) {
             c.processing_reminded_at AS processingReminded, c.processing_escalated_at AS processingEscalated,
             c.followup_reminded_at AS followupReminded,
             c.closure_reminded_at AS closureReminded, c.closure_escalated_at AS closureEscalated,
-            e.estate_name_zh AS estateNameZh, u.full_name AS assignedName
+            e.estate_name_zh AS estateNameZh, u.full_name AS assignedName,
+            c.created_at AS createdAt
        FROM \`case\` c
        JOIN sys_estate e ON e.estate_code = c.estate_code
        LEFT JOIN sys_user u ON u.user_id = c.assigned_to
@@ -116,6 +129,8 @@ function scanSla(db, nowMs = Date.now()) {
     if (row.eventType !== 'N/A' && row.responseDue && !row.firstResponseAt) {
       const due = ms(row.responseDue);
       const remaining = due - nowMs;
+      const leadMs = (responseLead[row.eventType] || 30) * 60 * 1000;
+      const effLead = effectiveLeadMs(due - ms(row.createdAt), leadMs);
       if (remaining <= 0 && !row.respEscalated) {
         // 逾期升級（FR-005-03）
         const targets = escalationRecipients(db, row, estateSup);
@@ -126,8 +141,9 @@ function scanSla(db, nowMs = Date.now()) {
         markCase(db, row.caseId, 'response_escalated_at', atDb);
         logCase(db, row.caseId, 'ESCALATE', `首次回應期限 ${dbToIso8(row.responseDue)} 已過仍未有首次回應 → 升級提醒（處理人員＋直屬主管）`);
         summary.responseEscalations.push(row.caseId);
-      } else if (remaining > 0 && !row.respReminded && remaining <= (responseLead[row.eventType] || 30) * 60 * 1000) {
-        // 期限將至提醒（FR-005-01；特急提前 10 分鐘、其餘 30 分鐘）
+      } else if (remaining > 0 && !row.respReminded && remaining <= effLead) {
+        // 期限將至提醒（FR-005-01）：有效提前量 = min(設定提前量, SLA 窗口×0.5)，
+        // 避免窗口 ≤ 提前量時建案當下即誤報「將至」
         const targets = reminderRecipients(db, row, estateSup);
         for (const t of targets) {
           notify(t.userId, 'REMINDER', `個案 ${row.caseId} 首次回應期限將至`,
@@ -143,6 +159,8 @@ function scanSla(db, nowMs = Date.now()) {
     if (row.dispatchDue && !row.assignedTo) {
       const due = ms(row.dispatchDue);
       const remaining = due - nowMs;
+      const leadMs = (responseLead[row.eventType] || 30) * 60 * 1000;
+      const effLead = effectiveLeadMs(due - ms(row.createdAt), leadMs);
       if (remaining <= 0 && !row.dispatchEscalated) {
         const targets = escalationRecipients(db, row, estateSup);
         for (const t of targets) {
@@ -152,7 +170,7 @@ function scanSla(db, nowMs = Date.now()) {
         markCase(db, row.caseId, 'dispatch_escalated_at', atDb);
         logCase(db, row.caseId, 'ESCALATE', `派單期限 ${dbToIso8(row.dispatchDue)} 已過仍未分派 → 升級提醒`);
         summary.dispatchEscalations.push(row.caseId);
-      } else if (remaining > 0 && !row.dispatchReminded && remaining <= (responseLead[row.eventType] || 30) * 60 * 1000) {
+      } else if (remaining > 0 && !row.dispatchReminded && remaining <= effLead) {
         const targets = reminderRecipients(db, row, estateSup);
         for (const t of targets) {
           notify(t.userId, 'REMINDER', `個案 ${row.caseId} 派單期限將至`,
@@ -168,6 +186,8 @@ function scanSla(db, nowMs = Date.now()) {
     if (row.processingDue && !row.closedAt) {
       const due = ms(row.processingDue);
       const remaining = due - nowMs;
+      const leadMs = (responseLead[row.eventType] || 30) * 60 * 1000;
+      const effLead = effectiveLeadMs(due - ms(row.createdAt), leadMs);
       if (remaining <= 0 && !row.processingEscalated) {
         const targets = escalationRecipients(db, row, estateSup);
         for (const t of targets) {
@@ -177,7 +197,7 @@ function scanSla(db, nowMs = Date.now()) {
         markCase(db, row.caseId, 'processing_escalated_at', atDb);
         logCase(db, row.caseId, 'ESCALATE', `處理期限 ${dbToIso8(row.processingDue)} 已過仍未完成 → 升級提醒`);
         summary.processingEscalations.push(row.caseId);
-      } else if (remaining > 0 && !row.processingReminded && remaining <= (responseLead[row.eventType] || 30) * 60 * 1000) {
+      } else if (remaining > 0 && !row.processingReminded && remaining <= effLead) {
         const targets = reminderRecipients(db, row, estateSup);
         for (const t of targets) {
           notify(t.userId, 'REMINDER', `個案 ${row.caseId} 處理期限將至`,

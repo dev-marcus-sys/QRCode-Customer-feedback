@@ -850,6 +850,14 @@ export interface EstateListData {
   items: EstateItem[];
 }
 
+/** 執行環境與資料庫位置（GET /api/v1/health；公開，無須登入） */
+export interface EnvInfo {
+  status: string;
+  db: boolean;
+  environment: { key: string; label: string };
+  dbPath: string;
+}
+
 const BASE = '/api/v1';
 
 /** F-008 儀表板共用查詢參數 */
@@ -913,6 +921,34 @@ export const authStore = {
   setUser: (u: AdminUser) => localStorage.setItem(USER_KEY, JSON.stringify(u)),
 };
 
+export interface EmailStatusMap {
+  PENDING: number;
+  SENT: number;
+  FAILED: number;
+}
+export interface EmailStatsData {
+  overall: EmailStatusMap;
+  satisfaction: EmailStatusMap;
+  satisfactionTotal: number;
+}
+export interface EmailOutboxRow {
+  outboxId: number;
+  caseId: string | null;
+  template: string;
+  recipient: string;
+  subject: string;
+  status: string;
+  createdAt: string;
+  sentAt: string | null;
+  error: string | null;
+}
+export interface EmailListData {
+  total: number;
+  page: number;
+  pageSize: number;
+  items: EmailOutboxRow[];
+}
+
 export const api = {
   getMeta: (estate: string, lang: string, t?: string) => {
     const params = new URLSearchParams({ estate, lang });
@@ -936,6 +972,8 @@ export const api = {
       token,
     }),
   me: (token: string) => request<AdminUser>('/me', { token }),
+  /** 頁面底部環境條：取得執行環境標籤與資料庫位置（公開 API） */
+  getEnvInfo: () => request<EnvInfo>('/health'),
   listCases: (query: string, token: string) => request<CaseListData>(`/cases?${query}`, { token }),
   caseDetail: (caseId: string, token: string) => request<CaseDetailData>(`/cases/${encodeURIComponent(caseId)}`, { token }),
   /** 客服人員手動新增個案（case:create） */
@@ -1011,6 +1049,11 @@ export const api = {
       body: { fileName, fileDataBase64 },
       token,
     }),
+  deleteAttachment: (caseId: string, attachmentId: number, token: string) =>
+    request<{ caseId: string; attachmentId: number }>(`/cases/${encodeURIComponent(caseId)}/attachments/${attachmentId}`, {
+      method: 'DELETE',
+      token,
+    }),
   batchAssign: (body: unknown, token: string) =>
     request<BatchActionResult>('/cases/batch-assign', { method: 'POST', body, token }),
   batchUpdate: (body: unknown, token: string) =>
@@ -1029,6 +1072,13 @@ export const api = {
     request<PublicSurvey>(`/survey/${encodeURIComponent(token)}?lang=${encodeURIComponent(lang)}`),
   submitSurvey: (token: string, body: { ratings: Record<string, number>; feedback: string }) =>
     request<SurveySubmitResult>(`/survey/${encodeURIComponent(token)}/submit`, { method: 'POST', body }),
+  /* 郵件發送管理（F-007 輔助） */
+  emailStats: (token: string) => request<EmailStatsData>('/emails/stats', { token }),
+  emailList: (query: string, token: string) => request<EmailListData>(`/emails?${query}`, { token }),
+  emailResend: (id: number, token: string) =>
+    request<{ ok: boolean; reason?: string; outboxId?: number }>(`/emails/${id}/resend`, { method: 'POST', token }),
+  emailResendFailed: (token: string) =>
+    request<{ reset: number; processed: number; sent: number; failed: number }>('/emails/resend-failed', { method: 'POST', token }),
   /* F-008 儀表板與週報 */
   dashboardSummary: (q: Parameters<typeof dashboardQuery>[0], token: string) =>
     request<DashboardSummaryData>(`/dashboard/summary${dashboardQuery(q)}`, { token }),
@@ -1132,6 +1182,19 @@ export async function downloadCaseAttachmentBlob(caseId: string, attachmentId: n
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
+}
+
+/** 取得附件（圖片）的可預覽 blob URL（帶 token 的私有下載）。呼叫端負責 revokeObjectURL。 */
+export async function fetchCaseAttachmentBlobUrl(caseId: string, attachmentId: number, token: string): Promise<string> {
+  const res = await fetch(`${BASE}/cases/${encodeURIComponent(caseId)}/attachments/${attachmentId}/download`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const env = await parseEnvelope<null>(res);
+    throw new ApiRequestError(env.code, env.message, env.data);
+  }
+  const blob = await res.blob();
+  return URL.createObjectURL(blob);
 }
 
 /** 以 blob 下載匯出檔（CSV/XLSX），套用目前篩選 */

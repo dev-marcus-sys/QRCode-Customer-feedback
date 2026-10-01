@@ -17,6 +17,8 @@ backend/data/
 _xlsx_dump.txt
 .playwright-cli/
 mlogin.yaml
+home.yaml
+*.tmp.js
 .DS_Store
 
 # IDE

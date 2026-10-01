@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  Alert, Box, Button, Card, CardContent, Checkbox, Chip, CircularProgress, Fade, IconButton,
+  Alert, Box, Button, Card, CardContent, Checkbox, Chip, CircularProgress, Fade,
   MenuItem, Paper, Stack, Table, TableBody, TableCell, TableContainer, TableHead,
   TablePagination, TableRow, TableSortLabel, TextField, Toolbar, Typography,
 } from '@mui/material';
@@ -19,7 +19,7 @@ import { BatchActions } from '../../components/BatchActions';
 import { CreateCaseDialog } from '../../components/CreateCaseDialog';
 import { ImportCasesDialog } from '../../components/ImportCasesDialog';
 import {
-  CATEGORY_OPTIONS, EVENT_OPTIONS, PRIORITY_OPTIONS,
+  CATEGORY_OPTIONS, EVENT_OPTIONS, INTENT_OPTIONS, PRIORITY_OPTIONS,
   labelOf, STATUS_OPTIONS,
 } from '../../admin/options';
 import { useEstates } from '../../admin/useEstates';
@@ -33,7 +33,9 @@ interface Filters {
   status?: string;
   eventType?: string;
   priority?: string;
+  intent?: string;
   second?: string;
+  slaOverdue?: string;
   dateFrom?: string;
   dateTo?: string;
 }
@@ -49,6 +51,9 @@ function fmt(iso: string | null): string {
   if (!iso) return '—';
   return iso.replace('T', ' ').slice(0, 16);
 }
+
+// 與後端 CLOSED_STATUSES 對齊：終結狀態不顯示即時 SLA 倒數
+const TERMINAL_STATUSES = ['CLOSED', 'RESOLVED'];
 
 function remainText(iso: string | null): { text: string; overdue: boolean } | null {
   if (!iso) return null;
@@ -68,7 +73,6 @@ export function CaseListPage() {
   // 所屬屋苑可多選：未含 ALL 且非空者視為受限範圍（可於自身屋苑間切換）
   const scopeCodes = user && user.estateCodes && user.estateCodes.length && !user.estateCodes.includes('ALL')
     ? user.estateCodes : null;
-  const estateLocked = !!scopeCodes;
   const canExport = !!user?.permissions?.includes('case:export');
   const estates = useEstates();
 
@@ -301,12 +305,29 @@ export function CaseListPage() {
                   ))}
                 </TextField>
                 <TextField
+                  select size="small" label="意見性質" sx={{ minWidth: 140 }}
+                  value={filters.intent || ''} onChange={(e) => setFilter('intent', e.target.value)}
+                >
+                  <MenuItem value="">全部</MenuItem>
+                  {INTENT_OPTIONS.map((o) => (
+                    <MenuItem key={o.code} value={o.code}>{o.labelZh}</MenuItem>
+                  ))}
+                </TextField>
+                <TextField
                   select size="small" label="二次投訴" sx={{ minWidth: 120 }}
                   value={filters.second || ''} onChange={(e) => setFilter('second', e.target.value)}
                 >
                   <MenuItem value="">全部</MenuItem>
                   <MenuItem value="1">是</MenuItem>
                   <MenuItem value="0">否</MenuItem>
+                </TextField>
+                <TextField
+                  select size="small" label="SLA 逾期" sx={{ minWidth: 130 }}
+                  value={filters.slaOverdue || ''} onChange={(e) => setFilter('slaOverdue', e.target.value)}
+                >
+                  <MenuItem value="">全部</MenuItem>
+                  <MenuItem value="1">逾期</MenuItem>
+                  <MenuItem value="0">未逾期</MenuItem>
                 </TextField>
               </Stack>
               <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} alignItems="center">
@@ -376,7 +397,9 @@ export function CaseListPage() {
                 <TableBody>
                   {!loading && data?.items.map((row) => {
                     const overdueRow = row.slaOverdue;
-                    const rem = remainText(row.responseSlaDue || row.closureSlaDue);
+                    const rem = TERMINAL_STATUSES.includes(row.caseStatus)
+                      ? null
+                      : remainText(row.responseSlaDue || row.closureSlaDue);
                     return (
                       <TableRow
                         key={row.caseId}
@@ -414,7 +437,7 @@ export function CaseListPage() {
                         <TableCell sx={{ whiteSpace: 'nowrap', fontSize: 13 }}>
                           {row.estateNameZh}
                           <Box component="span" sx={{ color: 'text.secondary', ml: 0.5, fontSize: 12 }}>
-                            {labelOf(CATEGORY_OPTIONS, row.categoryCode, 'zh-Hant')}
+                            {labelOf(CATEGORY_OPTIONS, row.categoryCode, 'zh-Hant')} · {labelOf(INTENT_OPTIONS, row.intentType, 'zh-Hant')}
                           </Box>
                         </TableCell>
                         <TableCell>

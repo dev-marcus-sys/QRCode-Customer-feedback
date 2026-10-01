@@ -1,11 +1,12 @@
 import { Box, Toolbar, Typography } from '@mui/material';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet } from 'react-router-dom';
 import InsightsIcon from '@mui/icons-material/Insights';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 import FactCheckIcon from '@mui/icons-material/FactCheck';
 import QrCode2Icon from '@mui/icons-material/QrCode2';
 import { authStore } from '../api/client';
 import { TopBarUser } from '../components/TopBarUser';
+import { EnvFooter } from '../components/EnvFooter';
 
 type Tab = { to: string; label: string; icon: JSX.Element; perm: string };
 
@@ -18,7 +19,6 @@ const TABS: Tab[] = [
 
 /** 手機版外框：頂部標題列 + 內容（Outlet）＋ 固定底部 Tab 導覽，app 化佈局。 */
 export function MobileShell() {
-  const navigate = useNavigate();
   const me = authStore.getUser();
   const perms = me?.permissions || [];
   const tabs = TABS.filter((t) => perms.includes(t.perm));
@@ -43,6 +43,8 @@ export function MobileShell() {
       <Box component="main" sx={{ flex: 1, px: { xs: 1.5, sm: 2 }, pt: 1.5, pb: 9 }}>
         <Outlet />
       </Box>
+
+      <EnvFooter fixed bottomOffset={60} />
 
       <Box
         component="nav"

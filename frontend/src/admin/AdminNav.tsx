@@ -12,6 +12,7 @@ const SECTIONS: { key: string; label: string; path: string; perms?: string[] }[]
   { key: 'cases', label: '個案', path: '/admin/cases', perms: ['case:list'] },
   { key: 'qr', label: 'QR Code', path: '/admin/qr', perms: ['qr:view', 'qr:generate'] },
   { key: 'surveys', label: '問卷', path: '/admin/surveys', perms: ['dashboard:view'] },
+  { key: 'emails', label: '郵件發送', path: '/admin/emails', perms: ['dashboard:view'] },
   { key: 'dashboard', label: '儀表板', path: '/admin/dashboard', perms: ['dashboard:view'] },
   { key: 'config', label: '參數', path: '/admin/config', perms: ['config:view'] },
   { key: 'users', label: '用戶', path: '/admin/users', perms: ['user:list'] },

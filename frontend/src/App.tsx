@@ -1,5 +1,7 @@
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { Box } from '@mui/material';
 import { AuthGuard } from './components/AuthGuard';
+import { EnvFooter } from './components/EnvFooter';
 import { FormPage } from './pages/public/FormPage';
 import { SuccessPage } from './pages/public/SuccessPage';
 import { SurveyPage } from './pages/public/SurveyPage';
@@ -8,6 +10,7 @@ import { CaseListPage } from './pages/admin/CaseListPage';
 import { CaseDetailPage } from './pages/admin/CaseDetailPage';
 import { QrCodePage } from './pages/admin/QrCodePage';
 import { SurveyStatsPage } from './pages/admin/SurveyStatsPage';
+import { EmailDispatchPage } from './pages/admin/EmailDispatchPage';
 import { DashboardPage } from './pages/admin/DashboardPage';
 import { ConfigPage } from './pages/admin/ConfigPage';
 import { UsersPage } from './pages/admin/UsersPage';
@@ -39,9 +42,13 @@ function MobileLanding() {
 }
 
 export default function App() {
+  const location = useLocation();
+  const isMobile = location.pathname.startsWith('/m');
   return (
-    <Routes>
-      <Route path="/" element={<FormPage />} />
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <Box component="main" sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <Routes>
+          <Route path="/" element={<FormPage />} />
       <Route path="/success" element={<SuccessPage />} />
       <Route path="/survey/:token" element={<SurveyPage />} />
       <Route path="/admin/login" element={<LoginPage />} />
@@ -133,6 +140,14 @@ export default function App() {
           </AuthGuard>
         }
       />
+      <Route
+        path="/admin/emails"
+        element={
+          <AuthGuard>
+            <EmailDispatchPage />
+          </AuthGuard>
+        }
+      />
       <Route path="/admin" element={<Navigate to="/admin/cases" replace />} />
 
       {/* ---------- 手機版（/m/*，獨立路由＋底部 Tab 導覽） ---------- */}
@@ -152,6 +167,9 @@ export default function App() {
         <Route path="surveys" element={<MobileSurveyPage />} />
         <Route path="qr" element={<MobileQrPage />} />
       </Route>
-    </Routes>
+        </Routes>
+      </Box>
+      {!isMobile && <EnvFooter />}
+    </Box>
   );
 }

@@ -8,7 +8,6 @@
 
 const { dbToIso8 } = require('../utils/time');
 const logger = require('../utils/logger');
-const { estateListMatch } = require('../utils/estateScope');
 
 const NOTIF_TYPES = ['CASE', 'REMINDER', 'ESCALATION', 'SURVEY', 'SYSTEM'];
 

@@ -41,7 +41,6 @@ export function SurveyStatsPage() {
   // 所屬屋苑可多選：未含 ALL 且非空者視為受限範圍（可於自身屋苑間切換）
   const scopeCodes = user && user.estateCodes && user.estateCodes.length && !user.estateCodes.includes('ALL')
     ? user.estateCodes : null;
-  const locked = !!scopeCodes;
   const estates = useEstates();
   const [estate, setEstate] = useState('');
   const [data, setData] = useState<SurveyStatsData | null>(null);

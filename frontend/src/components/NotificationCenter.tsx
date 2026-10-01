@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Badge, Box, Button, Divider, IconButton, List, ListItemButton, ListItemIcon,
-  ListItemText, ListSubheader, Paper, Popover, Stack, Typography,
+  ListItemText, ListSubheader, Popover, Typography,
 } from '@mui/material';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
@@ -11,7 +11,7 @@ import FactCheckIcon from '@mui/icons-material/FactCheck';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import DoneAllIcon from '@mui/icons-material/DoneAll';
-import { api, ApiRequestError, authStore, NotificationItem } from '../api/client';
+import { api, authStore, NotificationItem } from '../api/client';
 
 function fmt(iso: string): string {
   if (!iso) return '';
@@ -29,6 +29,7 @@ const TYPE_ICON: Record<string, React.ReactNode> = {
 /** 頂欄通知中心（F-005 FR-005-04）：未讀徽章＋列表＋標已讀/全部已讀 */
 export function NotificationCenter() {
   const navigate = useNavigate();
+  const location = useLocation();
   const token = authStore.getToken() || '';
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const [unread, setUnread] = useState(0);
@@ -79,7 +80,8 @@ export function NotificationCenter() {
     }
     if (n.refType === 'CASE' && n.refId) {
       closePanel();
-      navigate(`/admin/cases/${encodeURIComponent(n.refId)}`);
+      const base = location.pathname.startsWith('/m/') ? '/m/cases' : '/admin/cases';
+      navigate(`${base}/${encodeURIComponent(n.refId)}`);
     }
   };
 

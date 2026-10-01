@@ -56,11 +56,6 @@ function resolveBaseUrl(db, protocolHost) {
   return protocolHost.replace(/\/+$/, '');
 }
 
-/** 組成 QR 內容：表單 URL + estate 參數（不帶語言，表單自動依瀏覽器語言顯示） */
-function composeQrContent(base, estateCode) {
-  return `${String(base).replace(/\/+$/, '')}/?estate=${encodeURIComponent(estateCode)}`;
-}
-
 /**
  * 產生短亂數連結令牌（16 hex = 64-bit，不可猜測）。用於 QR 連結 ?t=<token>，
  * 取代明文 qr_id / 簽章，讓連結更短、更易掃描，且無法被偽造或枚舉。
@@ -318,7 +313,6 @@ module.exports = {
   saveSiteBaseUrl,
   sanitizeSiteBaseUrl,
   resolveBaseUrl,
-  composeQrContent,
   renderQr,
   getQrByToken,
 };

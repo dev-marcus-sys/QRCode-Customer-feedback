@@ -5,7 +5,7 @@
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
-const { initDatabase } = require('./db/connection');
+const { initDatabase, dbPath } = require('./db/connection');
 const { ok, errorHandler, notFound } = require('./middlewares/error');
 const logger = require('./utils/logger');
 const publicRoutes = require('./routes/public');
@@ -22,6 +22,7 @@ const auditRoutes = require('./routes/audit');
 const estateRoutes = require('./routes/estates');
 const aiRoutes = require('./routes/ai');
 const analyticsRoutes = require('./routes/analytics');
+const emailAdminRoutes = require('./routes/emailAdmin');
 
 /** 前端建置產物目錄（production 模式由後端直接托管；不存在時退回純 API / dev proxy） */
 const FRONTEND_DIST = path.resolve(__dirname, '../../frontend/dist');
@@ -49,7 +50,21 @@ function createApp() {
     next();
   });
 
-  app.get('/api/v1/health', (req, res) => ok(res, { status: 'ok', db: !!db }));
+  /** 執行環境標籤：優先取 APP_ENV（local/test/production），否則依 NODE_ENV 推斷 */
+  function resolveEnv() {
+    const map = {
+      local: '本機開發 (localhost)',
+      test: '測試環境',
+      production: '正式環境 (真實環境)',
+    };
+    const raw = (process.env.APP_ENV || '').toLowerCase();
+    if (map[raw]) return { key: raw, label: map[raw] };
+    const isProd = process.env.NODE_ENV === 'production';
+    return isProd ? { key: 'production', label: map.production } : { key: 'local', label: map.local };
+  }
+
+  app.get('/api/v1/health', (req, res) =>
+    ok(res, { status: 'ok', db: !!db, environment: resolveEnv(), dbPath: dbPath() }));
   app.use('/api/v1/form', publicRoutes.formRouter);
   app.use('/api/v1', publicRoutes.publicRouter);
   app.use('/api/v1', authRoutes);
@@ -67,6 +82,7 @@ function createApp() {
   // M0 AI 診斷（AI-01 影子模式之設定現況／連線測試）
   app.use('/api/v1/ai', aiRoutes);
   app.use('/api/v1/analytics', analyticsRoutes);
+  app.use('/api/v1/emails', emailAdminRoutes);
 
   // Production：若存在前端建置產物則托管靜態檔並提供 SPA fallback（React Router 深鏈）
   if (fs.existsSync(INDEX_HTML)) {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   Alert, Box, Button, Card, CardContent, Chip, CircularProgress, Divider,
   IconButton, Stack, Toolbar, Typography,
@@ -65,6 +65,7 @@ export function CaseDetailPage() {
   const rawCaseId = useParams().caseId;
   const caseId = rawCaseId ? decodeURIComponent(rawCaseId) : undefined;
   const navigate = useNavigate();
+  const location = useLocation();
   const me = authStore.getUser();
   const permissions = me?.permissions || [];
   const { features } = useAiFeatures();
@@ -96,7 +97,7 @@ export function CaseDetailPage() {
     return () => {
       alive = false;
     };
-  }, [caseId, navigate]);
+  }, [caseId, navigate, location.key]);
 
   const refresh = () => {
     if (!caseId) return;
@@ -191,6 +192,11 @@ export function CaseDetailPage() {
                   <Link to={`/admin/cases/${encodeURIComponent(c.originalCaseId)}`} style={{ marginLeft: 4 }}>
                     {c.originalCaseId}
                   </Link>
+                </Alert>
+              )}
+              {c.isSecondComplaint && !c.originalCaseId && (
+                <Alert severity="warning" sx={{ mt: 2, fontSize: 13 }}>
+                  本個案因二次投訴重新開啟，請優先跟進。
                 </Alert>
               )}
             </SectionCard>

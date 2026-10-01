@@ -51,6 +51,9 @@ const NEW_COLUMNS = [
   ['weekly_report', 'ai_summary_at', 'TEXT'],
   // AI-07 附件影像理解（OCR 文字另存）
   ['case_log_attachment', 'ocr_text', 'TEXT'],
+  // 郵件實際寄送（SMTP）：既有 DB 補 sent_at / error（新庫由 schema.sql 建表時已含）
+  ['email_outbox', 'sent_at', 'TEXT'],
+  ['email_outbox', 'error', 'TEXT'],
 ];
 
 /** 權限碼、名稱 → 需綁定之角色（維持 seed 一致，舊 DB 靠此補齊） */

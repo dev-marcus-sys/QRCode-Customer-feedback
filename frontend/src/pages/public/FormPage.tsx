@@ -28,7 +28,12 @@ const initialForm = (): FormState => ({
   title: '', name: '', email: '', phone: '', incidentDate: '', incidentTime: '',
   block: '', floor: '', unit: '', categories: [], otherText: '', content: '',
   surveyConsent: true, privacyAgree: false,
-});
+  });
+
+  /** 電郵格式（與後端 validate.js EMAIL_RE 一致） */
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  /** 香港電話：+852（可略）＋ 2/3/5/6/9 開頭 8 位數（與後端 PHONE_RE 一致） */
+  const PHONE_RE = /^(?:\+852)?[23569]\d{7}$/;
 
 type FieldErrors = Record<string, string>;
 
@@ -82,6 +87,10 @@ export function FormPage() {
     setForm((f) => ({ ...f, ...patch }));
     const touched = Object.keys(patch)[0];
     if (touched && errors[touched]) setErrors((e) => ({ ...e, [touched]: '' }));
+    // 聯絡方式二擇一：填寫任一即解除 contact 錯誤
+    if ((touched === 'email' || touched === 'phone') && errors.contact && String(patch[touched] || '').trim()) {
+      setErrors((e) => ({ ...e, contact: '' }));
+    }
   };
 
   const toggleCategory = (code: string) => {
@@ -97,7 +106,9 @@ export function FormPage() {
     const e: FieldErrors = {};
     if (!form.title) e.title = lang === 'en' ? 'Required' : '必填';
     if (!form.name.trim()) e.name = lang === 'en' ? 'Required' : '必填';
-    if (!form.email.trim() && !form.phone.trim()) e.contact = translate(lang, 'form.contactHint');
+    if (!form.email.trim() && !form.phone.trim()) e.contact = translate(lang, 'form.contactRequired');
+    if (form.email.trim() && !EMAIL_RE.test(form.email.trim())) e.email = translate(lang, 'form.emailInvalid');
+    if (form.phone.trim() && !PHONE_RE.test(form.phone.trim())) e.phone = translate(lang, 'form.phoneInvalid');
     if (!form.incidentDate) e.incidentDate = translate(lang, 'form.required');
     if (form.categories.length === 0) e.categories = lang === 'en' ? 'Select at least one' : '請至少選擇一項';
     if (form.categories.includes('OTHER') && !form.otherText.trim()) e.otherText = lang === 'en' ? 'Required' : '必填';
@@ -155,6 +166,8 @@ export function FormPage() {
           contentPreview: form.content.slice(0, 80),
           message: res.message,
           isDuplicate: false,
+          estate,
+          t: qrToken,
         },
       });
     } catch (err) {
@@ -167,6 +180,7 @@ export function FormPage() {
             state: {
               lang, caseId: dupCaseId, estateName: meta?.estateNameZh || estate,
               categoryLabels: [], contentPreview: '', message: err.message, isDuplicate: true,
+              estate, t: qrToken,
             },
           });
         } else if (err.code === 1002) {
@@ -194,6 +208,9 @@ export function FormPage() {
   };
 
   const categoryOptions = meta?.categories || [];
+  // 即時格式校驗：輸入當下即顯示紅框與訊息（不必等到按送出）
+  const emailInvalid = !!form.email.trim() && !EMAIL_RE.test(form.email.trim());
+  const phoneInvalid = !!form.phone.trim() && !PHONE_RE.test(form.phone.trim());
   const contentLen = form.content.length;
   const otherLen = form.otherText.length;
   const displayName = useMemo(() => (lang === 'en' ? meta?.estateNameEn : meta?.estateNameZh), [meta, lang]);
@@ -312,9 +329,13 @@ export function FormPage() {
                   <Typography fontWeight={600} sx={{ mb: 1.5 }}>{t('form.email')} / {t('form.phone')}</Typography>
                   <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                     <TextField size="small" fullWidth type="email" label={t('form.email')} value={form.email}
-                      onChange={(e) => set({ email: e.target.value })} />
+                      onChange={(e) => set({ email: e.target.value })}
+                      error={!!errors.contact || !!errors.email || emailInvalid}
+                      helperText={errors.email || (emailInvalid ? translate(lang, 'form.emailInvalid') : '')} />
                     <TextField size="small" fullWidth label={t('form.phone')} value={form.phone}
-                      onChange={(e) => set({ phone: e.target.value })} placeholder="+852 9123 4567" />
+                      onChange={(e) => set({ phone: e.target.value })} placeholder="+852 9123 4567"
+                      error={!!errors.contact || !!errors.phone || phoneInvalid}
+                      helperText={errors.phone || (phoneInvalid ? translate(lang, 'form.phoneInvalid') : '')} />
                   </Stack>
                   {errors.contact && (
                     <Typography variant="caption" color="error">{errors.contact}</Typography>

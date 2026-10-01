@@ -34,6 +34,13 @@ export const PRIORITY_OPTIONS: { code: string; labelZh: string; labelEn: string 
   { code: 'MEDIUM', labelZh: '中', labelEn: 'Medium' },
   { code: 'LOW', labelZh: '低', labelEn: 'Low' },
 ];
+
+export const INTENT_OPTIONS: { code: string; labelZh: string; labelEn: string }[] = [
+  { code: 'COMPLAINT', labelZh: '投訴', labelEn: 'Complaint' },
+  { code: 'FEEDBACK', labelZh: '反饋意見', labelEn: 'Feedback' },
+  { code: 'INQUIRY', labelZh: '查詢', labelEn: 'Inquiry' },
+  { code: 'COMPLIMENT', labelZh: '讚揚', labelEn: 'Compliment' },
+];
 export const ROLE_OPTIONS: { code: string; labelZh: string; labelEn: string }[] = [
   { code: 'ADMIN', labelZh: '系統管理員', labelEn: 'Administrator' },
   { code: 'CC_SUPERVISOR', labelZh: '客服中心主管', labelEn: 'CC Supervisor' },

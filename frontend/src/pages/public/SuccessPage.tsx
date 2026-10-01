@@ -13,6 +13,9 @@ interface SuccessState {
   contentPreview: string;
   message: string;
   isDuplicate: boolean;
+  /** 表單來源參數：返回首頁時重建合法 QR 連結（?estate=..&t=..） */
+  estate?: string;
+  t?: string | null;
 }
 
 export function SuccessPage() {
@@ -90,7 +93,18 @@ export function SuccessPage() {
                   </Box>
                 </>
               )}
-              <Button variant="contained" onClick={() => navigate('/')} sx={{ mt: 1 }}>
+              <Button
+                variant="contained"
+                onClick={() => {
+                  // 返回首頁須帶回 estate 與 QR token，否則表單頁會因連結驗證失敗而擋下
+                  const q = new URLSearchParams();
+                  if (s?.estate) q.set('estate', s.estate);
+                  if (s?.t) q.set('t', s.t);
+                  const qs = q.toString();
+                  navigate(qs ? `/?${qs}` : '/');
+                }}
+                sx={{ mt: 1 }}
+              >
                 {translate(lang, 'success.back')}
               </Button>
             </Stack>

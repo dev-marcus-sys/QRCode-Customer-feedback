@@ -29,7 +29,7 @@ const { ERR } = require('../config/constants');
 const { listCases, getCaseDetail, getAssignees, assignCase, reassignCase,
   startCase, setWaitingCase, resumeCase, addCaseNote, changeCasePriority,
   submitResolution, approveResolution, rejectResolution, reopenCase,
-  uploadCaseAttachment, downloadCaseAttachment, batchAssignCases, batchUpdateCases,
+  uploadCaseAttachment, downloadCaseAttachment, deleteCaseAttachment, batchAssignCases, batchUpdateCases,
   createManualCase, importCasesFromWorkbook, importTemplateBuffer } = require('../services/caseService');
 const { exportFile } = require('../services/exportService');
 const { listAiSuggestions, decideAiSuggestion, reanalyzeCase, linkSimilarCase, suggestAssignee,
@@ -163,6 +163,10 @@ router.get('/:caseId/attachments/:attachmentId/download', requirePerm('case:view
   res.set('Content-Type', att.fileType === 'pdf' ? 'application/pdf' : `image/${att.fileType === 'jpg' ? 'jpeg' : att.fileType}`);
   res.set('Content-Disposition', `attachment; filename="${encodeURIComponent(att.fileName)}"`);
   return res.sendFile(att.absPath);
+});
+
+router.delete('/:caseId/attachments/:attachmentId', requirePerm('case:update'), (req, res) => {
+  ok(res, deleteCaseAttachment(getDb(), req.params.caseId, req.user, Number(req.params.attachmentId)));
 });
 
 /** AI-07 附件影像理解結果（按附件聚合最新一筆；case:view） */

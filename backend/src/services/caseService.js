@@ -410,6 +410,19 @@ function createManualCase(db, actor, payload) {
   };
 }
 
+/**
+ * SLA 逾期判定（與 rowToDto 的 overdue 邏輯一致）：終結狀態不計逾期；
+ * 各 SLA 維度在其「已被滿足」條件未成立、且到期時間早於現在時視為逾期。
+ * 儲存格式為 UTC 字串 'YYYY-MM-DD HH:mm:ss'，與 datetime('now') 同格式，字串比較即等效於時間先後。
+ */
+const SLA_OVERDUE_WHERE = `c.case_status NOT IN (${CLOSED_STATUSES.map((s) => `'${s}'`).join(', ')}) AND (
+  (c.response_sla_due IS NOT NULL AND c.first_response_at IS NULL AND c.response_sla_due < datetime('now')) OR
+  (c.dispatch_sla_due IS NOT NULL AND c.assigned_to IS NULL AND c.dispatch_sla_due < datetime('now')) OR
+  (c.processing_sla_due IS NOT NULL AND c.closed_at IS NULL AND c.processing_sla_due < datetime('now')) OR
+  (c.followup_sla_due IS NOT NULL AND c.closed_at IS NULL AND c.followup_sla_due < datetime('now')) OR
+  (c.closure_sla_due IS NOT NULL AND c.closed_at IS NULL AND c.closure_sla_due < datetime('now'))
+)`;
+
 /** 解析篩選 Query → SQL 片段 */
 function parseCaseFilters(query, user) {
   const where = [];
@@ -441,6 +454,10 @@ function parseCaseFilters(query, user) {
     where.push('c.priority = ?');
     params.push(q.priority);
   }
+  if (q.intent) {
+    where.push('c.intent_type = ?');
+    params.push(q.intent);
+  }
   if (q.assignedTo === 'me' && user) {
     where.push('c.assigned_to = ?');
     params.push(user.userId);
@@ -467,6 +484,12 @@ function parseCaseFilters(query, user) {
     const kw = `%${q.keyword}%`;
     where.push('(c.case_id LIKE ? OR c.customer_name LIKE ? OR c.comment_content LIKE ?)');
     params.push(kw, kw, kw);
+  }
+  // SLA 逾期篩選（與 rowToDto 的 slaOverdue 一致）
+  if (q.slaOverdue === '1' || q.slaOverdue === 'true') {
+    where.push(SLA_OVERDUE_WHERE);
+  } else if (q.slaOverdue === '0' || q.slaOverdue === 'false') {
+    where.push(`NOT (${SLA_OVERDUE_WHERE})`);
   }
 
   const sortBy = SORT_COLUMNS[q.sortBy] || SORT_COLUMNS.createdAt;
@@ -678,7 +701,7 @@ function doAssign(db, row, assignee, user, opts, kind) {
   // 派單 SLA：指派時間未逾派單期限即達標（指引二 2.2）
   if (row.dispatch_sla_due != null) {
     parts.push('dispatch_sla_met = ?');
-    vals.push(dueMs(row.dispatch_sla_due) >= atDb.getTime() ? 1 : 0);
+    vals.push(dueMs(row.dispatch_sla_due) >= dueMs(atDb) ? 1 : 0);
   }
   if (opts.priority && PRIORITY.includes(opts.priority) && opts.priority !== row.priority) {
     parts.push('priority = ?');
@@ -873,7 +896,7 @@ function approveResolution(db, caseId, user, body) {
   const handlingDays = createdMs ? Math.round(((closedMs - createdMs) / 86400000) * 100) / 100 : null;
   const closureSlaMet = row.closure_sla_due ? (closedMs <= dueMs(row.closure_sla_due) ? 1 : 0) : null;
   db.transaction(() => {
-    const processingSlaMet = row.processing_sla_due ? (dueMs(row.processing_sla_due) >= atDb.getTime() ? 1 : 0) : null;
+    const processingSlaMet = row.processing_sla_due ? (dueMs(row.processing_sla_due) >= dueMs(atDb) ? 1 : 0) : null;
     db.prepare(
       'UPDATE `case` SET case_status = ?, closed_at = ?, closure_sla_met = ?, processing_sla_met = ?, followup_sla_met = ?, handling_days = ?, updated_at = ? WHERE case_id = ?'
     ).run('CLOSED', atDb, closureSlaMet, processingSlaMet, 1, handlingDays, atDb, row.case_id);
@@ -945,11 +968,14 @@ function reopenCase(db, caseId, user, body) {
   const reopenType = REOPEN_TYPE.includes(body.reopenType) ? body.reopenType : 'SECOND_COMPLAINT';
   const atDb = dbNow();
   const newClosureDue = computeDueDates(db, new Date(), row.event_type).closureDue;
+  // 重開標記為「二次投訴」時，正式寫入 is_second_complaint 標記（原缺口：僅寫 log 未設欄位，
+  // 導致不計入列表篩選/儀表板 SECOND 統計/週報）。其餘標記（跟進不足）保留原值不動。
+  const secondFlagSql = reopenType === 'SECOND_COMPLAINT' ? 'is_second_complaint = 1, ' : '';
   db.transaction(() => {
     db.prepare(
       `UPDATE \`case\`
           SET case_status = 'REOPENED', closure_sla_due = ?, closure_reminded_at = NULL, closure_escalated_at = NULL,
-              updated_at = ?
+              ${secondFlagSql}updated_at = ?
         WHERE case_id = ?`
     ).run(newClosureDue, atDb, row.case_id);
     insertLog(db, row.case_id, 'REOPEN', `重新開啟（標記：${REOPEN_LABEL[reopenType]}）：${reason}；新的關閉期限 ${newClosureDue}`, 'CLOSED', 'REOPENED', user.userId, atDb, null);
@@ -967,14 +993,14 @@ function reopenCase(db, caseId, user, body) {
   return { caseId: row.case_id, caseStatus: 'REOPENED', closureSlaDue: dbToIso8(newClosureDue) };
 }
 
-/** 上傳附件（FR-004-08：jpg/png/pdf ≤ 10MB，私有儲存） */
+/** 上傳附件（FR-004-08：僅 jpg/jpeg/png 圖片 ≤ 10MB，私有儲存） */
 function uploadCaseAttachment(db, caseId, user, file) {
   const row = getRawCase(db, caseId);
   assertEstateScope(user, row);
   assertState(row, ACTIONABLE_STATUSES, '上傳附件');
   const fileName = String(file.name || '').trim();
   const ext = path.extname(fileName).toLowerCase().replace(/^\./, '');
-  if (!['jpg', 'jpeg', 'png', 'pdf'].includes(ext)) throw new ApiError(ERR.ATTACH_INVALID);
+  if (!['jpg', 'jpeg', 'png'].includes(ext)) throw new ApiError(ERR.ATTACH_INVALID);
   const buf = file.data;
   if (!Buffer.isBuffer(buf) || buf.length === 0 || buf.length > 10 * 1024 * 1024) throw new ApiError(ERR.ATTACH_INVALID);
   const caseDir = path.join(uploadsDir(), row.case_id);
@@ -1005,6 +1031,26 @@ function downloadCaseAttachment(db, caseId, attachmentId, user) {
   const absPath = path.join(uploadsDir(), row.case_id, att.storageKey);
   if (!fs.existsSync(absPath)) throw new ApiError(ERR.INTERNAL, null, 500);
   return { absPath, fileName: att.fileName, fileType: att.fileType, fileSize: att.fileSize };
+}
+
+/** 刪除附件（FR-004-08：實體檔＋紀錄，並解除 case_log 關聯；狀態限 ACTIONABLE） */
+function deleteCaseAttachment(db, caseId, user, attachmentId) {
+  const row = getRawCase(db, caseId);
+  assertEstateScope(user, row);
+  assertState(row, ACTIONABLE_STATUSES, '刪除附件');
+  const att = db.prepare(
+    'SELECT attachment_id AS attachmentId, case_id AS caseId, storage_key AS storageKey, file_name AS fileName FROM case_log_attachment WHERE attachment_id = ? AND case_id = ?'
+  ).get(Number(attachmentId), caseId);
+  if (!att) throw new ApiError(ERR.CASE_NOT_FOUND, '附件不存在', 404);
+  const absPath = path.join(uploadsDir(), row.case_id, att.storageKey);
+  try { if (fs.existsSync(absPath)) fs.unlinkSync(absPath); } catch (e) { /* 實體檔遺失不阻斷刪除 */ }
+  db.transaction(() => {
+    db.prepare('UPDATE case_log SET attachment_id = NULL WHERE attachment_id = ?').run(att.attachmentId);
+    db.prepare('DELETE FROM case_log_attachment WHERE attachment_id = ?').run(att.attachmentId);
+    insertLog(db, row.case_id, 'OTHER', `刪除附件：${att.fileName}`, row.case_status, row.case_status, user.userId, dbNow(), null);
+    audit(db, user, 'CASE_ATTACHMENT_DELETE', row.case_id, { attachmentId: att.attachmentId, fileName: att.fileName });
+  })();
+  return { caseId: row.case_id, attachmentId: att.attachmentId };
 }
 
 /** 批次分派（FR-004-10：同屋苑多案指派同一人；PENDING/REOPENED） */
@@ -1087,6 +1133,7 @@ module.exports = {
   reopenCase,
   uploadCaseAttachment,
   downloadCaseAttachment,
+  deleteCaseAttachment,
   batchAssignCases,
   batchUpdateCases,
   importCasesFromWorkbook,

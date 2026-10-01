@@ -5,21 +5,21 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const Database = require('better-sqlite3');
+const { createAdapter } = require('./adapter');
 
 let _db = null;
 
 function dbPath() {
   if (process.env.DB_PATH === ':memory:') return ':memory:';
   const p = process.env.DB_PATH || path.join(__dirname, '..', '..', 'data', 'qr_feedback.sqlite');
-  return p;
+  return path.resolve(p);
 }
 
 function getDb() {
   if (!_db) {
     const p = dbPath();
     if (p !== ':memory:') fs.mkdirSync(path.dirname(p), { recursive: true });
-    _db = new Database(p);
+    _db = createAdapter('sqlite', { path: p });
     _db.pragma('foreign_keys = ON');
     _db.pragma('journal_mode = WAL');
   }
@@ -53,4 +53,4 @@ function initDatabase() {
   return db;
 }
 
-module.exports = { getDb, initDatabase, applySchema };
+module.exports = { getDb, initDatabase, applySchema, dbPath };

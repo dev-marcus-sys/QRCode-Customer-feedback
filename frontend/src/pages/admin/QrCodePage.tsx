@@ -124,7 +124,7 @@ export function QrCodePage() {
   const [notice, setNotice] = useState<Notice | null>(null);
 
   const [siteInput, setSiteInput] = useState('');
-  const [siteBusy, setSiteBusy] = useState(false);
+  const [siteBusy] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<{ kind: ConfirmKind; item: QrItem } | null>(null);
   /** 有效日期輸入草稿：qrId → 'YYYY-MM-DD'；空字串代表永不自動停用 */
