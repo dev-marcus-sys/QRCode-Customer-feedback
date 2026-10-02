@@ -10,7 +10,7 @@ if os.path.exists(_creds_file):
 else:
     _c = {k: os.environ[k] for k in ('SSH_HOST', 'SSH_PORT', 'SSH_USER', 'SSH_PASS')}
 host = _c['SSH_HOST'].strip(); port = int(str(_c['SSH_PORT']).strip())
-user = _c['SSH_USER'].strip(); pw = _c['SSH_PASS']
+user = _c['SSH_USER'].strip(); pw = _c['SSH_PASS'].strip()
 
 # 要同步的根目錄（相對 LOCAL）
 SYNC_DIRS = ['backend', 'frontend', 'docs']
