@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Alert, Box, Button, Card, CardContent, Chip, CircularProgress, IconButton, MenuItem,
+  Alert, Box, Button, Card, CardContent, Chip, CircularProgress, Dialog, DialogActions,
+  DialogContent, DialogContentText, DialogTitle, IconButton, MenuItem,
   Paper, Select, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   TextField, Toolbar, Tooltip, Typography,
 } from '@mui/material';
@@ -9,6 +10,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SendIcon from '@mui/icons-material/Send';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import EditIcon from '@mui/icons-material/Edit';
 import { api, ApiRequestError, authStore, EmailStatsData, EmailListData } from '../../api/client';
 import AdminNav from '../../admin/AdminNav';
 import { TopBarUser } from '../../components/TopBarUser';
@@ -59,6 +61,16 @@ export function EmailDispatchPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  /* 重發確認（系統 Dialog）：單筆 / 批次失敗 */
+  const [confirmTarget, setConfirmTarget] = useState<
+    | { kind: 'single'; outboxId: number; recipient: string }
+    | { kind: 'failed' }
+    | null
+  >(null);
+  /* 單封編輯（系統 Dialog）：編輯主旨/內文，可儲存或儲存並重發 */
+  const [editTarget, setEditTarget] = useState<{ outboxId: number; recipient: string; status: string } | null>(null);
+  const [editSubject, setEditSubject] = useState('');
+  const [editBody, setEditBody] = useState('');
 
   const load = useCallback(() => {
     setLoading(true);
@@ -91,26 +103,55 @@ export function EmailDispatchPage() {
     );
   }
 
-  const onResend = async (outboxId: number) => {
+  const onResend = (outboxId: number, recipient: string) => {
+    setConfirmTarget({ kind: 'single', outboxId, recipient });
+  };
+
+  const onResendFailed = () => {
+    setConfirmTarget({ kind: 'failed' });
+  };
+
+  const onEdit = (r: EmailListData['items'][number]) => {
+    setEditTarget({ outboxId: r.outboxId, recipient: r.recipient, status: r.status });
+    setEditSubject(r.subject);
+    setEditBody(r.body);
+  };
+
+  const saveEdit = async (resend: boolean) => {
+    if (!editTarget) return;
     setBusy(true); setMessage('');
     try {
-      const r = await api.emailResend(outboxId, token);
-      setMessage(r.ok ? `已重發 outbox #${outboxId}` : `重發失敗：${r.reason || '未知'}`);
+      await api.emailUpdate(editTarget.outboxId, { subject: editSubject, body: editBody }, token);
+      if (resend) {
+        const rr = await api.emailResend(editTarget.outboxId, token);
+        setMessage(rr.ok ? `已儲存並重發 outbox #${editTarget.outboxId}` : `重發失敗：${rr.reason || '未知'}`);
+      } else {
+        setMessage(`已儲存 outbox #${editTarget.outboxId} 的內容`);
+      }
+      setEditTarget(null);
       load();
     } catch (e) {
-      setMessage(`重發失敗：${e instanceof ApiRequestError ? e.message : '未知錯誤'}`);
+      setMessage(`儲存失敗：${e instanceof ApiRequestError ? e.message : '未知錯誤'}`);
     } finally { setBusy(false); }
   };
 
-  const onResendFailed = async () => {
-    if (!window.confirm('將重發所有「失敗」的滿意度調查信件，確定？')) return;
+  const doResend = async () => {
+    if (!confirmTarget) return;
+    const target = confirmTarget;
     setBusy(true); setMessage('');
     try {
-      const r = await api.emailResendFailed(token);
-      setMessage(`已重發失敗信件：重置 ${r.reset} 封，成功 ${r.sent}，失敗 ${r.failed}`);
+      if (target.kind === 'single') {
+        const r = await api.emailResend(target.outboxId, token);
+        setMessage(r.ok ? `已重發 outbox #${target.outboxId}` : `重發失敗：${r.reason || '未知'}`);
+      } else {
+        const r = await api.emailResendFailed(token);
+        setMessage(`已重發失敗信件：重置 ${r.reset} 封，成功 ${r.sent}，失敗 ${r.failed}`);
+      }
+      setConfirmTarget(null);
       load();
     } catch (e) {
       setMessage(`重發失敗：${e instanceof ApiRequestError ? e.message : '未知錯誤'}`);
+      setConfirmTarget(null);
     } finally { setBusy(false); }
   };
 
@@ -191,14 +232,18 @@ export function EmailDispatchPage() {
                     <TableCell>{r.createdAt}</TableCell>
                     <TableCell>{r.sentAt ?? '—'}</TableCell>
                     <TableCell align="right">
-                      <Button size="small" variant="outlined" startIcon={<SendIcon />} disabled={busy} onClick={() => onResend(r.outboxId)}>
+                      <Button size="small" variant="outlined" startIcon={<EditIcon />} disabled={busy || r.status === 'SENT'} onClick={() => onEdit(r)}
+                        title={r.status === 'SENT' ? '已送達不可編輯' : '編輯主旨/內文'}>
+                        編輯
+                      </Button>
+                      <Button size="small" variant="outlined" startIcon={<SendIcon />} disabled={busy} onClick={() => onResend(r.outboxId, r.recipient)} sx={{ ml: 1 }}>
                         重發
                       </Button>
                     </TableCell>
                   </TableRow>
                 ))}
                 {!loading && list && list.items.length === 0 && (
-                  <TableRow><TableCell colSpan={8} align="center" sx={{ py: 4, color: 'text.secondary' }}>沒有符合條件的郵件</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={9} align="center" sx={{ py: 4, color: 'text.secondary' }}>沒有符合條件的郵件</TableCell></TableRow>
                 )}
               </TableBody>
             </Table>
@@ -206,6 +251,52 @@ export function EmailDispatchPage() {
           {loading && <Box sx={{ display: 'grid', placeItems: 'center', py: 6 }}><CircularProgress /></Box>}
         </Paper>
       </Box>
+
+      <Dialog
+        open={!!confirmTarget}
+        onClose={() => { if (!busy) setConfirmTarget(null); }}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>重發確認</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {confirmTarget?.kind === 'single'
+              ? <>確定重發此郵件給 <strong>{confirmTarget.recipient}</strong>（outbox #{confirmTarget.outboxId}）？</>
+              : `將重發所有「失敗」的滿意度調查信件（共 ${s?.FAILED ?? 0} 封），確定？`}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmTarget(null)} disabled={busy}>取消</Button>
+          <Button onClick={doResend} variant="contained" color="warning" disabled={busy} autoFocus>
+            {busy ? '處理中…' : '確定重發'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={!!editTarget} onClose={() => { if (!busy) setEditTarget(null); }} maxWidth="sm" fullWidth>
+        <DialogTitle>編輯郵件內容（outbox #{editTarget?.outboxId}）</DialogTitle>
+        <DialogContent>
+          <TextField fullWidth size="small" label="主旨" margin="dense" value={editSubject}
+            disabled={busy} onChange={(e) => setEditSubject(e.target.value)} />
+          <TextField fullWidth size="small" label="內文（支援簡易 HTML）" margin="dense" multiline minRows={8}
+            helperText="可用標籤如 <a> <b> <br>；預覽如下" value={editBody}
+            disabled={busy} onChange={(e) => setEditBody(e.target.value)} />
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>預覽</Typography>
+          <Paper variant="outlined" sx={{ p: 1.5, background: '#fff', '& a': { color: '#1a5aa6' } }}>
+            <Typography variant="body2" sx={{ fontWeight: 700, mb: 0.5 }}>{editSubject || '（空白主旨）'}</Typography>
+            <Box component="div" sx={{ fontSize: 14, color: '#1f2d3d', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
+              dangerouslySetInnerHTML={{ __html: editBody || '<span style="color:#9aa7b4">（空白內文）</span>' }} />
+          </Paper>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditTarget(null)} disabled={busy}>取消</Button>
+          <Button onClick={() => saveEdit(false)} disabled={busy}>儲存</Button>
+          <Button onClick={() => saveEdit(true)} variant="contained" color="warning" disabled={busy || editTarget?.status === 'SENT'} autoFocus>
+            {busy ? '處理中…' : '儲存並重發'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

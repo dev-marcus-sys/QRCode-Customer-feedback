@@ -50,6 +50,23 @@ const CATALOG = [
     key: 'survey.expiry_days', group: 'SURVEY', labelZh: '問卷調查有效期（天）',
     kind: 'int', min: 1, max: 90,
   },
+  // ===== 郵件範本（主旨 + HTML 內文；「Email 內容可編輯」需求） =====
+  {
+    key: 'email.template.satisfaction_survey.zh', group: 'EMAIL', labelZh: '滿意度調查信（繁中）主旨/內文',
+    kind: 'json',
+  },
+  {
+    key: 'email.template.satisfaction_survey.en', group: 'EMAIL', labelZh: '滿意度調查信（英文）主旨/內文',
+    kind: 'json',
+  },
+  {
+    key: 'email.template.satisfaction_survey_reminder.zh', group: 'EMAIL', labelZh: '滿意度調查提醒信（繁中）主旨/內文',
+    kind: 'json',
+  },
+  {
+    key: 'email.template.satisfaction_survey_reminder.en', group: 'EMAIL', labelZh: '滿意度調查提醒信（英文）主旨/內文',
+    kind: 'json',
+  },
   {
     key: 'weekly_report.schedule', group: 'WEEKLY', labelZh: '週報自動產生排程',
     kind: 'weeklySchedule',

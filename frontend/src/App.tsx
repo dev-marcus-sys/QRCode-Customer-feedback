@@ -11,6 +11,7 @@ import { CaseDetailPage } from './pages/admin/CaseDetailPage';
 import { QrCodePage } from './pages/admin/QrCodePage';
 import { SurveyStatsPage } from './pages/admin/SurveyStatsPage';
 import { EmailDispatchPage } from './pages/admin/EmailDispatchPage';
+import { EmailTemplatePage } from './pages/admin/EmailTemplatePage';
 import { DashboardPage } from './pages/admin/DashboardPage';
 import { ConfigPage } from './pages/admin/ConfigPage';
 import { UsersPage } from './pages/admin/UsersPage';
@@ -145,6 +146,14 @@ export default function App() {
         element={
           <AuthGuard>
             <EmailDispatchPage />
+          </AuthGuard>
+        }
+      />
+      <Route
+        path="/admin/email-templates"
+        element={
+          <AuthGuard>
+            <EmailTemplatePage />
           </AuthGuard>
         }
       />

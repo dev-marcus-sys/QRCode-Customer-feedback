@@ -938,6 +938,7 @@ export interface EmailOutboxRow {
   recipient: string;
   subject: string;
   status: string;
+  body: string;
   createdAt: string;
   sentAt: string | null;
   error: string | null;
@@ -947,6 +948,16 @@ export interface EmailListData {
   page: number;
   pageSize: number;
   items: EmailOutboxRow[];
+}
+export interface EmailTemplateItem {
+  key: string;
+  lang: string;
+  configKey: string;
+  subject: string;
+  body: string;
+}
+export interface EmailTemplateData {
+  items: EmailTemplateItem[];
 }
 
 export const api = {
@@ -1079,6 +1090,10 @@ export const api = {
     request<{ ok: boolean; reason?: string; outboxId?: number }>(`/emails/${id}/resend`, { method: 'POST', token }),
   emailResendFailed: (token: string) =>
     request<{ reset: number; processed: number; sent: number; failed: number }>('/emails/resend-failed', { method: 'POST', token }),
+  emailTemplatesGet: (token: string) =>
+    request<EmailTemplateData>('/emails/email-templates', { token }),
+  emailUpdate: (id: number, body: { subject: string; body: string }, token: string) =>
+    request<{ outboxId: number; subject: string; body: string }>(`/emails/${id}`, { method: 'PATCH', body, token }),
   /* F-008 儀表板與週報 */
   dashboardSummary: (q: Parameters<typeof dashboardQuery>[0], token: string) =>
     request<DashboardSummaryData>(`/dashboard/summary${dashboardQuery(q)}`, { token }),

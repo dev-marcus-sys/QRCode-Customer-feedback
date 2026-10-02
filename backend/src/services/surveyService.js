@@ -12,6 +12,7 @@ const { ERR } = require('../config/constants');
 const { ApiError } = require('../middlewares/error');
 const { toDb, now, parseDb, dbToIso8 } = require('../utils/time');
 const { enqueueEmail, notifyUser, reviewersForCase } = require('./notificationService');
+const { renderEmailTemplate } = require('./emailTemplateService');
 const logger = require('../utils/logger');
 const { estateInClause } = require('../utils/estateScope');
 
@@ -51,13 +52,13 @@ function createSurveyOnClose(db, caseRow, { origin = '', lang = 'zh-Hant' } = {}
     'INSERT INTO satisfaction_survey (case_id, survey_token, lang, sent_at, expires_at, status) VALUES (?, ?, ?, ?, ?, ?)'
   ).run(caseRow.case_id, token, lang, atDb, expiresDb, 'SENT');
   const estateName = lang === 'en' ? caseRow.estate_name_en : caseRow.estate_name_zh;
-  const subject = lang === 'en'
-    ? `[${estateName}] Feedback Survey - Case ${caseRow.case_id}`
-    : `[${estateName}] 客戶意見處理滿意度調查 — 個案 ${caseRow.case_id}`;
-  const body = lang === 'en'
-    ? `Thank you for your feedback.\nCase No.: ${caseRow.case_id}\nPlease complete our anonymous satisfaction survey before ${dbToIso8(expiresDb)}:\n${base}/survey/${token}\n\nAll replies are anonymous and used for service improvement only.`
-    : `感謝您提交客戶意見。\n個案編號：${caseRow.case_id}\n請於 ${dbToIso8(expiresDb)} 前填寫匿名滿意度問卷：\n${base}/survey/${token}\n\n問卷為匿名統計，僅用於改善服務。`;
-  enqueueEmail(db, { caseId: caseRow.case_id, template: 'satisfaction_survey', recipient: caseRow.customer_email, lang, subject, body });
+  const tpl = renderEmailTemplate(db, 'satisfaction_survey', lang, {
+    case_id: String(caseRow.case_id),
+    estate_name: estateName,
+    survey_link: `${base}/survey/${token}`,
+    expires: dbToIso8(expiresDb),
+  });
+  enqueueEmail(db, { caseId: caseRow.case_id, template: 'satisfaction_survey', recipient: caseRow.customer_email, lang, subject: tpl.subject, body: tpl.body });
   logger.info('surveyService', `SURVEY_CREATE ${caseRow.case_id} surveyId=${info.lastInsertRowid} expires=${expiresDb}`);
   return { surveyId: info.lastInsertRowid, caseId: caseRow.case_id, token, expiresAt: dbToIso8(expiresDb), status: 'SENT' };
 }
@@ -182,16 +183,16 @@ function resendSurvey(db, surveyId, user, { origin = '', lang = '' } = {}) {
   if (s.resendCount >= 1) throw new ApiError(ERR.VALIDATION, '問卷電郵只能補發一次');
   const l = lang === 'en' ? 'en' : s.lang === 'en' ? 'en' : 'zh-Hant';
   const base = resolveBaseUrl(db, origin);
-  const subject = l === 'en'
-    ? `[${s.estateNameEn}] Reminder: Feedback Survey - Case ${s.caseId}`
-    : `[${s.estateNameZh}] 客戶意見處理滿意度調查（提醒）— 個案 ${s.caseId}`;
-  const body = l === 'en'
-    ? `This is a reminder for case ${s.caseId}.\nPlease complete the survey before ${dbToIso8(s.expiresAt)}:\n${base}/survey/${s.token}\n\nReplies are anonymous.`
-    : `提醒：個案 ${s.caseId} 的匿名滿意度問卷尚未填寫。\n請於 ${dbToIso8(s.expiresAt)} 前完成：\n${base}/survey/${s.token}\n\n問卷為匿名統計。`;
+  const tpl = renderEmailTemplate(db, 'satisfaction_survey_reminder', l, {
+    case_id: String(s.caseId),
+    estate_name: l === 'en' ? s.estateNameEn : s.estateNameZh,
+    survey_link: `${base}/survey/${s.token}`,
+    expires: dbToIso8(s.expiresAt),
+  });
   db.prepare(
     "UPDATE satisfaction_survey SET resend_count = resend_count + 1, sent_at = ? WHERE survey_id = ?"
   ).run(dbNow(), s.surveyId);
-  enqueueEmail(db, { caseId: s.caseId, template: 'satisfaction_survey_reminder', recipient: s.customerEmail, lang: l, subject, body });
+  enqueueEmail(db, { caseId: s.caseId, template: 'satisfaction_survey_reminder', recipient: s.customerEmail, lang: l, subject: tpl.subject, body: tpl.body });
   audit(db, user, 'SURVEY_RESEND', s.caseId, { surveyId: s.surveyId });
   return { surveyId: s.surveyId, resendCount: s.resendCount + 1, sentAt: dbToIso8(dbNow()) };
 }

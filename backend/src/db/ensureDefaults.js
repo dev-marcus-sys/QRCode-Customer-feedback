@@ -9,6 +9,8 @@
  */
 'use strict';
 
+const { getBuiltInTemplate } = require('../services/emailTemplateService');
+
 const ESTATES = [
   { estate_code: 'CWC', estate_name_zh: '灣景中心', estate_name_en: 'Bayview Centre', company_code: 'CRPM' },
   { estate_code: 'YPR', estate_name_zh: '攸壆路', estate_name_en: 'Yau Pok Road', company_code: 'PML' },
@@ -94,6 +96,11 @@ const CONFIG_DEFAULTS = [
   ['sla.followup_interval_hours', 'SLA'],
   ['survey.expiry_days', 'SLA'],
   ['survey.questions', 'SLA'],
+  // 郵件範本（主旨 + HTML 內文；「Email 內容可編輯」需求）
+  ['email.template.satisfaction_survey.zh', 'EMAIL'],
+  ['email.template.satisfaction_survey.en', 'EMAIL'],
+  ['email.template.satisfaction_survey_reminder.zh', 'EMAIL'],
+  ['email.template.satisfaction_survey_reminder.en', 'EMAIL'],
   ['weekly_report.schedule', 'SYSTEM'],
   ['pwd.max_age_days', 'SYSTEM'],
   // M0 AI 橫向服務層（AI-01 影子模式；見 docs/AI_利用方案.md §6.3）
@@ -149,6 +156,10 @@ function configValue(key) {
     'weekly_report.schedule': { dayOfWeek: 'MON', time: '09:00' },
     'pwd.max_age_days': 90,
     'survey.expiry_days': 14,
+    'email.template.satisfaction_survey.zh': getBuiltInTemplate('satisfaction_survey', 'zh'),
+    'email.template.satisfaction_survey.en': getBuiltInTemplate('satisfaction_survey', 'en'),
+    'email.template.satisfaction_survey_reminder.zh': getBuiltInTemplate('satisfaction_survey_reminder', 'zh'),
+    'email.template.satisfaction_survey_reminder.en': getBuiltInTemplate('satisfaction_survey_reminder', 'en'),
     'survey.questions': {
       zh: [
         { key: 'overall', label: '整體滿意度' },

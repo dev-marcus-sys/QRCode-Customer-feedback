@@ -11,6 +11,7 @@ const { ok } = require('../middlewares/error');
 const { requireAuth, requirePerm } = require('../middlewares/auth');
 const { getDb } = require('../db/connection');
 const { processOutbox, resendById, resendFailedSurveys } = require('../services/emailWorker');
+const { getEffectiveTemplate, TEMPLATE_KEYS, updateOutboxContent } = require('../services/emailTemplateService');
 
 const SAT_TEMPLATES = "('satisfaction_survey','satisfaction_survey_reminder')";
 
@@ -44,11 +45,27 @@ router.get('/', (req, res) => {
   const size = Math.min(Math.max(Number(pageSize) || 20, 1), 100);
   const p = Math.max(Number(page) || 1, 1);
   const items = db.prepare(
-    `SELECT outbox_id AS outboxId, case_id AS caseId, template, recipient, subject, status,
+    `SELECT outbox_id AS outboxId, case_id AS caseId, template, recipient, subject, status, body,
             created_at AS createdAt, sent_at AS sentAt, error
        FROM email_outbox ${whereSql} ORDER BY outbox_id DESC LIMIT ? OFFSET ?`
-  ).all(...params, size, (p - 1) * size).map((r) => ({ ...r, error: r.error || null }));
+  ).all(...params, size, (p - 1) * size).map((r) => ({ ...r, body: r.body || '', error: r.error || null }));
   ok(res, { total, page: p, pageSize: size, items });
+});
+
+router.get('/email-templates', (req, res) => {
+  const db = getDb();
+  const items = [];
+  for (const key of Object.keys(TEMPLATE_KEYS)) {
+    for (const lang of ['zh', 'en']) {
+      const t = getEffectiveTemplate(db, key, lang);
+      items.push({ key, lang, configKey: TEMPLATE_KEYS[key][lang], subject: t.subject, body: t.body });
+    }
+  }
+  ok(res, { items });
+});
+
+router.patch('/:id', (req, res) => {
+  ok(res, updateOutboxContent(getDb(), req.params.id, req.body || {}));
 });
 
 router.post('/:id/resend', (req, res) => {
