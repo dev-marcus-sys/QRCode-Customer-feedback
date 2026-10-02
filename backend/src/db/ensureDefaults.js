@@ -85,6 +85,8 @@ const PERM_BINDINGS = [
   { code: 'estate:manage', module: 'estate', name: '屋苑管理', roles: ['ADMIN'] },
   // AI-09 RAG 知識庫（§4.9；管理權限，讀取沿用 case:view / dashboard:view）
   { code: 'kb:manage', module: 'kb', name: '知識庫管理', roles: ['ADMIN'] },
+  // 資料庫瀏覽 / SQL 控制台（危險權限，僅 ADMIN；寫入型 SQL 另記 audit_log）
+  { code: 'db:query', module: 'db', name: '資料庫查詢/維護', roles: ['ADMIN'] },
 ];
 
 /** 需確保存在之系統參數（INSERT OR IGNORE） */

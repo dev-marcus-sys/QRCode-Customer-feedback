@@ -49,6 +49,7 @@ const PERMISSIONS = [
   ['estate:list', 'estate', '屋苑查閱'],
   ['estate:manage', 'estate', '屋苑管理'],
   ['kb:manage', 'kb', '知識庫管理'],
+  ['db:query', 'db', '資料庫查詢/維護'],
 ];
 
 const ROLE_PERMISSIONS = {

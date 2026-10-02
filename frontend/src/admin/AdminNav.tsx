@@ -20,6 +20,7 @@ const SECTIONS: { key: string; label: string; path: string; perms?: string[] }[]
   { key: 'roles', label: '角色', path: '/admin/roles', perms: ['role:list'] },
   { key: 'audit', label: '審計', path: '/admin/audit', perms: ['audit:view'] },
   { key: 'estates', label: '屋苑', path: '/admin/estates', perms: ['estate:list'] },
+  { key: 'database', label: '資料庫', path: '/admin/database', perms: ['db:query'] },
   { key: 'kb', label: '知識庫', path: '/admin/kb' },
 ];
 

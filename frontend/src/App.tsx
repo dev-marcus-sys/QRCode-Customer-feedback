@@ -18,6 +18,7 @@ import { UsersPage } from './pages/admin/UsersPage';
 import { RolesPage } from './pages/admin/RolesPage';
 import { AuditPage } from './pages/admin/AuditPage';
 import { EstatesPage } from './pages/admin/EstatesPage';
+import { DatabasePage } from './pages/admin/DatabasePage';
 import KnowledgeBasePage from './pages/admin/KnowledgeBasePage';
 import { MobileGuard } from './mobile/MobileGuard';
 import { MobileShell } from './mobile/MobileShell';
@@ -154,6 +155,14 @@ export default function App() {
         element={
           <AuthGuard>
             <EmailTemplatePage />
+          </AuthGuard>
+        }
+      />
+      <Route
+        path="/admin/database"
+        element={
+          <AuthGuard>
+            <DatabasePage />
           </AuthGuard>
         }
       />

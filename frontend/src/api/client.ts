@@ -960,6 +960,41 @@ export interface EmailTemplateData {
   items: EmailTemplateItem[];
 }
 
+/* ---------- 資料庫瀏覽 / SQL 控制台（db:query，僅 ADMIN） ---------- */
+export interface DbTableItem {
+  name: string;
+  type: string;
+  system: boolean;
+}
+export interface DbColumn {
+  name: string;
+  type: string;
+  notnull: boolean;
+  pk: boolean;
+  default: string | null;
+}
+export interface DbTableSchema {
+  table: string;
+  type: string;
+  columns: DbColumn[];
+  createSql: string;
+}
+export interface DbTablePreview {
+  table: string;
+  columns: string[];
+  rows: Record<string, unknown>[];
+  limit: number;
+}
+export interface DbQueryResult {
+  kind: 'read' | 'write';
+  columns?: string[];
+  rows?: Record<string, unknown>[];
+  rowCount?: number;
+  truncated?: boolean;
+  changes?: number;
+  lastInsertRowid?: number;
+}
+
 export const api = {
   getMeta: (estate: string, lang: string, t?: string) => {
     const params = new URLSearchParams({ estate, lang });
@@ -1177,6 +1212,15 @@ export const api = {
   createEstate: (body: unknown, token: string) => request<EstateItem>('/estates', { method: 'POST', body, token }),
   updateEstate: (estateCode: string, body: unknown, token: string) =>
     request<EstateItem>(`/estates/${encodeURIComponent(estateCode)}`, { method: 'PUT', body, token }),
+  /* 資料庫瀏覽 / SQL 控制台（db:query，僅 ADMIN） */
+  listDbTables: (includeSystem: boolean, token: string) =>
+    request<{ tables: DbTableItem[] }>(`/db/tables?includeSystem=${includeSystem ? 1 : 0}`, { token }),
+  dbTableSchema: (name: string, token: string) =>
+    request<DbTableSchema>(`/db/tables/${encodeURIComponent(name)}/schema`, { token }),
+  dbTablePreview: (name: string, limit: number, token: string) =>
+    request<DbTablePreview>(`/db/tables/${encodeURIComponent(name)}/preview?limit=${limit}`, { token }),
+  runDbSql: (sql: string, token: string) =>
+    request<DbQueryResult>('/db/query', { method: 'POST', body: { sql }, token }),
 };
 
 /** 私有附件下載（帶 token 之 blob 下載） */
