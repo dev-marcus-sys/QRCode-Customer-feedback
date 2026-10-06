@@ -27,6 +27,7 @@ home.yaml
 
 # Env files (keep .env.example tracked)
 .env
+_creds.json
 
 # Debug snapshots
 snap*.txt

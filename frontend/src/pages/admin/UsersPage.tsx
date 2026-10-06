@@ -18,6 +18,7 @@ import {
   ApiRequestError, authStore, PermissionRow, RoleRow, UserRow, api,
 } from '../../api/client';
 import { TopBarUser } from '../../components/TopBarUser';
+import { PasswordField } from '../../components/PasswordField';
 import AdminNav from '../../admin/AdminNav';
 import { useEstates } from '../../admin/useEstates';
 
@@ -332,8 +333,8 @@ export function UsersPage() {
               ))}
             </TextField>
             {!editing && (
-              <TextField size="small" label="初始密碼（留空則產生一次性密碼並要求首登改密）"
-                type="password" value={form.password}
+              <PasswordField size="small" label="初始密碼（留空則產生一次性密碼並要求首登改密）"
+                value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })} fullWidth
                 helperText="若填寫須 ≥8 位且含大小寫字母與數字" />
             )}

@@ -88,7 +88,16 @@ function createApp() {
 
   // Production：若存在前端建置產物則托管靜態檔並提供 SPA fallback（React Router 深鏈）
   if (fs.existsSync(INDEX_HTML)) {
-    app.use(express.static(FRONTEND_DIST));
+    // 靜態托管前端建置產物；PWA manifest 需正確 MIME（application/manifest+json）以利安裝
+    app.use(
+      express.static(FRONTEND_DIST, {
+        setHeaders: (res, filePath) => {
+          if (filePath.endsWith('.webmanifest')) {
+            res.setHeader('Content-Type', 'application/manifest+json');
+          }
+        },
+      })
+    );
     app.use((req, res, next) => {
       if (req.method === 'GET' && !req.path.startsWith('/api') && req.accepts('html')) {
         return res.sendFile(INDEX_HTML);

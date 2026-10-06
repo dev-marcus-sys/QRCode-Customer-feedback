@@ -4,6 +4,9 @@
   "description": "QRCode 客戶意見反饋系統 F-001~F-003 前端（React + MUI）",
   "private": true,
   "type": "module",
+  "overrides": {
+    "colorette": "2.0.19"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -14,6 +17,7 @@
     "@emotion/styled": "^11.13.0",
     "@mui/icons-material": "^5.16.7",
     "@mui/material": "^5.16.7",
+    "fdir": "^6.5.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.26.2"
@@ -22,8 +26,10 @@
     "@types/node": "^20.19.43",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
+    "@vite-pwa/assets-generator": "^0.2.6",
     "@vitejs/plugin-react": "^4.3.1",
     "typescript": "~5.5.4",
-    "vite": "^5.4.8"
+    "vite": "^5.4.8",
+    "vite-plugin-pwa": "^0.20.5"
   }
 }

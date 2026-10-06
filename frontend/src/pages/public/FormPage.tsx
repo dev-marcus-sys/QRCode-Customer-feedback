@@ -1,9 +1,10 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  Alert, Box, Button, Card, CardContent, Chip, CircularProgress, Container, Divider,
-  FormControlLabel, MenuItem, Stack, Switch, TextField, Typography,
+  Alert, Box, Button, Card, CardContent, Chip, CircularProgress, Container,   Dialog, DialogActions, DialogContent, DialogTitle,
+  Divider, FormControlLabel, IconButton, MenuItem, Stack, Switch, TextField, Typography,
 } from '@mui/material';
+import { Close as CloseIcon } from '@mui/icons-material';
 import { api, ApiRequestError, FeedbackPayload, FormMeta } from '../../api/client';
 import { translate, Lang } from '../../i18n/dict';
 
@@ -51,7 +52,37 @@ export function FormPage() {
   const [errors, setErrors] = useState<FieldErrors>({});
   const [topError, setTopError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [privacyOpen, setPrivacyOpen] = useState(false);
+  const [policyHtml, setPolicyHtml] = useState('');
+  const [policyScrolled, setPolicyScrolled] = useState(false);
+  const [policyAgreed, setPolicyAgreed] = useState(false);
+  const policyContentRef = useRef<HTMLDivElement | null>(null);
   const draftKey = `qrform_${estate}`;
+
+  // 開啟 popup 時抓取私隱政策 HTML，抽取 <style> 與 <body> 內嵌（避免 iframe，手機更穩）
+  useEffect(() => {
+    if (!privacyOpen || policyHtml) return;
+    const url = meta?.privacyPolicyUrl || '/privacy-policy.html';
+    fetch(url)
+      .then((r) => r.text())
+      .then((html) => {
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const style = doc.querySelector('style')?.outerHTML || '';
+        setPolicyHtml(style + (doc.body?.innerHTML || ''));
+      })
+      .catch(() => setPolicyHtml(''));
+  }, [privacyOpen, policyHtml, meta]);
+
+  // 每次開啟 popup 重置「是否已捲到底」；內容未溢出（不需捲動）時直接允許確認
+  useEffect(() => {
+    if (privacyOpen) setPolicyScrolled(false);
+  }, [privacyOpen]);
+
+  useEffect(() => {
+    if (!privacyOpen) return;
+    const el = policyContentRef.current;
+    if (el && el.scrollHeight <= el.clientHeight + 8) setPolicyScrolled(true);
+  }, [privacyOpen, policyHtml]);
 
   // 載入表單設定（含該語系標籤）
   useEffect(() => {
@@ -204,6 +235,7 @@ export function FormPage() {
   const reset = () => {
     setForm(initialForm());
     setErrors({});
+    setPolicyAgreed(false);
     sessionStorage.removeItem(draftKey);
   };
 
@@ -348,11 +380,15 @@ export function FormPage() {
                 <Box>
                   <Typography fontWeight={600} sx={{ mb: 1.5 }}>{t('form.incidentDate')}</Typography>
                   <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                    {/* 原生 date 的「年/月/日」提示依瀏覽器語言顯示，無法隨網頁語言切換。
+                        清空時隱藏原生提示（WebKit 設透明），改由 MUI 浮動 label 作提示（跟隨表單語言），
+                        選擇日期後再恢復原生顯示 */}
                     <TextField size="small" fullWidth type="date" label={t('form.incidentDate')}
                       value={form.incidentDate}
                       onChange={(e) => set({ incidentDate: e.target.value })}
                       error={!!errors.incidentDate} helperText={errors.incidentDate}
-                      InputLabelProps={{ shrink: true }} />
+                      InputLabelProps={{ shrink: form.incidentDate ? true : undefined }}
+                      sx={form.incidentDate ? undefined : { '& input::-webkit-datetime-edit': { color: 'transparent' } }} />
                     <TextField size="small" fullWidth type="time" label={t('form.incidentTime')}
                       value={form.incidentTime} onChange={(e) => set({ incidentTime: e.target.value })}
                       InputLabelProps={{ shrink: true }} />
@@ -392,14 +428,26 @@ export function FormPage() {
                 </Box>
                 <FormControlLabel
                   control={
-                    <Switch checked={form.privacyAgree} onChange={(e) => set({ privacyAgree: e.target.checked })} />
+                    <Switch
+                      checked={form.privacyAgree}
+                      onChange={() => {
+                        if (!policyAgreed) {
+                          setPrivacyOpen(true);
+                        }
+                        // 已確認後鎖定為開啟，禁止手動關閉；未確認則點擊只彈出政策
+                      }}
+                    />
                   }
                   label={
                     <span>
                       {t('form.privacyPrefix')}{' '}
-                      <a href={meta.privacyPolicyUrl} target="_blank" rel="noreferrer" style={{ color: '#1a5aa6' }}>
+                      <Box
+                        component="span"
+                        onClick={() => setPrivacyOpen(true)}
+                        sx={{ color: '#1a5aa6', cursor: 'pointer', textDecoration: 'underline' }}
+                      >
                         {t('form.privacy')}
-                      </a>
+                      </Box>
                       <Box component="span" sx={{ color: 'error.main' }}>*</Box>
                     </span>
                   }
@@ -409,6 +457,10 @@ export function FormPage() {
                 )}
 
                 <Divider />
+
+                <Typography variant="body2" color="text.secondary" textAlign="center">
+                  {t('form.responsePromise')}
+                </Typography>
 
                 <Stack direction="row" spacing={2}>
                   <Button type="submit" variant="contained" size="large" disabled={submitting} fullWidth>
@@ -423,6 +475,60 @@ export function FormPage() {
           </Card>
         </form>
       </Container>
+      <Dialog
+        open={privacyOpen}
+        onClose={() => setPrivacyOpen(false)}
+        maxWidth="md"
+        fullWidth
+        scroll="paper"
+      >
+        <DialogTitle sx={{ pr: 6 }}>
+          {t('form.privacy')}
+          <IconButton
+            aria-label="close"
+            onClick={() => setPrivacyOpen(false)}
+            sx={{ position: 'absolute', right: 8, top: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent
+          dividers
+          onScroll={(e) => {
+            const el = e.currentTarget;
+            if (el.scrollHeight - el.scrollTop - el.clientHeight < 8) setPolicyScrolled(true);
+          }}
+        >
+          <Box
+            ref={policyContentRef}
+            sx={{ '& .wrap': { maxWidth: '100%', padding: '8px 0 0', background: 'transparent' } }}
+            dangerouslySetInnerHTML={{ __html: policyHtml }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2, display: 'block' }}>
+          {!policyScrolled && (
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+              {lang === 'en' ? 'Please scroll to the bottom before confirming.' : '請先向下捲動至底部方可確認。'}
+            </Typography>
+          )}
+          <Box sx={{ textAlign: 'right' }}>
+            <Button onClick={() => setPrivacyOpen(false)} sx={{ mr: 1 }}>
+              {lang === 'en' ? 'Close' : '關閉'}
+            </Button>
+            <Button
+              variant="contained"
+              disabled={!policyScrolled}
+              onClick={() => {
+                setPolicyAgreed(true);
+                set({ privacyAgree: true });
+                setPrivacyOpen(false);
+              }}
+            >
+              {lang === 'en' ? 'I have read' : '我已閱讀'}
+            </Button>
+          </Box>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

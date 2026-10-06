@@ -892,16 +892,25 @@ async function request<T>(
     ...(init.headers || {}),
   };
   if (init.token) headers.Authorization = `Bearer ${init.token}`;
-  const res = await fetch(BASE + path, {
-    method: init.method || 'GET',
-    headers,
-    body: init.body !== undefined ? JSON.stringify(init.body) : undefined,
-  });
-  const env = await parseEnvelope<T>(res);
-  if (env.code !== 0) {
-    throw new ApiRequestError(env.code, env.message, env.data);
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+    throw new ApiRequestError(-1, '目前處於離線狀態，請檢查網路連線後重試', null);
   }
-  return env.data as T;
+  try {
+    const res = await fetch(BASE + path, {
+      method: init.method || 'GET',
+      headers,
+      body: init.body !== undefined ? JSON.stringify(init.body) : undefined,
+    });
+    const env = await parseEnvelope<T>(res);
+    if (env.code !== 0) {
+      throw new ApiRequestError(env.code, env.message, env.data);
+    }
+    return env.data as T;
+  } catch (err) {
+    if (err instanceof ApiRequestError) throw err;
+    console.error('API request failed', err);
+    throw new ApiRequestError(-1, '網路連線失敗，請確認網路或稍後再試', null);
+  }
 }
 
 const TOKEN_KEY = 'qr_admin_token';

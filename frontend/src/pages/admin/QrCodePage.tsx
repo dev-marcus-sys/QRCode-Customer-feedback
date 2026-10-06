@@ -366,7 +366,8 @@ export function QrCodePage() {
                                 disabled={!canManage || busy !== null}
                                 onChange={(e) => setValidDraft((d) => ({ ...d, [item.qrId as number]: e.target.value }))}
                                 inputProps={{ 'aria-label': `${item.estateNameZh} 有效日期` }}
-                                sx={{ width: 150 }}
+                                InputLabelProps={{ shrink: draftValid ? true : undefined }}
+                                sx={{ width: 150, '& input::-webkit-datetime-edit': draftValid ? undefined : { color: 'transparent' } }}
                               />
                               <Button
                                 size="small"

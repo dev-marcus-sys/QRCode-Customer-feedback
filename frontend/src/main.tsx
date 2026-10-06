@@ -2,8 +2,12 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { ThemeProvider, CssBaseline } from '@mui/material';
+import { registerSW } from 'virtual:pwa-register';
 import App from './App';
 import { theme } from './theme';
+
+// PWA：註冊 service worker（autoUpdate 會在下次開啟時靜默套用新版本）
+registerSW({ immediate: true });
 
 // TEMP DIAGNOSTIC（定位後即移除）：
 // 捕捉 "getBoundingClientRect of null" 的真實來源，把原始 stack 丟回 window error，

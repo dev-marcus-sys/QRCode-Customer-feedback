@@ -335,10 +335,12 @@ export function CaseListPage() {
                   value={keyword} onChange={(e) => setKeyword(e.target.value)} />
                 <TextField size="small" type="date" label="由" sx={{ width: 150 }}
                   value={filters.dateFrom || ''} onChange={(e) => setFilter('dateFrom', e.target.value)}
-                  InputLabelProps={{ shrink: true }} />
+                  InputLabelProps={{ shrink: filters.dateFrom ? true : undefined }}
+                  sx={filters.dateFrom ? undefined : { '& input::-webkit-datetime-edit': { color: 'transparent' } }} />
                 <TextField size="small" type="date" label="至" sx={{ width: 150 }}
                   value={filters.dateTo || ''} onChange={(e) => setFilter('dateTo', e.target.value)}
-                  InputLabelProps={{ shrink: true }} />
+                  InputLabelProps={{ shrink: filters.dateTo ? true : undefined }}
+                  sx={filters.dateTo ? undefined : { '& input::-webkit-datetime-edit': { color: 'transparent' } }} />
                 <Button variant="contained" size="small" onClick={() => setPage(0)}>套用</Button>
                 <Button variant="outlined" size="small" onClick={resetAll}>重設</Button>
                 <Box sx={{ flex: 1 }} />

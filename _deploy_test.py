@@ -79,7 +79,8 @@ cd /home/devusr/qr-feedback/frontend && npm ci --no-audit --no-fund && npm run b
 echo "== ensure APP_ENV=test =="
 grep -q '^APP_ENV=' /home/devusr/qr-feedback/backend/.env || echo 'APP_ENV=test' >> /home/devusr/qr-feedback/backend/.env
 echo "== restart =="
-pkill -f 'node src/server.js' || true
+# 使用 [n]ode 括號技巧，避免 pkill -f 匹配到執行本腳本的 shell 自身（其指令列含此字串）而自我終止
+pkill -f '[n]ode src/server.js' || true
 sleep 2
 sh /home/devusr/qr-feedback/start.sh
 sleep 9

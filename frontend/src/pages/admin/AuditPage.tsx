@@ -91,8 +91,12 @@ export function AuditPage() {
             {actions.map((a) => <MenuItem key={a} value={a}>{ACTION_LABEL[a] || a}</MenuItem>)}
           </TextField>
           <TextField size="small" label="操作人" value={username} onChange={(e) => setUsername(e.target.value)} sx={{ minWidth: 150 }} />
-          <TextField size="small" type="date" label="起" value={from} onChange={(e) => setFrom(e.target.value)} InputLabelProps={{ shrink: true }} />
-          <TextField size="small" type="date" label="迄" value={to} onChange={(e) => setTo(e.target.value)} InputLabelProps={{ shrink: true }} />
+          <TextField size="small" type="date" label="起" value={from} onChange={(e) => setFrom(e.target.value)}
+            InputLabelProps={{ shrink: from ? true : undefined }}
+            sx={from ? undefined : { '& input::-webkit-datetime-edit': { color: 'transparent' } }} />
+          <TextField size="small" type="date" label="迄" value={to} onChange={(e) => setTo(e.target.value)}
+            InputLabelProps={{ shrink: to ? true : undefined }}
+            sx={to ? undefined : { '& input::-webkit-datetime-edit': { color: 'transparent' } }} />
           <Button size="small" variant="contained" onClick={load}>查詢</Button>
         </Stack>
 

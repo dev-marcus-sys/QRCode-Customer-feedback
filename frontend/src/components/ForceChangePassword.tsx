@@ -6,6 +6,7 @@
 import { FormEvent, useState } from 'react';
 import { Alert, Button, Stack, TextField } from '@mui/material';
 import { api, ApiRequestError, LoginResult } from '../api/client';
+import { PasswordField } from './PasswordField';
 
 /** 與後端 isStrong 對齊：≥8 位，含英文大寫、小寫與數字 */
 function isStrong(pw: string) {
@@ -53,13 +54,13 @@ export function ForceChangePassword({ username, currentPassword, token, onLogin 
           首次登入或密碼已被重設／已過期，請先設定新密碼（≥8 位，含英文大小寫與數字）。
         </Alert>
         {error && <Alert severity="error">{error}</Alert>}
-        <TextField
-          label="新密碼" type="password" value={newPassword}
+        <PasswordField
+          label="新密碼" value={newPassword}
           onChange={(e) => setNewPassword(e.target.value)}
           autoComplete="new-password" fullWidth required
         />
-        <TextField
-          label="確認新密碼" type="password" value={confirm}
+        <PasswordField
+          label="確認新密碼" value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
           autoComplete="new-password" fullWidth required
           error={!!confirm && confirm !== newPassword}

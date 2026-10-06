@@ -103,7 +103,7 @@ formRouter.get('/meta', (req, res) => {
     maxLength,
     promise: isEn ? promise.en : promise.zh,
     style,
-    privacyPolicyUrl: getConfig(db, 'form.privacy_policy_url', ''),
+    privacyPolicyUrl: getConfig(db, 'form.privacy_policy_url', '/privacy-policy.html'),
   });
 });
 

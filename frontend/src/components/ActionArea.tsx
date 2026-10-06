@@ -247,7 +247,9 @@ export function ActionArea({ caseId, caseStatus, actions, permissions, onDone }:
                   <TextField size="small" label="無法解決原因（必填）" fullWidth multiline minRows={2} value={form.reason || ''} onChange={(e) => set('reason', e.target.value)} required />
                 )}
                 <TextField size="small" label="客戶回覆情況（選填）" fullWidth multiline minRows={2} value={form.customerReply || ''} onChange={(e) => set('customerReply', e.target.value)} />
-                <TextField size="small" type="date" label="處理完成日期（選填）" fullWidth value={form.completionDate || ''} onChange={(e) => set('completionDate', e.target.value)} InputLabelProps={{ shrink: true }} />
+                <TextField size="small" type="date" label="處理完成日期（選填）" fullWidth value={form.completionDate || ''} onChange={(e) => set('completionDate', e.target.value)}
+                  InputLabelProps={{ shrink: form.completionDate ? true : undefined }}
+                  sx={form.completionDate ? undefined : { '& input::-webkit-datetime-edit': { color: 'transparent' } }} />
               </>
             )}
             {dialog === 'approve' && (

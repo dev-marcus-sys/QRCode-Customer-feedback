@@ -22,6 +22,7 @@ import {
 import { invalidateAiFeatures } from '../../aiFeatures';
 import { CATEGORY_OPTIONS, EVENT_OPTIONS, labelOf } from '../../admin/options';
 import { TopBarUser } from '../../components/TopBarUser';
+import { PasswordField } from '../../components/PasswordField';
 
 const WEEKDAY_OPTIONS = [
   { code: 'MON', zh: '星期一' }, { code: 'TUE', zh: '星期二' }, { code: 'WED', zh: '星期三' },
@@ -505,7 +506,7 @@ export function ConfigPage() {
               <TextField size="small" label="模型名稱（空白＝用環境變數／預設值）" fullWidth
                 value={aiModel} onChange={(e) => setAiModel(e.target.value)}
                 placeholder="gpt-4o-mini" />
-              <TextField size="small" type="password" autoComplete="new-password" fullWidth
+              <PasswordField size="small" autoComplete="new-password" fullWidth
                 label="API Key（留空＝不更改；只寫入後端 .env，不入資料庫／審計）"
                 value={aiApiKey} onChange={(e) => setAiApiKey(e.target.value)}
                 helperText={aiApiKey.trim() ? '尚未儲存；按「儲存設定」或直接按「開始測試」（會先自動儲存）' : ''} />

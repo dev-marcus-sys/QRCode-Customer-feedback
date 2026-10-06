@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Alert, Box, Button, Card, CardContent, Stack, TextField, Typography } from '@mui/material';
 import { api, ApiRequestError, authStore, LoginResult } from '../../api/client';
 import { ForceChangePassword } from '../../components/ForceChangePassword';
+import { PasswordField } from '../../components/PasswordField';
 
 /** 手機版專用登入頁 /m/login（大字、單欄、觸控友善）。 */
 export function MobileLoginPage() {
@@ -65,7 +66,7 @@ export function MobileLoginPage() {
               <form onSubmit={submit} style={{ width: '100%' }}>
                 <Stack spacing={2}>
                   <TextField label="帳號" value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" fullWidth required />
-                  <TextField label="密碼" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" fullWidth required />
+                  <PasswordField label="密碼" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" fullWidth required />
                   <Button type="submit" variant="contained" size="large" disabled={loading} fullWidth>
                     {loading ? '登入中…' : '登入'}
                   </Button>

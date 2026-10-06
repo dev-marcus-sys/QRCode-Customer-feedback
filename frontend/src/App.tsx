@@ -29,6 +29,7 @@ import { MobileCaseDetailPage } from './pages/mobile/MobileCaseDetailPage';
 import { MobileSurveyPage } from './pages/mobile/MobileSurveyPage';
 import { MobileQrPage } from './pages/mobile/MobileQrPage';
 import { authStore } from './api/client';
+import InstallPrompt from './pwa/InstallPrompt';
 
 /** 手機版入口：依權限導向第一個可存取的分頁（避免無 dashboard:view 的使用者被卡在儀表板 403）。 */
 function MobileLanding() {
@@ -46,8 +47,9 @@ function MobileLanding() {
 export default function App() {
   const location = useLocation();
   const isMobile = location.pathname.startsWith('/m');
+  const showInstall = location.pathname.startsWith('/admin');
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', pt: 'env(safe-area-inset-top)' }}>
       <Box component="main" sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         <Routes>
           <Route path="/" element={<FormPage />} />
@@ -188,6 +190,7 @@ export default function App() {
         </Routes>
       </Box>
       {!isMobile && <EnvFooter />}
+      {showInstall && <InstallPrompt />}
     </Box>
   );
 }

@@ -321,9 +321,9 @@ export function DashboardPage() {
           {range === 'custom' && (
             <>
               <TextField type="date" size="small" label="自" value={from} onChange={(e) => setFrom(e.target.value)}
-                InputLabelProps={{ shrink: true }} sx={{ maxWidth: 160 }} />
+                InputLabelProps={{ shrink: from ? true : undefined }} sx={{ maxWidth: 160, '& input::-webkit-datetime-edit': from ? undefined : { color: 'transparent' } }} />
               <TextField type="date" size="small" label="至" value={to} onChange={(e) => setTo(e.target.value)}
-                InputLabelProps={{ shrink: true }} sx={{ maxWidth: 160 }} />
+                InputLabelProps={{ shrink: to ? true : undefined }} sx={{ maxWidth: 160, '& input::-webkit-datetime-edit': to ? undefined : { color: 'transparent' } }} />
             </>
           )}
           <TextField select size="small" label="屋苑（可多選）" sx={{ minWidth: 200 }} disabled={!!scopeCodes && scopeCodes.length <= 1}

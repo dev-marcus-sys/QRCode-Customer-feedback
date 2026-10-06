@@ -149,7 +149,9 @@ export function CreateCaseDialog({ open, onClose, onCreated }: {
               {PRIORITY_OPTIONS.map((o) => (<MenuItem key={o.code} value={o.code}>{o.labelZh}</MenuItem>))}
             </TextField>
             <TextField fullWidth label="發生日期" type="date" size="small" value={incidentDate}
-              onChange={(e) => setIncidentDate(e.target.value)} InputLabelProps={{ shrink: true }} />
+              onChange={(e) => setIncidentDate(e.target.value)}
+              InputLabelProps={{ shrink: incidentDate ? true : undefined }}
+              sx={incidentDate ? undefined : { '& input::-webkit-datetime-edit': { color: 'transparent' } }} />
           </Row>
 
           <TextField fullWidth label="發生時間" type="time" size="small" value={incidentTime}

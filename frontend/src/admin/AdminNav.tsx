@@ -51,7 +51,12 @@ export default function AdminNav({ current }: { current: string }) {
             if (s) navigate(s.path);
           }
         }}
-        sx={{ flexWrap: 'wrap' }}
+        sx={{
+          flexWrap: { xs: 'nowrap', md: 'wrap' },
+          overflowX: { xs: 'auto', md: 'visible' },
+          maxWidth: '100%',
+          '& .MuiToggleButton-root': { whiteSpace: 'nowrap', flexShrink: 0 },
+        }}
       >
         {SECTIONS.filter(allowed).map((s) => (
           <ToggleButton key={s.key} value={s.key}>
