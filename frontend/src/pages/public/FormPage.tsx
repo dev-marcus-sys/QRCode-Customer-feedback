@@ -60,17 +60,30 @@ export function FormPage() {
   const draftKey = `qrform_${estate}`;
 
   // 開啟 popup 時抓取私隱政策 HTML，抽取 <style> 與 <body> 內嵌（避免 iframe，手機更穩）
+  // 若設定的 URL 抓取失敗（如外部網址 CORS）或實為 SPA fallback 的 index.html，自動改抓 /privacy-policy.html
   useEffect(() => {
     if (!privacyOpen || policyHtml) return;
-    const url = meta?.privacyPolicyUrl || '/privacy-policy.html';
-    fetch(url)
-      .then((r) => r.text())
-      .then((html) => {
-        const doc = new DOMParser().parseFromString(html, 'text/html');
-        const style = doc.querySelector('style')?.outerHTML || '';
-        setPolicyHtml(style + (doc.body?.innerHTML || ''));
-      })
-      .catch(() => setPolicyHtml(''));
+    const FALLBACK = '/privacy-policy.html';
+    const parse = (html: string) => {
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const style = doc.querySelector('style')?.outerHTML || '';
+      return style + (doc.body?.innerHTML || '');
+    };
+    const hasContent = (html: string) => html.replace(/<[^>]*>/g, '').replace(/\s/g, '').length > 50;
+    const load = (url: string): Promise<void> =>
+      fetch(url)
+        .then((r) => r.text())
+        .then((raw) => {
+          const html = parse(raw);
+          if (hasContent(html)) {
+            setPolicyHtml(html);
+            return;
+          }
+          if (url !== FALLBACK) return load(FALLBACK);
+          setPolicyHtml('');
+        })
+        .catch(() => (url !== FALLBACK ? load(FALLBACK) : setPolicyHtml('')));
+    load(meta?.privacyPolicyUrl || FALLBACK);
   }, [privacyOpen, policyHtml, meta]);
 
   // 每次開啟 popup 重置「是否已捲到底」；內容未溢出（不需捲動）時直接允許確認
