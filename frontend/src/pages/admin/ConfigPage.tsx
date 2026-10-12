@@ -21,7 +21,7 @@ import {
 } from '../../api/client';
 import { invalidateAiFeatures } from '../../aiFeatures';
 import { CATEGORY_OPTIONS, EVENT_OPTIONS, labelOf } from '../../admin/options';
-import { TopBarUser } from '../../components/TopBarUser';
+import { AdminPageToolbar } from '../../components/AdminPageToolbar';
 import { PasswordField } from '../../components/PasswordField';
 
 const WEEKDAY_OPTIONS = [
@@ -221,7 +221,7 @@ export function ConfigPage() {
     return (
       <Box sx={{ minHeight: '100vh', bgcolor: '#f4f6fa', p: 3 }}>
         <Toolbar>
-          <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/admin/cases')}>返回個案列表</Button>
+          <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/admin/cases')} sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}>個案管理</Button>
         </Toolbar>
         <Alert severity="warning">當前帳號沒有 config:view 權限，無法查看系統參數。</Alert>
       </Box>
@@ -371,12 +371,7 @@ export function ConfigPage() {
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#f4f6fa', pb: 4 }}>
-      <Toolbar sx={{ position: 'sticky', top: 0, zIndex: 10, bgcolor: '#fff', borderBottom: '1px solid #e5eaf2', boxShadow: '0 1px 3px rgba(15,40,80,.06)' }}>
-        <IconButton title="返回個案列表" onClick={() => navigate('/admin/cases')}><ArrowBackIcon /></IconButton>
-        <Typography variant="h6" sx={{ color: '#1a5aa6', ml: 1 }}>系統參數配置</Typography>
-        <Box sx={{ flex: 1 }} />
-        <TopBarUser />
-      </Toolbar>
+      <AdminPageToolbar title="系統參數配置" />
 
       <Box sx={{ p: { xs: 1.5, md: 3 } }} maxWidth="md" mx="auto">
         <Stack direction="row" spacing={1} sx={{ mb: 2 }} alignItems="center" flexWrap="wrap" useFlexGap>

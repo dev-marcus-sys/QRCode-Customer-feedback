@@ -4,16 +4,21 @@
  * - 查詢（case:view 或 dashboard:view）：檢索 top-k 段落（附章節來源）或問答（附引用）。
  */
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
-  Alert, Box, Button, Chip, Divider, Paper, Stack, Tab, Table, TableBody, TableCell,
-  TableHead, TableRow, Tabs, TextField, Typography,
+  Alert, Box, Button, Chip, Divider, IconButton, Paper, Stack, Tab, Table, TableBody, TableCell,
+  TableHead, TableRow, Tabs, TextField, Toolbar, Typography,
 } from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { api, authStore, KbDocument } from '../../api/client';
+import { AdminPageToolbar } from '../../components/AdminPageToolbar';
 import { useAiFeatures, featureOn } from '../../aiFeatures';
+import AdminNav from '../../admin/AdminNav';
 
 type TabKey = 'docs' | 'query';
 
 export default function KnowledgeBasePage() {
+  const navigate = useNavigate();
   const token = authStore.getToken() || '';
   const user = authStore.getUser();
   const perms = useMemo(() => new Set(user?.permissions || []), [user]);
@@ -82,7 +87,10 @@ export default function KnowledgeBasePage() {
   const statusColor: Record<string, 'success' | 'default' | 'warning'> = { active: 'success', disabled: 'default', pending_review: 'warning' };
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: '#f4f6fa', pb: 4 }}>
+      <AdminPageToolbar title="知識庫" />
+      <Box sx={{ p: { xs: 1.5, md: 3 } }} maxWidth="xl" mx="auto">
+      <AdminNav current="kb" />
       <Typography variant="h5" gutterBottom>AI-09 知識庫（RAG）</Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
         以規格書／手冊／FAQ 等 wiki／Markdown 文件建立內部知識庫，輔助回覆與內部查詢（答錯有後果，故答案一律附來源）。
@@ -204,6 +212,7 @@ export default function KnowledgeBasePage() {
           )}
         </Paper>
       )}
+      </Box>
     </Box>
   );
 }

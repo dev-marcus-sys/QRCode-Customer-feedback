@@ -19,8 +19,21 @@ process.env.DB_PATH = tmp;
 let app;
 let db;
 const adminId = () => db.prepare('SELECT user_id FROM sys_user WHERE username = ?').get('admin').user_id;
-const meta = (estate) => request(app).get('/api/v1/form/meta').query({ estate });
-const token = (estate) => request(app).post('/api/v1/form/token').send({ estate });
+const meta = (estate, t) => {
+  const q = { estate };
+  if (t) q.t = t;
+  return request(app).get('/api/v1/form/meta').query(q);
+};
+const token = (estate, t) => {
+  const b = { estate };
+  if (t) b.t = t;
+  return request(app).post('/api/v1/form/token').send(b);
+};
+/** 由 QR 內容（base/?estate=X&t=TOKEN）取出 link token */
+function tokenOf(content) {
+  const m = /[?&]t=([^&]+)/.exec(content || '');
+  return m ? decodeURIComponent(m[1]) : null;
+}
 
 test.before(() => {
   for (const f of [tmp, `${tmp}-wal`, `${tmp}-shm`]) { try { fs.unlinkSync(f); } catch (e) { /* ignore */ } }
@@ -32,39 +45,45 @@ test.after(() => {
   for (const f of [tmp, `${tmp}-wal`, `${tmp}-shm`]) { try { fs.unlinkSync(f); } catch (e) { /* ignore */ } }
 });
 
-test('未生成 QR：載入表單與取 token 皆阻擋（1006 / 403）', async () => {
+test('未生成 QR：缺 token／偽造 token 連結皆阻擋（1007 / 403）', async () => {
   const m = await meta('CHNG').expect(403);
-  assert.equal(m.body.code, 1006);
+  assert.equal(m.body.code, 1007);
   const t = await token('CHNG').expect(403);
-  assert.equal(t.body.code, 1006);
+  assert.equal(t.body.code, 1007);
+  const f = await meta('CHNG', 'deadbeefdeadbeef').expect(403);
+  assert.equal(f.body.code, 1007);
 });
 
-test('生成 QR 後：可正常載入表單與取 token', async () => {
-  qrService.generate(db, { estateCode: 'CHNG', base: 'http://demo.test' }, adminId());
-  const m = await meta('CHNG').expect(200);
+test('生成 QR 後：持有效 t 可正常載入表單與取 token', async () => {
+  const qr = qrService.generate(db, { estateCode: 'CHNG', base: 'http://demo.test' }, adminId());
+  const tk = tokenOf(qr.qrContent);
+  assert.ok(tk, 'QR 內容應含 link token');
+  const m = await meta('CHNG', tk).expect(200);
   assert.equal(m.body.code, 0);
   assert.equal(m.body.data.estateCode, 'CHNG');
-  const t = await token('CHNG').expect(200);
+  const t = await token('CHNG', tk).expect(200);
   assert.equal(t.body.code, 0);
   assert.ok(t.body.data.token);
 });
 
-test('停用 QR 後：再次阻擋', async () => {
-  const qr = qrService.getUsableQr(db, 'CHNG');
+test('停用 QR 後：持該 t 再次阻擋（1006）', async () => {
+  const qr = qrService.generate(db, { estateCode: 'CHNG', base: 'http://demo.test' }, adminId());
+  const tk = tokenOf(qr.qrContent);
   qrService.setActive(db, qr.qrId, false);
-  assert.equal((await meta('CHNG').expect(403)).body.code, 1006);
+  assert.equal((await meta('CHNG', tk).expect(403)).body.code, 1006);
 });
 
-test('有效日期已過：阻擋；設回永遠有效：恢復（含自動重新啟用）', async () => {
+test('有效日期已過：持該 t 阻擋（1006）；設回永遠有效：恢復', async () => {
   const qr = qrService.generate(db, { estateCode: 'CHNG', base: 'http://demo.test' }, adminId());
+  const tk = tokenOf(qr.qrContent);
   qrService.setValidUntil(db, qr.qrId, '2000-01-01');
   qrService.applyExpiry(db); // 模擬排程掃描
-  assert.equal((await meta('CHNG').expect(403)).body.code, 1006);
+  assert.equal((await meta('CHNG', tk).expect(403)).body.code, 1006);
 
   // 清空有效日期 = 永遠有效 → 應同時重新啟用並恢復可存取
   qrService.setValidUntil(db, qr.qrId, '');
   assert.equal(qrService.getQr(db, qr.qrId).active, 1);
-  assert.equal((await meta('CHNG').expect(200)).body.code, 0);
+  assert.equal((await meta('CHNG', tk).expect(200)).body.code, 0);
 });
 
 test('getUsableQr：無碼 / 停用 / 過期皆回 null', () => {

@@ -50,9 +50,6 @@ export function LoginPage() {
             <Box component="img" src="/logo.png" alt="CRLPM" sx={{ height: 64, width: 'auto' }} />
             <Box textAlign="center">
               <Typography variant="h5">個案管理系統</Typography>
-              <Typography color="text.secondary" variant="body2" sx={{ mt: 0.5 }}>
-                QRCode 客戶意見反饋 · 後台
-              </Typography>
             </Box>
             {error && <Alert severity="error">{error}</Alert>}
             {force ? (
@@ -80,9 +77,6 @@ export function LoginPage() {
             >
               開啟手機版（現場／外勤使用）
             </Button>
-            <Alert severity="info" sx={{ fontSize: 12 }}>
-              演示帳號：admin / Admin@2026、chng_sup / ChngSup@2026、chng_staff / ChngSt@2026
-            </Alert>
           </Stack>
         </CardContent>
       </Card>

@@ -84,3 +84,30 @@ test('findSecondComplaint 僅在 24 小時窗內命中', () => {
   const hitOutside = findSecondComplaint(db, payload({ email: 'window@example.com', content: '另一件相同類別的事。' }), Date.now() + 25 * 60 * 60 * 1000);
   assert.equal(hitOutside, null);
 });
+
+test('24 小時內同聯絡人＋同類別，但原案已結案 → 不標記二次投訴', () => {
+  const db = initDatabase();
+  const first = createCaseFromFeedback(db, payload({ email: 'closed1@example.com', content: '漏水問題。' }));
+  db.prepare("UPDATE `case` SET case_status = 'CLOSED', closed_at = datetime('now') WHERE case_id = ?").run(first.caseId);
+  const second = createCaseFromFeedback(db, payload({ email: 'closed1@example.com', content: '漏水仍未處理。' }));
+  assert.equal(second.isSecondComplaint, false);
+  assert.equal(second.originalCaseId, null);
+});
+
+test('二次投訴收緊為同單位：不同單位不標記，相同單位才標記', () => {
+  const db = initDatabase();
+  const first = createCaseFromFeedback(db, payload({
+    email: 'unit1@example.com', content: '牆身發霉。', address: { block: 'A', floor: '12', unit: '03' },
+  }));
+  // 不同單位 → 不標記
+  const other = createCaseFromFeedback(db, payload({
+    email: 'unit1@example.com', content: '牆身也有發霉。', address: { block: 'B', floor: '08', unit: '05' },
+  }));
+  assert.equal(other.isSecondComplaint, false);
+  // 相同單位 → 標記
+  const same = createCaseFromFeedback(db, payload({
+    email: 'unit1@example.com', content: '發霉問題持續。', address: { block: 'A', floor: '12', unit: '03' },
+  }));
+  assert.equal(same.isSecondComplaint, true);
+  assert.equal(same.originalCaseId, first.caseId);
+});

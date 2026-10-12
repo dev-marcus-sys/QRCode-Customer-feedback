@@ -7,14 +7,11 @@ import {
 } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
-import FactCheckIcon from '@mui/icons-material/FactCheck';
-import QrCode2Icon from '@mui/icons-material/QrCode2';
-import InsightsIcon from '@mui/icons-material/Insights';
-import TuneIcon from '@mui/icons-material/Tune';
 import AddIcon from '@mui/icons-material/Add';
 import { api, ApiRequestError, authStore, CaseListData, downloadExport } from '../../api/client';
 import { TopBarUser } from '../../components/TopBarUser';
-import AdminNav from '../../admin/AdminNav';
+import { SECTIONS } from '../../admin/AdminNav';
+import { useAiFeatures, featureOn } from '../../aiFeatures';
 import { BatchActions } from '../../components/BatchActions';
 import { CreateCaseDialog } from '../../components/CreateCaseDialog';
 import { ImportCasesDialog } from '../../components/ImportCasesDialog';
@@ -185,60 +182,50 @@ export function CaseListPage() {
     }
   };
 
+  const { features } = useAiFeatures();
+  const kbEnabled = featureOn(features, 'kb'); // AI-09 知識庫：未啟用則隱藏
+  const permissions: string[] = user?.permissions || [];
+  /** 各導覽項依權限顯示：任一所需權限符合即出現；知識庫另受 AI 功能開關控制 */
+  const allowed = (s: { key: string; perms?: string[] }) =>
+    (!s.perms || s.perms.some((p) => permissions.includes(p))) && (s.key !== 'kb' || kbEnabled);
+
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#f4f6fa', pb: 4 }}>
       <Toolbar
         sx={{
           position: 'sticky', top: 0, zIndex: 10, bgcolor: '#fff',
           borderBottom: '1px solid #e5eaf2', boxShadow: '0 1px 3px rgba(15,40,80,.06)',
+          flexWrap: 'wrap', rowGap: 0.5, py: 1,
         }}
       >
-        <Typography variant="h6" sx={{ color: '#1a5aa6' }}>個案管理</Typography>
-        {user?.permissions?.includes('qr:view') && (
-          <Button component={Link} to="/admin/qr" size="small" startIcon={<QrCode2Icon />}
-            sx={{ ml: 2, whiteSpace: 'nowrap' }}>
-            QR Code 管理
-          </Button>
-        )}
-        {user?.permissions?.includes('dashboard:view') && (
-          <Button component={Link} to="/admin/surveys" size="small" startIcon={<FactCheckIcon />}
-            sx={{ ml: 1, whiteSpace: 'nowrap' }}>
-            問卷統計
-          </Button>
-        )}
-        {user?.permissions?.includes('dashboard:view') && (
-          <Button component={Link} to="/admin/dashboard" size="small" startIcon={<InsightsIcon />}
-            sx={{ ml: 1, whiteSpace: 'nowrap' }}>
-            數據分析儀表板
-          </Button>
-        )}
-        {user?.permissions?.includes('config:view') && (
-          <Button component={Link} to="/admin/config" size="small" startIcon={<TuneIcon />}
-            sx={{ ml: 1, whiteSpace: 'nowrap' }}>
-            系統參數
-          </Button>
-        )}
-        {user?.permissions?.includes('case:create') && (
-          <Button size="small" variant="contained" startIcon={<AddIcon />}
-            sx={{ ml: 1, whiteSpace: 'nowrap' }}
-            onClick={() => setCreateOpen(true)}>
-            新增個案
-          </Button>
-        )}
-        {user?.permissions?.includes('case:create') && (
-          <Button size="small" variant="outlined" startIcon={<FileDownloadIcon />}
-            sx={{ ml: 1, whiteSpace: 'nowrap' }}
-            onClick={() => setImportOpen(true)}>
-            匯入 Excel
-          </Button>
-        )}
+        {/* 第一行：logo + 標題 + 頁面操作 + 用戶資訊 */}
+        <Box component="img" src="/logo.png" alt="CRLPM" sx={{ height: 34, width: 'auto', mr: 1.5 }} />
+        <Typography variant="h6" sx={{ color: '#1a5aa6' }}>個案管理系統</Typography>
         <Box sx={{ flex: 1 }} />
         <TopBarUser />
+        {/* 第二行：後台導覽（與 AdminNav 共用 SECTIONS），按權限顯示、可橫向捲動 */}
+        <Box sx={{ flexBasis: '100%', maxWidth: '100%', minWidth: 0 }}>
+          <Stack direction="row" spacing={0.5} sx={{ overflowX: 'auto', py: 0.25 }}>
+            {SECTIONS.filter((s) => allowed(s)).map((s) => {
+              const Icon = s.icon;
+              const active = s.key === 'cases';
+              return (
+                <Button key={s.key} component={Link} to={s.path} size="small"
+                  startIcon={<Icon />}
+                  sx={{
+                    whiteSpace: 'nowrap', flexShrink: 0,
+                    ...(active ? {
+                      bgcolor: 'primary.main', color: '#fff',
+                      '&:hover': { bgcolor: 'primary.dark' },
+                    } : {}),
+                  }}>
+                  {s.label}
+                </Button>
+              );
+            })}
+          </Stack>
+        </Box>
       </Toolbar>
-
-      <Box sx={{ px: { xs: 1.5, md: 3 }, pt: 1.5 }} maxWidth="xl" mx="auto">
-        <AdminNav current="cases" />
-      </Box>
 
       <Box sx={{ p: { xs: 1.5, md: 3 } }} maxWidth="xl" mx="auto">
         {/* 批次工具列（F-004） */}
@@ -344,6 +331,20 @@ export function CaseListPage() {
                 <Button variant="contained" size="small" onClick={() => setPage(0)}>套用</Button>
                 <Button variant="outlined" size="small" onClick={resetAll}>重設</Button>
                 <Box sx={{ flex: 1 }} />
+                {user?.permissions?.includes('case:create') && (
+                  <Button size="small" variant="contained" startIcon={<AddIcon />}
+                    sx={{ whiteSpace: 'nowrap' }}
+                    onClick={() => setCreateOpen(true)}>
+                    新增個案
+                  </Button>
+                )}
+                {user?.permissions?.includes('case:create') && (
+                  <Button size="small" variant="outlined" startIcon={<FileDownloadIcon />}
+                    sx={{ whiteSpace: 'nowrap' }}
+                    onClick={() => setImportOpen(true)}>
+                    匯入 Excel
+                  </Button>
+                )}
                 <Button size="small" startIcon={<FileDownloadIcon />} disabled={exporting || !canExport}
                   onClick={() => doExport('csv')}>
                   CSV
@@ -446,7 +447,7 @@ export function CaseListPage() {
                           <StatusChip status={row.caseStatus} lang="zh-Hant" />
                         </TableCell>
                         <TableCell sx={{ whiteSpace: 'nowrap', fontSize: 13 }}>
-                          {row.customerTitle}{row.customerName}
+                          {row.customerTitle ? `(${row.customerTitle}) ` : ''}{row.customerName}
                           <Typography variant="caption" color="text.secondary" display="block">
                             {labelOf(EVENT_OPTIONS, row.eventType, 'zh-Hant')} · {labelOf(PRIORITY_OPTIONS, row.priority, 'zh-Hant')}
                           </Typography>

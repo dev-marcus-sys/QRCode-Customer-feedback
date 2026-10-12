@@ -1,16 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Alert, Box, Card, CardActionArea, Chip, Fab, MenuItem, Stack, TextField, Typography,
+  Alert, Box, Button, Card, CardActionArea, Chip, MenuItem, Stack, TextField, Typography,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
 import { api, ApiRequestError, authStore, CaseListData } from '../../api/client';
 import {
   CATEGORY_OPTIONS, EVENT_OPTIONS, PRIORITY_OPTIONS, STATUS_OPTIONS, labelOf,
 } from '../../admin/options';
 import { StatusChip } from '../../components/StatusChip';
 import { CreateCaseDialog } from '../../components/CreateCaseDialog';
+import { ImportCasesDialog } from '../../components/ImportCasesDialog';
 import { useEstates } from '../../admin/useEstates';
 
 // 與後端 CLOSED_STATUSES 對齊：終結狀態不顯示即時 SLA 倒數
@@ -51,6 +53,7 @@ export function MobileCaseListPage() {
   const [page, setPage] = useState(0);
   const pageSize = 10;
   const [createOpen, setCreateOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [refresh, setRefresh] = useState(0);
 
   const query = useMemo(() => {
@@ -92,6 +95,17 @@ export function MobileCaseListPage() {
 
   return (
     <Box>
+      {user?.permissions?.includes('case:create') && (
+        <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
+          <Button variant="contained" startIcon={<AddIcon />} fullWidth onClick={() => setCreateOpen(true)}>
+            新增個案
+          </Button>
+          <Button variant="outlined" startIcon={<UploadFileIcon />} fullWidth onClick={() => setImportOpen(true)}>
+            匯入 Excel
+          </Button>
+        </Stack>
+      )}
+
       <Card elevation={0} sx={{ borderRadius: 2, border: '1px solid #e5eaf2', mb: 2, p: 1.5 }}>
         <Stack spacing={1.2}>
           <TextField
@@ -158,7 +172,7 @@ export function MobileCaseListPage() {
                       <StatusChip status={row.caseStatus} lang="zh-Hant" />
                     </Box>
                     <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                      {row.customerTitle}{row.customerName}
+                      {row.customerTitle ? `(${row.customerTitle}) ` : ''}{row.customerName}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
                       {row.estateNameZh} · {labelOf(CATEGORY_OPTIONS, row.categoryCode, 'zh-Hant')} ·{' '}
@@ -195,18 +209,22 @@ export function MobileCaseListPage() {
         </>
       )}
 
-      {user?.permissions?.includes('case:create') && (
-        <Fab color="primary" aria-label="新增個案" sx={{ position: 'fixed', right: 16, bottom: 16 }}
-          onClick={() => setCreateOpen(true)}>
-          <AddIcon />
-        </Fab>
-      )}
-
       <CreateCaseDialog
         open={createOpen}
         onClose={() => setCreateOpen(false)}
         onCreated={() => {
           setCreateOpen(false);
+          setPage(0);
+          setRefresh((r) => r + 1);
+        }}
+      />
+
+      <ImportCasesDialog
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        token={token}
+        onImported={() => {
+          setImportOpen(false);
           setPage(0);
           setRefresh((r) => r + 1);
         }}

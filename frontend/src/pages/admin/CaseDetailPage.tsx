@@ -17,7 +17,7 @@ import { SurveyStatusCard } from '../../components/SurveyStatusCard';
 import { AiSuggestionsCard } from '../../components/AiSuggestionsCard';
 import { AiAssigneeCard } from '../../components/AiAssigneeCard';
 import { AiDraftCard } from '../../components/AiDraftCard';
-import { TopBarUser } from '../../components/TopBarUser';
+import { AdminPageToolbar } from '../../components/AdminPageToolbar';
 
 const LOG_TYPE_ZH: Record<string, string> = {
   CREATE: '建立個案', ASSIGN: '分派', REASSIGN: '轉派', UPDATE: '更新',
@@ -124,7 +124,7 @@ export function CaseDetailPage() {
     return (
       <Box sx={{ minHeight: '100vh', p: 3 }}>
         <Toolbar>
-          <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/admin/cases')}>返回列表</Button>
+          <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/admin/cases')} sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}>個案管理</Button>
         </Toolbar>
         <Alert severity="error">{error || '個案不存在'}</Alert>
       </Box>
@@ -138,29 +138,24 @@ export function CaseDetailPage() {
   const canReview = permissions.includes('case:review');
   const canUpdate = permissions.includes('case:update');
   const canAssign = permissions.includes('case:assign');
+  const canTemplate = permissions.includes('config:view');
   const attachments: AttachmentMeta[] = detail.timeline
     .filter((t) => t.logType === 'UPLOAD' && t.attachmentId != null)
     .map((t) => ({ attachmentId: t.attachmentId as number, attachmentName: t.attachmentName || '附件', attachmentSize: t.attachmentSize ?? null }));
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#f4f6fa', pb: 4 }}>
-      <Toolbar
-        sx={{
-          position: 'sticky', top: 0, zIndex: 20, bgcolor: '#fff',
-          borderBottom: '1px solid #e5eaf2', boxShadow: '0 1px 3px rgba(15,40,80,.06)',
-        }}
-      >
-        <IconButton title="返回列表" onClick={() => navigate('/admin/cases')}><ArrowBackIcon /></IconButton>
-        <Box sx={{ ml: 1, fontFamily: '"Roboto Mono", monospace', fontSize: 16, fontWeight: 700, color: '#1a5aa6' }}>
-          {c.caseId}
-        </Box>
-        <Box sx={{ ml: 1.5 }}><StatusChip status={c.caseStatus} lang="zh-Hant" /></Box>
-        <Box sx={{ flex: 1 }} />
-        <TopBarUser />
-        <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
-          {c.estateNameZh} · {c.caseSource} 管道
-        </Typography>
-      </Toolbar>
+      <AdminPageToolbar
+        title={c.caseId}
+        actions={
+          <>
+            <Box sx={{ mr: 1 }}><StatusChip status={c.caseStatus} lang="zh-Hant" /></Box>
+            <Typography variant="body2" color="text.secondary">
+              {c.estateNameZh} · {c.caseSource} 管道
+            </Typography>
+          </>
+        }
+      />
 
       <Box sx={{ p: { xs: 1.5, md: 3 } }} maxWidth="xl" mx="auto">
         {toast && (
@@ -202,7 +197,7 @@ export function CaseDetailPage() {
             </SectionCard>
 
             <SectionCard title="客戶資料">
-              <InfoRow label="姓名" value={`${c.customerTitle || ''} ${c.customerName}`} />
+              <InfoRow label="姓名" value={`${c.customerTitle ? `(${c.customerTitle}) ` : ''}${c.customerName}`} />
               <InfoRow label="電郵" value={c.customerEmail || '—'} />
               <InfoRow label="電話" value={c.customerPhone || '—'} />
               <InfoRow label="地址" value={address || '—'} />
@@ -255,6 +250,7 @@ export function CaseDetailPage() {
               caseId={c.caseId}
               canUpdate={canUpdate}
               caseClosed={c.caseStatus === 'CLOSED'}
+              isSecondComplaint={c.isSecondComplaint}
               onChanged={refresh}
               onMessage={notify}
             />
@@ -295,7 +291,12 @@ export function CaseDetailPage() {
             </SectionCard>
 
             {/* 滿意度調查（F-007） */}
-            <SectionCard title="滿意度調查" extra={detail.survey && <Chip size="small" label={`#${detail.survey.surveyId}`} variant="outlined" />}>
+            <SectionCard title="滿意度調查" extra={
+              <Stack direction="row" spacing={1} alignItems="center">
+                {detail.survey && <Chip size="small" label={`#${detail.survey.surveyId}`} variant="outlined" />}
+                {canTemplate && <Button size="small" onClick={() => navigate('/admin/survey-templates')}>問卷範本</Button>}
+              </Stack>
+            }>
               <SurveyStatusCard
                 survey={detail.survey}
                 canResend={canReview}

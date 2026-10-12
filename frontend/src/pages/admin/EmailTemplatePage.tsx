@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
-  Alert, Box, Button, Card, CardContent, CircularProgress, Divider, Paper, Snackbar,
-  Stack, ToggleButton, ToggleButtonGroup, Typography, TextField,
+  Alert, Box, Button, Card, CardContent, CircularProgress, Divider, IconButton, Paper, Snackbar,
+  Stack, ToggleButton, ToggleButtonGroup, Toolbar, Typography, TextField,
 } from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SaveIcon from '@mui/icons-material/Save';
 import { api, ApiRequestError, EmailTemplateItem, authStore } from '../../api/client';
+import { AdminPageToolbar } from '../../components/AdminPageToolbar';
 import AdminNav from '../../admin/AdminNav';
 
 const TEMPLATE_META = [
@@ -64,6 +67,7 @@ function TemplateCard({
 }
 
 export function EmailTemplatePage() {
+  const navigate = useNavigate();
   const token = authStore.getToken() || '';
   const user = authStore.getUser();
   const permissions: string[] = user?.permissions || [];
@@ -111,15 +115,19 @@ export function EmailTemplatePage() {
 
   if (!canView) {
     return (
-      <Box sx={{ p: 3 }}>
-        <AdminNav current="email-templates" />
+      <Box sx={{ minHeight: '100vh', bgcolor: '#f4f6fa', p: 3 }}>
+        <Toolbar>
+          <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/admin/cases')} sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}>個案管理</Button>
+        </Toolbar>
         <Alert severity="warning" sx={{ mt: 2 }}>當前帳號沒有 config:view 權限，無法檢視郵件範本。</Alert>
       </Box>
     );
   }
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: '#f4f6fa', pb: 4 }}>
+      <AdminPageToolbar title="郵件範本" />
+      <Box sx={{ p: { xs: 1.5, md: 3 } }} maxWidth="xl" mx="auto">
       <AdminNav current="email-templates" />
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mt: 2, mb: 1 }}>
         <Box>
@@ -160,6 +168,7 @@ export function EmailTemplatePage() {
       )}
 
       <Snackbar open={!!snack} autoHideDuration={2500} onClose={() => setSnack('')} message={snack} />
+      </Box>
     </Box>
   );
 }

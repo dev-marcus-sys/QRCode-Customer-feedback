@@ -13,7 +13,7 @@ import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import EditIcon from '@mui/icons-material/Edit';
 import { api, ApiRequestError, authStore, EmailStatsData, EmailListData } from '../../api/client';
 import AdminNav from '../../admin/AdminNav';
-import { TopBarUser } from '../../components/TopBarUser';
+import { AdminPageToolbar } from '../../components/AdminPageToolbar';
 
 const STATUS_OPTIONS = [
   { value: '', label: '全部狀態' },
@@ -97,7 +97,7 @@ export function EmailDispatchPage() {
   if (!user?.permissions?.includes('dashboard:view')) {
     return (
       <Box sx={{ minHeight: '100vh', bgcolor: '#f4f6fa', p: 3 }}>
-        <Toolbar><Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/admin/cases')}>返回個案列表</Button></Toolbar>
+        <Toolbar><Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/admin/cases')} sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}>個案管理</Button></Toolbar>
         <Alert severity="warning">當前帳號沒有 dashboard:view 權限，無法查看郵件發送管理。</Alert>
       </Box>
     );
@@ -159,15 +159,11 @@ export function EmailDispatchPage() {
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#f4f6fa', pb: 4 }}>
-      <Toolbar sx={{ position: 'sticky', top: 0, zIndex: 10, bgcolor: '#fff', borderBottom: '1px solid #e5eaf2', boxShadow: '0 1px 3px rgba(15,40,80,.06)' }}>
-        <IconButton title="返回" onClick={() => navigate('/admin/cases')}><ArrowBackIcon /></IconButton>
-        <AdminNav current="emails" />
-        <Box sx={{ flex: 1 }} />
-        <TopBarUser />
-      </Toolbar>
+      <AdminPageToolbar title="郵件發送" />
 
       <Box sx={{ p: { xs: 1.5, md: 3 } }} maxWidth="xl" mx="auto">
-        <Typography variant="h6" sx={{ color: '#1a5aa6', mb: 2 }}>郵件發送管理</Typography>
+      <AdminNav current="emails" />
+      <Typography variant="h6" sx={{ color: '#1a5aa6', mb: 2 }}>郵件發送管理</Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           顯示透過 SMTP relay 實際寄出的郵件狀態（含滿意度調查問券）。PENDING＝待寄、SENT＝已送達、FAILED＝寄送失敗。
         </Typography>

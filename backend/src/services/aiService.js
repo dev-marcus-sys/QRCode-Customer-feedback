@@ -449,6 +449,8 @@ function linkSimilarCase(db, suggestionId, user, { targetCaseId }) {
   const target = getCaseCore(db, targetCaseId);
   if (!target) throw new ApiError(ERR.VALIDATION, '關聯個案不存在', 404);
   if (target.case_id === s.case_id) throw new ApiError(ERR.VALIDATION, '不能關聯自身個案');
+  // 防呆：本個案已標記為二次投訴時，禁止重複關聯（避免重複標記）
+  if (c.is_second_complaint) throw new ApiError(ERR.STATE_TRANSITION, '本個案已標記為二次投訴，無法重複關聯');
   const actorId = user ? user.userId : SYSTEM_USER_ID;
   const tx = db.transaction(() => {
     db.prepare(

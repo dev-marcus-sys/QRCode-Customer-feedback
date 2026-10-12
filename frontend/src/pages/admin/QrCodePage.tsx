@@ -14,7 +14,7 @@ import CheckIcon from '@mui/icons-material/Check';
 import {
   api, ApiRequestError, authStore, downloadQrFile, qrImageBlob, QrItem, QrOverviewData,
 } from '../../api/client';
-import { TopBarUser } from '../../components/TopBarUser';
+import { AdminPageToolbar } from '../../components/AdminPageToolbar';
 
 type Notice = { severity: 'success' | 'error'; text: string };
 type ConfirmKind = 'deactivate' | 'reactivate' | 'regenerate';
@@ -255,18 +255,7 @@ export function QrCodePage() {
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#f4f6fa', pb: 4 }}>
-      <Toolbar sx={{
-        position: 'sticky', top: 0, zIndex: 10, bgcolor: '#fff',
-        borderBottom: '1px solid #e5eaf2', boxShadow: '0 1px 3px rgba(15,40,80,.06)',
-      }}>
-        <Button component={Link} to="/admin/cases" size="small" startIcon={<ArrowBackIcon />}
-          sx={{ color: 'text.secondary', mr: 1, whiteSpace: 'nowrap' }}>
-          個案管理
-        </Button>
-        <Typography variant="h6" sx={{ color: '#1a5aa6', fontWeight: 600 }}>QR Code 管理</Typography>
-        <Box sx={{ flex: 1 }} />
-        <TopBarUser />
-      </Toolbar>
+      <AdminPageToolbar title="QR Code 管理" />
 
       <Box sx={{ p: { xs: 1.5, md: 3 } }} maxWidth="xl" mx="auto">
         {notice && <Alert severity={notice.severity} sx={{ mb: 2 }} onClose={() => setNotice(null)}>{notice.text}</Alert>}

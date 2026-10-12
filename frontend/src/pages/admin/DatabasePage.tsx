@@ -1,13 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Alert, Box, Button, Card, CardContent, Chip, CircularProgress, Divider, FormControlLabel,
-  Paper, Snackbar, Stack, Switch, Table, TableBody, TableCell, TableHead, TableRow,
-  Tabs, Tab, TextField, ToggleButton, ToggleButtonGroup, Typography,
+  IconButton, Paper, Snackbar, Stack, Switch, Table, TableBody, TableCell, TableHead, TableRow,
+  Tabs, Tab, TextField, ToggleButton, ToggleButtonGroup, Toolbar, Typography,
 } from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import StorageIcon from '@mui/icons-material/Storage';
 import { api, ApiRequestError, authStore } from '../../api/client';
+import { AdminPageToolbar } from '../../components/AdminPageToolbar';
 import AdminNav from '../../admin/AdminNav';
 
 type TabKey = 'schema' | 'preview';
@@ -30,6 +33,7 @@ function toCsv(columns: string[], rows: Record<string, unknown>[]) {
 }
 
 export function DatabasePage() {
+  const navigate = useNavigate();
   const token = authStore.getToken() || '';
   const user = authStore.getUser();
   const canAccess = (user?.permissions || []).includes('db:query');
@@ -96,15 +100,20 @@ export function DatabasePage() {
 
   if (!canAccess) {
     return (
-      <Box sx={{ p: 3 }}>
-        <AdminNav current="database" />
-        <Alert severity="warning" sx={{ mt: 2 }}>當前帳號沒有 db:query 權限，無法使用資料庫控制台（僅 ADMIN 可存取）。</Alert>
+      <Box sx={{ minHeight: '100vh', bgcolor: '#f4f6fa', p: 3 }}>
+        <Toolbar>
+          <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/admin/cases')} sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}>個案管理</Button>
+        </Toolbar>
+        <Alert severity="warning">當前帳號沒有 db:query 權限，無法使用資料庫控制台（僅 ADMIN 可存取）。</Alert>
       </Box>
     );
   }
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: '#f4f6fa', pb: 4 }}>
+      <AdminPageToolbar title="資料庫管理" />
+
+      <Box sx={{ p: { xs: 1.5, md: 3 } }} maxWidth="xl" mx="auto">
       <AdminNav current="database" />
       <Typography variant="h6" sx={{ fontWeight: 700, mt: 2 }}>資料庫控制台</Typography>
       <Typography variant="caption" color="text.secondary">
@@ -273,6 +282,7 @@ export function DatabasePage() {
           </Card>
         </Stack>
       </Stack>
+      </Box>
 
       <Snackbar open={!!snack} autoHideDuration={2500} onClose={() => setSnack('')} message={snack} />
     </Box>

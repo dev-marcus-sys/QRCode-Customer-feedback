@@ -46,11 +46,12 @@ interface Props {
   caseId: string;
   canUpdate: boolean;
   caseClosed: boolean;
+  isSecondComplaint?: boolean;
   onChanged: () => void;
   onMessage: (msg: string) => void;
 }
 
-export function AiSuggestionsCard({ caseId, canUpdate, caseClosed, onChanged, onMessage }: Props) {
+export function AiSuggestionsCard({ caseId, canUpdate, caseClosed, isSecondComplaint = false, onChanged, onMessage }: Props) {
   const [items, setItems] = useState<AiSuggestionItem[]>([]);
   const [similarItems, setSimilarItems] = useState<AiSuggestionItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -280,7 +281,7 @@ export function AiSuggestionsCard({ caseId, canUpdate, caseClosed, onChanged, on
                         <Chip size="small" color="primary" label={`相似度 ${Math.round(m.score * 100)}%`} />
                         <Box sx={{ flex: 1, minWidth: 0 }} />
                         {s.status === 'shown' && (
-                          <Button size="small" variant="contained" color="warning" sx={{ flexShrink: 0, whiteSpace: 'nowrap' }} disabled={!actionable || busyId === s.suggestionId} onClick={() => linkCase(s, m.caseId)}>關聯為原案</Button>
+                          <Button size="small" variant="contained" color="warning" sx={{ flexShrink: 0, whiteSpace: 'nowrap' }} disabled={!actionable || isSecondComplaint || busyId === s.suggestionId} onClick={() => linkCase(s, m.caseId)}>關聯為原案</Button>
                         )}
                       </Box>
                     ))}
@@ -292,6 +293,9 @@ export function AiSuggestionsCard({ caseId, canUpdate, caseClosed, onChanged, on
                     )}
                     {s.status === 'shown' && caseClosed && (
                       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>個案已關閉，不能關聯。</Typography>
+                    )}
+                    {s.status === 'shown' && isSecondComplaint && (
+                      <Typography variant="caption" color="warning.main" sx={{ display: 'block', mt: 0.5 }}>本個案已標記為二次投訴，無須重複關聯。</Typography>
                     )}
                   </Box>
                 );

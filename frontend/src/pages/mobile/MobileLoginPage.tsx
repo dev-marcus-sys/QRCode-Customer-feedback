@@ -50,7 +50,6 @@ export function MobileLoginPage() {
             <Box component="img" src="/logo.png" alt="CRLPM" sx={{ height: 56, width: 'auto' }} />
             <Box textAlign="center">
               <Typography variant="h6" sx={{ color: '#1a5aa6' }}>個案管理系統</Typography>
-              <Typography color="text.secondary" variant="body2">手機版 · QRCode 客戶意見反饋</Typography>
             </Box>
             {error && <Alert severity="error" sx={{ width: '100%' }}>{error}</Alert>}
             {force ? (

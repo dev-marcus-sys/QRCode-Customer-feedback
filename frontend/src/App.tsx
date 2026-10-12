@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
-import { Box } from '@mui/material';
+import type { ReactNode } from 'react';
+import { Box, Typography } from '@mui/material';
 import { AuthGuard } from './components/AuthGuard';
 import { EnvFooter } from './components/EnvFooter';
 import { FormPage } from './pages/public/FormPage';
@@ -12,6 +13,7 @@ import { QrCodePage } from './pages/admin/QrCodePage';
 import { SurveyStatsPage } from './pages/admin/SurveyStatsPage';
 import { EmailDispatchPage } from './pages/admin/EmailDispatchPage';
 import { EmailTemplatePage } from './pages/admin/EmailTemplatePage';
+import { SurveyTemplatePage } from './pages/admin/SurveyTemplatePage';
 import { DashboardPage } from './pages/admin/DashboardPage';
 import { ConfigPage } from './pages/admin/ConfigPage';
 import { UsersPage } from './pages/admin/UsersPage';
@@ -23,7 +25,6 @@ import KnowledgeBasePage from './pages/admin/KnowledgeBasePage';
 import { MobileGuard } from './mobile/MobileGuard';
 import { MobileShell } from './mobile/MobileShell';
 import { MobileLoginPage } from './pages/mobile/MobileLoginPage';
-import { MobileDashboardPage } from './pages/mobile/MobileDashboardPage';
 import { MobileCaseListPage } from './pages/mobile/MobileCaseListPage';
 import { MobileCaseDetailPage } from './pages/mobile/MobileCaseDetailPage';
 import { MobileSurveyPage } from './pages/mobile/MobileSurveyPage';
@@ -44,13 +45,26 @@ function MobileLanding() {
   return <Navigate to={target} replace />;
 }
 
+/** 手機版管理頁權限守衛：無對應權限時顯示「無權限」，避免直接輸入網址越權檢視。 */
+function PermGuard({ perm, children }: { perm: string; children: ReactNode }) {
+  const perms = authStore.getUser()?.permissions || [];
+  if (!perms.includes(perm)) {
+    return (
+      <Box sx={{ p: 4, textAlign: 'center' }}>
+        <Typography color="text.secondary">無權限</Typography>
+      </Box>
+    );
+  }
+  return <>{children}</>;
+}
+
 export default function App() {
   const location = useLocation();
   const isMobile = location.pathname.startsWith('/m');
   const showInstall = location.pathname.startsWith('/admin');
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', pt: 'env(safe-area-inset-top)' }}>
-      <Box component="main" sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <Box component="main" sx={{ flex: 1, display: 'flex', flexDirection: 'column', pb: isMobile ? 0 : 5 }}>
         <Routes>
           <Route path="/" element={<FormPage />} />
       <Route path="/success" element={<SuccessPage />} />
@@ -161,6 +175,14 @@ export default function App() {
         }
       />
       <Route
+        path="/admin/survey-templates"
+        element={
+          <AuthGuard>
+            <SurveyTemplatePage />
+          </AuthGuard>
+        }
+      />
+      <Route
         path="/admin/database"
         element={
           <AuthGuard>
@@ -181,15 +203,22 @@ export default function App() {
         }
       >
         <Route index element={<MobileLanding />} />
-        <Route path="dashboard" element={<MobileDashboardPage />} />
+        <Route path="dashboard" element={<DashboardPage hideToolbar basePath="/m" />} />
         <Route path="cases" element={<MobileCaseListPage />} />
         <Route path="cases/:caseId" element={<MobileCaseDetailPage />} />
         <Route path="surveys" element={<MobileSurveyPage />} />
         <Route path="qr" element={<MobileQrPage />} />
+        {/* 管理功能：經「更多」溢出選單進入，權限與桌面一致 */}
+        <Route path="config" element={<PermGuard perm="config:view"><ConfigPage /></PermGuard>} />
+        <Route path="users" element={<PermGuard perm="user:list"><UsersPage /></PermGuard>} />
+        <Route path="roles" element={<PermGuard perm="role:list"><RolesPage /></PermGuard>} />
+        <Route path="audit" element={<PermGuard perm="audit:view"><AuditPage /></PermGuard>} />
+        <Route path="estates" element={<PermGuard perm="estate:list"><EstatesPage /></PermGuard>} />
+        <Route path="database" element={<PermGuard perm="db:query"><DatabasePage /></PermGuard>} />
       </Route>
         </Routes>
       </Box>
-      {!isMobile && <EnvFooter />}
+      {!isMobile && <EnvFooter fixed />}
       {showInstall && <InstallPrompt />}
     </Box>
   );

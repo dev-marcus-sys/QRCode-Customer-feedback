@@ -16,7 +16,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import {
   ApiRequestError, authStore, PermissionRow, RoleRow, api,
 } from '../../api/client';
-import { TopBarUser } from '../../components/TopBarUser';
+import { AdminPageToolbar } from '../../components/AdminPageToolbar';
 import AdminNav from '../../admin/AdminNav';
 
 export function RolesPage() {
@@ -61,7 +61,7 @@ export function RolesPage() {
   if (!canView) {
     return (
       <Box sx={{ minHeight: '100vh', bgcolor: '#f4f6fa', p: 3 }}>
-        <Toolbar><Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/admin/cases')}>返回個案列表</Button></Toolbar>
+        <Toolbar><Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/admin/cases')} sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}>個案管理</Button></Toolbar>
         <Alert severity="warning">當前帳號沒有 role:list 權限，無法查看角色。</Alert>
       </Box>
     );
@@ -118,12 +118,7 @@ export function RolesPage() {
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#f4f6fa', pb: 4 }}>
-      <Toolbar sx={{ position: 'sticky', top: 0, zIndex: 10, bgcolor: '#fff', borderBottom: '1px solid #e5eaf2' }}>
-        <IconButton title="返回個案列表" onClick={() => navigate('/admin/cases')}><ArrowBackIcon /></IconButton>
-        <Typography variant="h6" sx={{ color: '#1a5aa6', ml: 1 }}>角色與權限</Typography>
-        <Box sx={{ flex: 1 }} />
-        <TopBarUser />
-      </Toolbar>
+      <AdminPageToolbar title="角色與權限" />
 
       <Box sx={{ p: { xs: 1.5, md: 3 } }} maxWidth="xl" mx="auto">
         <AdminNav current="roles" />

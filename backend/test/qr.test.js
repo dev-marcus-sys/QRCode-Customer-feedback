@@ -40,7 +40,8 @@ test('生成：內容依 fallback 主機構成，僅帶 estate 參數', () => {
   assert.equal(base, 'http://demo.test:3000');
   const qr = qrService.generate(db, { estateCode: 'CHNG', base }, adminId(db));
   assert.equal(qr.active, 1);
-  assert.equal(qr.qrContent, 'http://demo.test:3000/?estate=CHNG');
+  assert.ok(qr.qrContent.startsWith('http://demo.test:3000/?estate=CHNG&t='));
+  assert.match(qr.qrContent, /&t=[0-9a-f]{16}$/);
   const data = qrService.overview(db);
   const chng = data.items.find((i) => i.estateCode === 'CHNG');
   assert.equal(chng.qrId, qr.qrId);
@@ -68,7 +69,8 @@ test('site_base_url 設定優先於 fallback，且可清除退回自動偵測', 
   const base = qrService.resolveBaseUrl(db, 'http://demo.test');
   assert.equal(base, 'https://qr.example.com');
   const qr = qrService.generate(db, { estateCode: 'YPR', base }, adminId(db));
-  assert.equal(qr.qrContent, 'https://qr.example.com/?estate=YPR');
+  assert.ok(qr.qrContent.startsWith('https://qr.example.com/?estate=YPR&t='));
+  assert.match(qr.qrContent, /&t=[0-9a-f]{16}$/);
   assert.equal(qrService.overview(db).siteBaseUrl, 'https://qr.example.com');
 
   // 清除設定 → 退回 fallback

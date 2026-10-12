@@ -50,6 +50,10 @@ const CATALOG = [
     key: 'survey.expiry_days', group: 'SURVEY', labelZh: '問卷調查有效期（天）',
     kind: 'int', min: 1, max: 90,
   },
+  {
+    key: 'survey.questions', group: 'SURVEY', labelZh: '問卷題目（繁中/英文）',
+    kind: 'surveyQuestions',
+  },
   // ===== 郵件範本（主旨 + HTML 內文；「Email 內容可編輯」需求） =====
   {
     key: 'email.template.satisfaction_survey.zh', group: 'EMAIL', labelZh: '滿意度調查信（繁中）主旨/內文',
@@ -118,6 +122,11 @@ const CATALOG = [
   {
     key: 'ai.similar.max_matches', group: 'AI', labelZh: 'AI-02 最多建議關聯個案數',
     subGroup: 'AI-02 語意防重', kind: 'int', min: 1, max: 10,
+  },
+  // --- 防重複／二次投訴判定（§6.5）---
+  {
+    key: 'dedupe.second_complaint.hours', group: '防重複', labelZh: '二次投訴判定視窗（小時）',
+    subGroup: '二次投訴', kind: 'int', min: 1, max: 720,
   },
   // --- AI-03 智能分派建議（§4.3）---
   {
@@ -293,6 +302,23 @@ function validate(key, value) {
     if (!v && def.allowEmpty) return;
     if (def.maxLength && value.length > def.maxLength) throw bad(`${def.labelZh} 不得超過 ${def.maxLength} 字`);
     if (def.url && !/^https?:\/\/\S+$/i.test(v)) throw bad(`${def.labelZh} 須為 http(s):// 開頭之網址`);
+  } else if (kind === 'surveyQuestions') {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) throw bad(`${def.labelZh} 須為物件`);
+    const BASE = ['overall', 'response', 'attitude', 'resolution'];
+    for (const lang of ['zh', 'en']) {
+      const arr = value[lang];
+      if (!Array.isArray(arr)) throw bad(`${def.labelZh}（${lang}）須為陣列`);
+      if (arr.length < 1 || arr.length > 20) throw bad(`${def.labelZh}（${lang}）題數須為 1–20`);
+      const seen = new Set();
+      for (const q of arr) {
+        if (!q || typeof q !== 'object') throw bad(`${def.labelZh}（${lang}）每題須為 {key,label}`);
+        if (!/^[a-z][a-z0-9_]*$/.test(q.key || '')) throw bad(`${def.labelZh}（${lang}）key 須為小寫英文/數字/底線`);
+        if (typeof q.label !== 'string' || !String(q.label).trim()) throw bad(`${def.labelZh}（${lang}）label 不得為空`);
+        if (seen.has(q.key)) throw bad(`${def.labelZh}（${lang}）key 重複：${q.key}`);
+        seen.add(q.key);
+      }
+      for (const k of BASE) if (!seen.has(k)) throw bad(`${def.labelZh}（${lang}）必須保留基準題目：${BASE.join('/')}`);
+    }
   }
 }
 

@@ -9,7 +9,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import FactCheckIcon from '@mui/icons-material/FactCheck';
 import { api, ApiRequestError, authStore, SurveyStatsData } from '../../api/client';
 import { useEstates } from '../../admin/useEstates';
-import { TopBarUser } from '../../components/TopBarUser';
+import { AdminPageToolbar } from '../../components/AdminPageToolbar';
 import { SurveyInsightsCard } from '../../components/SurveyInsightsCard';
 import { useAiFeatures, featureOn } from '../../aiFeatures';
 
@@ -48,6 +48,7 @@ export function SurveyStatsPage() {
   const [error, setError] = useState('');
   const { features } = useAiFeatures();
   const showFeedback = featureOn(features, 'feedback'); // AI-05 問卷意見分析
+  const canTemplate = !!user?.permissions?.includes('config:view');
 
   useEffect(() => {
     let alive = true;
@@ -75,7 +76,7 @@ export function SurveyStatsPage() {
     return (
       <Box sx={{ minHeight: '100vh', bgcolor: '#f4f6fa', p: 3 }}>
         <Toolbar>
-          <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/admin/cases')}>返回個案列表</Button>
+          <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/admin/cases')} sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}>個案管理</Button>
         </Toolbar>
         <Alert severity="warning">當前帳號沒有 dashboard:view 權限，無法查看問卷統計。</Alert>
       </Box>
@@ -86,17 +87,12 @@ export function SurveyStatsPage() {
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#f4f6fa', pb: 4 }}>
-      <Toolbar
-        sx={{
-          position: 'sticky', top: 0, zIndex: 10, bgcolor: '#fff',
-          borderBottom: '1px solid #e5eaf2', boxShadow: '0 1px 3px rgba(15,40,80,.06)',
-        }}
-      >
-        <IconButton title="返回個案列表" onClick={() => navigate('/admin/cases')}><ArrowBackIcon /></IconButton>
-        <Typography variant="h6" sx={{ color: '#1a5aa6', ml: 1 }}>問卷統計</Typography>
-        <Box sx={{ flex: 1 }} />
-        <TopBarUser />
-      </Toolbar>
+      <AdminPageToolbar
+        title="問卷統計"
+        actions={canTemplate ? (
+          <Button size="small" onClick={() => navigate('/admin/survey-templates')}>問卷範本</Button>
+        ) : undefined}
+      />
 
       <Box sx={{ p: { xs: 1.5, md: 3 } }} maxWidth="xl" mx="auto">
         <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 2 }} flexWrap="wrap" useFlexGap>

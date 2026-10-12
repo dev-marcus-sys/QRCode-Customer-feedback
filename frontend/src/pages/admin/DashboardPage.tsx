@@ -23,7 +23,7 @@ import {
 import { useAiFeatures, featureOn } from '../../aiFeatures';
 import { STATUS_COLORS } from '../../admin/options';
 import { useEstates } from '../../admin/useEstates';
-import { TopBarUser } from '../../components/TopBarUser';
+import { AdminPageToolbar } from '../../components/AdminPageToolbar';
 
 const RANGES: { code: RangePreset; label: string }[] = [
   { code: 'today', label: '本日' },
@@ -142,7 +142,7 @@ function statusLabelZh(code: string): string {
   return hit ? hit.zh : code;
 }
 
-export function DashboardPage() {
+export function DashboardPage({ hideToolbar = false, basePath = '/admin' }: { hideToolbar?: boolean; basePath?: string }) {
   const navigate = useNavigate();
   const user = authStore.getUser();
   const token = authStore.getToken() || '';
@@ -212,7 +212,7 @@ export function DashboardPage() {
         setError(e instanceof ApiRequestError ? e.message : '載入儀表板失敗');
         if (e instanceof ApiRequestError && e.code === 2001) {
           authStore.clear();
-          navigate('/admin/login', { replace: true });
+          navigate(`${basePath}/login`, { replace: true });
         }
       })
       .finally(() => setLoading(false));
@@ -226,9 +226,11 @@ export function DashboardPage() {
   if (!user?.permissions?.includes('dashboard:view')) {
     return (
       <Box sx={{ minHeight: '100vh', bgcolor: '#f4f6fa', p: 3 }}>
-        <Toolbar>
-          <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/admin/cases')}>返回個案列表</Button>
-        </Toolbar>
+        {!hideToolbar && (
+          <Toolbar>
+            <Button startIcon={<ArrowBackIcon />} onClick={() => navigate(`${basePath}/cases`)} sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}>個案管理</Button>
+          </Toolbar>
+        )}
         <Alert severity="warning">當前帳號沒有 dashboard:view 權限，無法查看儀表板。</Alert>
       </Box>
     );
@@ -301,12 +303,9 @@ export function DashboardPage() {
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#f4f6fa', pb: 4 }}>
-      <Toolbar sx={{ position: 'sticky', top: 0, zIndex: 10, bgcolor: '#fff', borderBottom: '1px solid #e5eaf2', boxShadow: '0 1px 3px rgba(15,40,80,.06)' }}>
-        <IconButton title="返回個案列表" onClick={() => navigate('/admin/cases')}><ArrowBackIcon /></IconButton>
-        <Typography variant="h6" sx={{ color: '#1a5aa6', ml: 1 }}>數據分析儀表板</Typography>
-        <Box sx={{ flex: 1 }} />
-        <TopBarUser />
-      </Toolbar>
+      {!hideToolbar && (
+        <AdminPageToolbar title="數據分析儀表板" backTo={`${basePath}/cases`} />
+      )}
 
       <Box sx={{ p: { xs: 1.5, md: 3 } }} maxWidth="xl" mx="auto">
         <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 2 }} flexWrap="wrap" useFlexGap>
@@ -482,7 +481,7 @@ export function DashboardPage() {
                     </TableHead>
                     <TableBody>
                       {anomalies?.items.map((a: AnomalyRow, i: number) => (
-                        <TableRow key={`${a.caseId}-${i}`} hover sx={{ cursor: 'pointer' }} onClick={() => navigate(`/admin/cases/${encodeURIComponent(a.caseId)}`)}>
+                        <TableRow key={`${a.caseId}-${i}`} hover sx={{ cursor: 'pointer' }} onClick={() => navigate(`${basePath}/cases/${encodeURIComponent(a.caseId)}`)}>
                           <TableCell>
                             <Chip size="small" label={a.aspect || ANOMALY_META[a.type].label}
                               sx={{ color: ANOMALY_META[a.type].color, bgcolor: '#fff', border: `1px solid ${ANOMALY_META[a.type].color}` }} />
@@ -557,7 +556,7 @@ export function DashboardPage() {
                       <Box key={r.caseId} sx={{ p: 1.2, borderRadius: 1.5, bgcolor: r.riskLevel === 'HIGH' ? '#fff5f5' : '#f7fafd', border: '1px solid #e5eaf2' }}>
                         <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
                           <Typography variant="body2" fontWeight={600} sx={{ cursor: 'pointer', color: '#1a5aa6' }}
-                            onClick={() => navigate(`/admin/cases/${encodeURIComponent(r.caseId)}`)}>
+                            onClick={() => navigate(`${basePath}/cases/${encodeURIComponent(r.caseId)}`)}>
                             {r.caseId}
                           </Typography>
                           <Chip size="small" sx={{ height: 20, fontSize: 11 }}

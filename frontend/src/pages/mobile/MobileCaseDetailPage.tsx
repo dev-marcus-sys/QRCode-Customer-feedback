@@ -152,7 +152,7 @@ export function MobileCaseDetailPage() {
       </SectionCard>
 
       <SectionCard title="客戶資料">
-        <InfoRow label="姓名" value={`${c.customerTitle || ''} ${c.customerName}`} />
+        <InfoRow label="姓名" value={`${c.customerTitle ? `(${c.customerTitle}) ` : ''}${c.customerName}`} />
         <InfoRow label="電郵" value={c.customerEmail || '—'} />
         <InfoRow label="電話" value={c.customerPhone || '—'} />
         <InfoRow label="地址" value={address || '—'} />
@@ -175,7 +175,7 @@ export function MobileCaseDetailPage() {
       </SectionCard>
 
       {showSuggestions && (
-        <AiSuggestionsCard caseId={c.caseId} canUpdate={canUpdate} caseClosed={c.caseStatus === 'CLOSED'} onChanged={refresh} onMessage={notify} />
+        <AiSuggestionsCard caseId={c.caseId} canUpdate={canUpdate} caseClosed={c.caseStatus === 'CLOSED'} isSecondComplaint={c.isSecondComplaint} onChanged={refresh} onMessage={notify} />
       )}
       {showAssign && (
         <AiAssigneeCard caseId={c.caseId} canAssign={canAssign} caseClosed={c.caseStatus === 'CLOSED'} caseStatus={c.caseStatus} onChanged={refresh} onMessage={notify} />

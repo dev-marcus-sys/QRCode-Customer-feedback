@@ -63,7 +63,7 @@ test('更新：每類驗證失敗均 400（ApiError VALIDATION）', () => {
   const cases = [
     ['sla.closure_days', '10'],
     ['sla.closure_days', 99],
-    ['sla.response', { URGENT: 5, NORMAL: 30, COMPLEX: 120 }], // 缺 INSTANT
+    ['sla.response', { URGENT: 5, NORMAL: 30, COMPLEX: 120, INSTANT: 0 }], // INSTANT 越界（min 1）
     ['sla.response', { URGENT: 5, NORMAL: 30, COMPLEX: 0, INSTANT: 240 }],
     ['category.event_mapping', { MO_SERVICE: { base: 'N/A' } }], // 不完整＋base 非法
     ['weekly_report.schedule', { dayOfWeek: 'XDAY', time: '09:00' }],

@@ -120,6 +120,8 @@ const CONFIG_DEFAULTS = [
   ['ai.similar.lookback_days', 'AI'],
   ['ai.similar.threshold', 'AI'],
   ['ai.similar.max_matches', 'AI'],
+  // 防重複／二次投訴判定（§6.5）
+  ['dedupe.second_complaint.hours', '防重複'],
   // AI-03 智能分派建議（§4.3）
   ['ai.assign.enabled', 'AI'],
   ['ai.assign.category_role', 'AI'],
@@ -191,6 +193,8 @@ function configValue(key) {
     'ai.similar.lookback_days': 30,
     'ai.similar.threshold': 0.82,
     'ai.similar.max_matches': 3,
+    // 防重複／二次投訴判定視窗（小時；1–720）
+    'dedupe.second_complaint.hours': 24,
     // AI-03：級一純規則＋SQL 統計（無需 LLM）
     'ai.assign.enabled': false,
     'ai.assign.category_role': {

@@ -17,7 +17,7 @@ import LockResetIcon from '@mui/icons-material/LockReset';
 import {
   ApiRequestError, authStore, PermissionRow, RoleRow, UserRow, api,
 } from '../../api/client';
-import { TopBarUser } from '../../components/TopBarUser';
+import { AdminPageToolbar } from '../../components/AdminPageToolbar';
 import { PasswordField } from '../../components/PasswordField';
 import AdminNav from '../../admin/AdminNav';
 import { useEstates } from '../../admin/useEstates';
@@ -102,7 +102,7 @@ export function UsersPage() {
   if (!canView) {
     return (
       <Box sx={{ minHeight: '100vh', bgcolor: '#f4f6fa', p: 3 }}>
-        <Toolbar><Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/admin/cases')}>返回個案列表</Button></Toolbar>
+        <Toolbar><Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/admin/cases')} sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}>個案管理</Button></Toolbar>
         <Alert severity="warning">當前帳號沒有 user:list 權限，無法查看用戶。</Alert>
       </Box>
     );
@@ -184,12 +184,7 @@ export function UsersPage() {
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#f4f6fa', pb: 4 }}>
-      <Toolbar sx={{ position: 'sticky', top: 0, zIndex: 10, bgcolor: '#fff', borderBottom: '1px solid #e5eaf2' }}>
-        <IconButton title="返回個案列表" onClick={() => navigate('/admin/cases')}><ArrowBackIcon /></IconButton>
-        <Typography variant="h6" sx={{ color: '#1a5aa6', ml: 1 }}>用戶管理</Typography>
-        <Box sx={{ flex: 1 }} />
-        <TopBarUser />
-      </Toolbar>
+      <AdminPageToolbar title="用戶管理" />
 
       <Box sx={{ p: { xs: 1.5, md: 3 } }} maxWidth="xl" mx="auto">
         <AdminNav current="users" />

@@ -21,15 +21,15 @@ const RESPONSE_LEAD_DEFAULT = { URGENT: 10, NORMAL: 30, COMPLEX: 30, INSTANT: 30
 const CLOSURE_LEAD_DEFAULT = 1;
 
 /**
- * 將至提醒的有效提前量：不超過設定提前量，且最多只取 SLA 窗口的一半。
- * 避免「設定提前量 ≥ SLA 窗口」（如 NORMAL：窗口 30 分、提前 30 分）時，
- * 建案當下 remaining 已 ≤ 提前量而被誤判為「期限將至」、一建案就發通知。
- * @param {number|null} windowMs SLA 窗口長度（到期 - 建案）
+ * 將至提醒的有效提前量＝設定的提前量（毫秒）。
+ * 規格書：首次回應「提前 10/30 分鐘」提醒；故直接採用設定提前量，
+ * 不再以 SLA 窗口×0.5 收斂——該收斂會把「5 分鐘後到期之 URGENT（提前 10 分）」
+ * 誤判為未達提前量而漏發提醒，與規格衝突。
+ * @param {number|null} windowMs SLA 窗口長度（到期 - 建案），保留參數以相容呼叫端
  * @param {number} configuredLeadMs 設定提前量（毫秒）
  */
 function effectiveLeadMs(windowMs, configuredLeadMs) {
-  if (windowMs == null || !Number.isFinite(windowMs)) return configuredLeadMs;
-  return Math.min(configuredLeadMs, Math.max(0, windowMs * 0.5));
+  return configuredLeadMs;
 }
 
 function fetchCases(db) {

@@ -182,8 +182,9 @@ function createCaseFromFeedback(db, payload, lang = 'zh-Hant') {
     return { isDuplicate: true, caseId: dup.case_id };
   }
 
-  // 24 小時二次投訴（先於建案判定，於交易內寫入標記）
-  const secondRow = findSecondComplaint(db, p, nowMs);
+  // 24 小時二次投訴（先於建案判定，於交易內寫入標記；視窗長度可配置）
+  const secondWindowHours = Number(getConfig(db, 'dedupe.second_complaint.hours', 24)) || 24;
+  const secondRow = findSecondComplaint(db, p, nowMs, secondWindowHours);
 
   // 事件類型判定（二次投訴 → COMPLEX 升級）
   const { intentType, eventType } = computeEvent(
