@@ -46,7 +46,7 @@ function describe(v: unknown): string {
   return String(v);
 }
 
-export function ConfigPage() {
+export function ConfigPage({ hideToolbar = false }: { hideToolbar?: boolean }) {
   const navigate = useNavigate();
   const user = authStore.getUser();
   const token = authStore.getToken() || '';
@@ -371,15 +371,15 @@ export function ConfigPage() {
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#f4f6fa', pb: 4 }}>
-      <AdminPageToolbar title="系統參數配置" />
+      {!hideToolbar && <AdminPageToolbar title="系統參數配置" />}
 
       <Box sx={{ p: { xs: 1.5, md: 3 } }} maxWidth="md" mx="auto">
         <Stack direction="row" spacing={1} sx={{ mb: 2 }} alignItems="center" flexWrap="wrap" useFlexGap>
           <Chip icon={<TuneIcon />} label={canEdit ? '可編輯模式（修改即時生效＋完整審計）' : '唯讀檢視（config:view）'} size="small" color={canEdit ? 'primary' : 'default'} />
-          <Button size="small" variant="outlined" startIcon={<HistoryIcon />} onClick={openAudit}>更新紀錄</Button>
-          <Button size="small" variant="outlined" startIcon={<RefreshIcon />} onClick={load}>重新整理</Button>
+          <Button size="small" variant="outlined" startIcon={<HistoryIcon />} onClick={openAudit} sx={{ width: { xs: '100%', sm: 'auto' } }}>更新紀錄</Button>
+          <Button size="small" variant="outlined" startIcon={<RefreshIcon />} onClick={load} sx={{ width: { xs: '100%', sm: 'auto' } }}>重新整理</Button>
           {canEdit && (
-            <Button size="small" variant="outlined" startIcon={<NetworkCheckIcon />} onClick={openAiTest}>AI 連線測試</Button>
+            <Button size="small" variant="outlined" startIcon={<NetworkCheckIcon />} onClick={openAiTest} sx={{ width: { xs: '100%', sm: 'auto' } }}>AI 連線測試</Button>
           )}
           <Box sx={{ flex: 1 }} />
         </Stack>
@@ -413,7 +413,7 @@ export function ConfigPage() {
                         </Box>
                       )}
                       {idx > 0 && !it.subGroup && <Divider />}
-                      <Box sx={{ px: 2.5, py: 1.6, display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                      <Box sx={{ px: 2.5, py: 1.6, display: 'flex', flexDirection: { xs: 'column', md: 'row' }, alignItems: { xs: 'stretch', md: 'center' }, gap: 1.5 }}>
                         <Box sx={{ minWidth: 170, flex: 1 }}>
                           <Typography variant="body2" fontWeight={600}>{it.labelZh}</Typography>
                           <Typography variant="caption" color="text.secondary">{it.key}</Typography>
@@ -428,11 +428,12 @@ export function ConfigPage() {
                         </Typography>
                         {canEdit && it.editable ? (
                           <Button size="small" variant="outlined" startIcon={<EditIcon />}
+                            sx={{ width: { xs: '100%', md: 'auto' } }}
                             onClick={() => { setEditItem(it); setDraft(it.value == null ? null : JSON.parse(JSON.stringify(it.value))); }}>
                             編輯
                           </Button>
                         ) : (
-                          <Chip label={it.editable ? '僅 ADMIN 可編輯' : '唯讀'} size="small" variant="outlined" />
+                          <Chip label={it.editable ? '僅 ADMIN 可編輯' : '唯讀'} size="small" variant="outlined" sx={{ width: { xs: '100%', md: 'auto' } }} />
                         )}
                       </Box>
                     </Box>
@@ -565,7 +566,7 @@ export function ConfigPage() {
           {auditLoading ? (
             <Box sx={{ display: 'grid', placeItems: 'center', py: 4 }}><CircularProgress size={28} /></Box>
           ) : (
-            <TableContainer>
+            <TableContainer sx={{ overflowX: 'auto' }}>
               <Table size="small">
                 <TableHead>
                   <TableRow sx={{ bgcolor: '#f7f9fc' }}>

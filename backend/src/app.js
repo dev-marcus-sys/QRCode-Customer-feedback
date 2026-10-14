@@ -69,6 +69,7 @@ function createApp() {
   app.use('/api/v1/form', publicRoutes.formRouter);
   app.use('/api/v1', publicRoutes.publicRouter);
   app.use('/api/v1', authRoutes);
+
   app.use('/api/v1', systemRoutes);
   app.use('/api/v1/cases', caseRoutes);
   app.use('/api/v1/qr', qrRoutes);

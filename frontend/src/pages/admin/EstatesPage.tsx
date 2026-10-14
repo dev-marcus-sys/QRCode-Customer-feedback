@@ -21,7 +21,7 @@ import { invalidateEstates } from '../../admin/useEstates';
 
 const EMPTY_FORM = { estateCode: '', estateNameZh: '', estateNameEn: '', companyCode: '' };
 
-export function EstatesPage() {
+export function EstatesPage({ hideToolbar = false }: { hideToolbar?: boolean }) {
   const navigate = useNavigate();
   const user = authStore.getUser();
   const token = authStore.getToken() || '';
@@ -128,7 +128,7 @@ export function EstatesPage() {
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#f4f6fa', pb: 4 }}>
-      <AdminPageToolbar title="屋苑管理" />
+      {!hideToolbar && <AdminPageToolbar title="屋苑管理" />}
 
       <Box sx={{ p: { xs: 1.5, md: 3 } }} maxWidth="xl" mx="auto">
         <AdminNav current="estates" />
@@ -136,7 +136,7 @@ export function EstatesPage() {
         <Stack direction="row" spacing={1} sx={{ mb: 2, mt: 1 }} alignItems="center" flexWrap="wrap" useFlexGap>
           <Box sx={{ flex: 1 }} />
           {canManage && (
-            <Button size="small" variant="contained" startIcon={<ApartmentIcon />} onClick={openCreate}>新增屋苑</Button>
+            <Button size="small" variant="contained" startIcon={<ApartmentIcon />} onClick={openCreate} sx={{ width: { xs: '100%', sm: 'auto' } }}>新增屋苑</Button>
           )}
         </Stack>
 
@@ -151,50 +151,101 @@ export function EstatesPage() {
         {loading ? (
           <Box sx={{ display: 'grid', placeItems: 'center', py: 8 }}><CircularProgress /></Box>
         ) : (
-          <TableContainer sx={{ bgcolor: '#fff', borderRadius: 2, border: '1px solid #e5eaf2' }}>
-            <Table size="small">
-              <TableHead>
-                <TableRow sx={{ bgcolor: '#f7f9fc' }}>
-                  <TableCell sx={{ fontWeight: 600 }}>代碼</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>中文名稱</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>英文名稱</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>公司</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>狀態</TableCell>
-                  <TableCell sx={{ fontWeight: 600, width: 120 }}>操作</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {rows.map((r) => (
-                  <TableRow key={r.estateCode} hover>
-                    <TableCell sx={{ fontWeight: 600 }}>{r.estateCode}</TableCell>
-                    <TableCell>{r.estateNameZh}</TableCell>
-                    <TableCell>{r.estateNameEn}</TableCell>
-                    <TableCell>{r.companyCode}</TableCell>
-                    <TableCell>
-                      {r.isActive === 1 ? <Chip size="small" color="success" label="啟用" /> : <Chip size="small" label="停用" />}
-                    </TableCell>
-                    <TableCell>
-                      {canManage && (
-                        <>
-                          <IconButton size="small" title="修改" onClick={() => openEdit(r)}><EditIcon fontSize="small" /></IconButton>
-                          <Button
-                            size="small"
-                            color={r.isActive === 1 ? 'error' : 'success'}
-                            onClick={() => setConfirm({ code: r.estateCode, name: r.estateNameZh, deactivate: r.isActive === 1 })}
-                          >
-                            {r.isActive === 1 ? '停用' : '啟用'}
-                          </Button>
-                        </>
-                      )}
-                    </TableCell>
+          <>
+            {/* 寬屏：表格（窄屏隱藏） */}
+            <TableContainer sx={{ display: { xs: 'none', md: 'block' }, bgcolor: '#fff', borderRadius: 2, border: '1px solid #e5eaf2', overflowX: 'auto' }}>
+              <Table size="small">
+                <TableHead>
+                  <TableRow sx={{ bgcolor: '#f7f9fc' }}>
+                    <TableCell sx={{ fontWeight: 600 }}>代碼</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>中文名稱</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>英文名稱</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>公司</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>狀態</TableCell>
+                    <TableCell sx={{ fontWeight: 600, width: 120 }}>操作</TableCell>
                   </TableRow>
-                ))}
-                {!rows.length && (
-                  <TableRow><TableCell colSpan={6} sx={{ textAlign: 'center', color: '#999', py: 3 }}>暫無屋苑</TableCell></TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                </TableHead>
+                <TableBody>
+                  {rows.map((r) => (
+                    <TableRow key={r.estateCode} hover>
+                      <TableCell sx={{ fontWeight: 600 }}>{r.estateCode}</TableCell>
+                      <TableCell>{r.estateNameZh}</TableCell>
+                      <TableCell>{r.estateNameEn}</TableCell>
+                      <TableCell>{r.companyCode}</TableCell>
+                      <TableCell>
+                        {r.isActive === 1 ? <Chip size="small" color="success" label="啟用" /> : <Chip size="small" label="停用" />}
+                      </TableCell>
+                      <TableCell>
+                        {canManage && (
+                          <>
+                            <IconButton size="small" title="修改" onClick={() => openEdit(r)}><EditIcon fontSize="small" /></IconButton>
+                            <Button
+                              size="small"
+                              color={r.isActive === 1 ? 'error' : 'success'}
+                              onClick={() => setConfirm({ code: r.estateCode, name: r.estateNameZh, deactivate: r.isActive === 1 })}
+                            >
+                              {r.isActive === 1 ? '停用' : '啟用'}
+                            </Button>
+                          </>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {!rows.length && (
+                    <TableRow><TableCell colSpan={6} sx={{ textAlign: 'center', color: '#999', py: 3 }}>暫無屋苑</TableCell></TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+
+            {/* 窄屏：卡片堆疊（寬屏隱藏） */}
+            <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', gap: 2 }}>
+              {rows.map((r) => (
+                <Box key={r.estateCode} sx={{ bgcolor: '#fff', borderRadius: 2, border: '1px solid #e5eaf2', p: 2 }}>
+                  <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 1.5 }}>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">代碼</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>{r.estateCode}</Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">中文名稱</Typography>
+                      <Typography variant="body2">{r.estateNameZh}</Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">英文名稱</Typography>
+                      <Typography variant="body2">{r.estateNameEn}</Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">公司</Typography>
+                      <Typography variant="body2">{r.companyCode}</Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">狀態（更新資訊）</Typography>
+                      <Box sx={{ mt: 0.5 }}>
+                        {r.isActive === 1 ? <Chip size="small" color="success" label="啟用" /> : <Chip size="small" label="停用" />}
+                      </Box>
+                    </Box>
+                  </Box>
+                  {canManage && (
+                    <Stack direction="row" spacing={1} sx={{ mt: 2 }} useFlexGap>
+                      <Button size="small" variant="outlined" startIcon={<EditIcon />} fullWidth onClick={() => openEdit(r)}>編輯</Button>
+                      <Button
+                        size="small"
+                        fullWidth
+                        color={r.isActive === 1 ? 'error' : 'success'}
+                        onClick={() => setConfirm({ code: r.estateCode, name: r.estateNameZh, deactivate: r.isActive === 1 })}
+                      >
+                        {r.isActive === 1 ? '停用' : '啟用'}
+                      </Button>
+                    </Stack>
+                  )}
+                </Box>
+              ))}
+              {!rows.length && (
+                <Typography sx={{ textAlign: 'center', color: '#999', py: 3 }}>暫無屋苑</Typography>
+              )}
+            </Box>
+          </>
         )}
         <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
           屋苑被既有個案與 QR Code 參照，無法刪除；停用後住戶表單即停止受理，歷史資料仍會保留。

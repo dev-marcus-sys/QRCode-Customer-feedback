@@ -22,7 +22,7 @@ const ACTION_LABEL: Record<string, string> = {
   USER_MANAGE: '用戶管理', ROLE_MANAGE: '角色管理', WEEKLY_REPORT: '週報', SURVEY: '問卷',
 };
 
-export function AuditPage() {
+export function AuditPage({ hideToolbar = false }: { hideToolbar?: boolean }) {
   const navigate = useNavigate();
   const user = authStore.getUser();
   const token = authStore.getToken() || '';
@@ -75,7 +75,7 @@ export function AuditPage() {
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#f4f6fa', pb: 4 }}>
-      <AdminPageToolbar title="操作審計" />
+      {!hideToolbar && <AdminPageToolbar title="操作審計" />}
 
       <Box sx={{ p: { xs: 1.5, md: 3 } }} maxWidth="xl" mx="auto">
         <AdminNav current="audit" />
@@ -92,7 +92,7 @@ export function AuditPage() {
           <TextField size="small" type="date" label="迄" value={to} onChange={(e) => setTo(e.target.value)}
             InputLabelProps={{ shrink: to ? true : undefined }}
             sx={to ? undefined : { '& input::-webkit-datetime-edit': { color: 'transparent' } }} />
-          <Button size="small" variant="contained" onClick={load}>查詢</Button>
+          <Button size="small" variant="contained" onClick={load} sx={{ width: { xs: '100%', sm: 'auto' } }}>查詢</Button>
         </Stack>
 
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
@@ -100,7 +100,7 @@ export function AuditPage() {
         {loading ? (
           <Box sx={{ display: 'grid', placeItems: 'center', py: 8 }}><CircularProgress /></Box>
         ) : (
-          <TableContainer sx={{ bgcolor: '#fff', borderRadius: 2, border: '1px solid #e5eaf2' }}>
+          <TableContainer sx={{ bgcolor: '#fff', borderRadius: 2, border: '1px solid #e5eaf2', overflowX: 'auto' }}>
             <Table size="small">
               <TableHead>
                 <TableRow sx={{ bgcolor: '#f7f9fc' }}>

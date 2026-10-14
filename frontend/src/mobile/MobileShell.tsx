@@ -50,7 +50,7 @@ export function MobileShell() {
   const [moreAnchor, setMoreAnchor] = useState<null | HTMLElement>(null);
 
   const tabs = TABS.filter((t) => perms.includes(t.perm));
-  const moreItems = MORE_ITEMS.filter((m) => perms.includes(m.perm));
+  const moreItems = MORE_ITEMS.filter((m) => !m.perm || perms.includes(m.perm));
   const moreActive = moreItems.some((m) => location.pathname.startsWith(m.to));
 
   return (

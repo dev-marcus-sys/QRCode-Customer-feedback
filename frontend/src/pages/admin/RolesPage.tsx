@@ -19,7 +19,7 @@ import {
 import { AdminPageToolbar } from '../../components/AdminPageToolbar';
 import AdminNav from '../../admin/AdminNav';
 
-export function RolesPage() {
+export function RolesPage({ hideToolbar = false }: { hideToolbar?: boolean }) {
   const navigate = useNavigate();
   const user = authStore.getUser();
   const token = authStore.getToken() || '';
@@ -118,13 +118,13 @@ export function RolesPage() {
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#f4f6fa', pb: 4 }}>
-      <AdminPageToolbar title="角色與權限" />
+      {!hideToolbar && <AdminPageToolbar title="角色與權限" />}
 
       <Box sx={{ p: { xs: 1.5, md: 3 } }} maxWidth="xl" mx="auto">
         <AdminNav current="roles" />
         <Stack direction="row" spacing={1} sx={{ mb: 2, mt: 1 }} alignItems="center">
           <Box sx={{ flex: 1 }} />
-          {canManage && <Button size="small" variant="contained" startIcon={<AddIcon />} onClick={openCreate}>新增角色</Button>}
+          {canManage && <Button size="small" variant="contained" startIcon={<AddIcon />} onClick={openCreate} sx={{ width: { xs: '100%', sm: 'auto' } }}>新增角色</Button>}
         </Stack>
 
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
@@ -132,42 +132,90 @@ export function RolesPage() {
         {loading ? (
           <Box sx={{ display: 'grid', placeItems: 'center', py: 8 }}><CircularProgress /></Box>
         ) : (
-          <TableContainer sx={{ bgcolor: '#fff', borderRadius: 2, border: '1px solid #e5eaf2' }}>
-            <Table size="small">
-              <TableHead>
-                <TableRow sx={{ bgcolor: '#f7f9fc' }}>
-                  <TableCell sx={{ fontWeight: 600 }}>角色代碼</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>名稱</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>數據範圍</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>權限數</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>用戶數</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>狀態</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }} align="right">操作</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {roles.map((r) => (
-                  <TableRow key={r.roleId} hover>
-                    <TableCell sx={{ fontWeight: 600 }}>{r.roleCode}</TableCell>
-                    <TableCell>{r.roleName}</TableCell>
-                    <TableCell><Chip size="small" label={r.dataScope === 'ALL' ? '全屋苑' : '單屋苑'} /></TableCell>
-                    <TableCell>{r.permissions.length}</TableCell>
-                    <TableCell>{r.userCount}</TableCell>
-                    <TableCell>{r.isActive ? <Chip size="small" color="success" label="啟用" /> : <Chip size="small" label="停用" />}</TableCell>
-                    <TableCell align="right">
-                      {canManage && (
-                        <>
-                          <Button size="small" onClick={() => openEdit(r)}>修改</Button>
-                          <Button size="small" startIcon={<ContentCopyIcon />} onClick={() => openCopy(r)}>複製</Button>
-                          <Button size="small" color="warning" onClick={() => disable(r)}>{r.isActive ? '停用' : '啟用'}</Button>
-                        </>
-                      )}
-                    </TableCell>
+          <>
+            {/* 寬屏：表格（窄屏隱藏） */}
+            <TableContainer sx={{ display: { xs: 'none', md: 'block' }, bgcolor: '#fff', borderRadius: 2, border: '1px solid #e5eaf2', overflowX: 'auto' }}>
+              <Table size="small">
+                <TableHead>
+                  <TableRow sx={{ bgcolor: '#f7f9fc' }}>
+                    <TableCell sx={{ fontWeight: 600 }}>角色代碼</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>名稱</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>數據範圍</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>權限數</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>用戶數</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>狀態</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }} align="right">操作</TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                </TableHead>
+                <TableBody>
+                  {roles.map((r) => (
+                    <TableRow key={r.roleId} hover>
+                      <TableCell sx={{ fontWeight: 600 }}>{r.roleCode}</TableCell>
+                      <TableCell>{r.roleName}</TableCell>
+                      <TableCell><Chip size="small" label={r.dataScope === 'ALL' ? '全屋苑' : '單屋苑'} /></TableCell>
+                      <TableCell>{r.permissions.length}</TableCell>
+                      <TableCell>{r.userCount}</TableCell>
+                      <TableCell>{r.isActive ? <Chip size="small" color="success" label="啟用" /> : <Chip size="small" label="停用" />}</TableCell>
+                      <TableCell align="right">
+                        {canManage && (
+                          <>
+                            <Button size="small" onClick={() => openEdit(r)}>修改</Button>
+                            <Button size="small" startIcon={<ContentCopyIcon />} onClick={() => openCopy(r)}>複製</Button>
+                            <Button size="small" color="warning" onClick={() => disable(r)}>{r.isActive ? '停用' : '啟用'}</Button>
+                          </>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+
+            {/* 窄屏：卡片堆疊（寬屏隱藏） */}
+            <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', gap: 2 }}>
+              {roles.map((r) => (
+                <Box key={r.roleId} sx={{ bgcolor: '#fff', borderRadius: 2, border: '1px solid #e5eaf2', p: 2 }}>
+                  <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 1.5 }}>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">角色代碼</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>{r.roleCode}</Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">名稱</Typography>
+                      <Typography variant="body2">{r.roleName}</Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">數據範圍</Typography>
+                      <Box sx={{ mt: 0.5 }}>
+                        <Chip size="small" label={r.dataScope === 'ALL' ? '全屋苑' : '單屋苑'} />
+                      </Box>
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">權限數</Typography>
+                      <Typography variant="body2">{r.permissions.length}</Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">用戶數</Typography>
+                      <Typography variant="body2">{r.userCount}</Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">狀態（更新資訊）</Typography>
+                      <Box sx={{ mt: 0.5 }}>
+                        {r.isActive ? <Chip size="small" color="success" label="啟用" /> : <Chip size="small" label="停用" />}
+                      </Box>
+                    </Box>
+                  </Box>
+                  {canManage && (
+                    <Stack direction="row" spacing={1} sx={{ mt: 2 }} useFlexGap>
+                      <Button size="small" variant="outlined" fullWidth onClick={() => openEdit(r)}>修改</Button>
+                      <Button size="small" variant="outlined" fullWidth startIcon={<ContentCopyIcon />} onClick={() => openCopy(r)}>複製</Button>
+                      <Button size="small" fullWidth color="warning" onClick={() => disable(r)}>{r.isActive ? '停用' : '啟用'}</Button>
+                    </Stack>
+                  )}
+                </Box>
+              ))}
+            </Box>
+          </>
         )}
       </Box>
 

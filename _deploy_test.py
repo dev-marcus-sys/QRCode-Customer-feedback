@@ -79,8 +79,12 @@ cd /home/devusr/qr-feedback/frontend && npm ci --no-audit --no-fund && npm run b
 echo "== ensure APP_ENV=test =="
 grep -q '^APP_ENV=' /home/devusr/qr-feedback/backend/.env || echo 'APP_ENV=test' >> /home/devusr/qr-feedback/backend/.env
 echo "== restart =="
-# 使用 [n]ode 括號技巧，避免 pkill -f 匹配到執行本腳本的 shell 自身（其指令列含此字串）而自我終止
-pkill -f '[n]ode src/server.js' || true
+# 確實終止佔用 3100 的舊程序：優先按監聽埠取 PID 終止（lsof/ss），並輔以 pkill 與 pid 檔；皆以 || true 避免 set -e 中斷
+PID=$(lsof -ti:3100 2>/dev/null)
+[ -z "$PID" ] && PID=$(ss -ltnp 'sport = :3100' 2>/dev/null | grep -oP 'pid=\K[0-9]+' | head -1)
+[ -n "$PID" ] && kill -9 $PID 2>/dev/null || true
+kill $(cat /home/devusr/qr-feedback/qr.pid) 2>/dev/null || true
+pkill -9 -f 'src/server.js' 2>/dev/null || true
 sleep 2
 sh /home/devusr/qr-feedback/start.sh
 sleep 9

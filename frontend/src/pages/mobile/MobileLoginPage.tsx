@@ -62,15 +62,17 @@ export function MobileLoginPage() {
                 />
               </Box>
             ) : (
-              <form onSubmit={submit} style={{ width: '100%' }}>
-                <Stack spacing={2}>
-                  <TextField label="帳號" value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" fullWidth required />
-                  <PasswordField label="密碼" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" fullWidth required />
-                  <Button type="submit" variant="contained" size="large" disabled={loading} fullWidth>
-                    {loading ? '登入中…' : '登入'}
-                  </Button>
-                </Stack>
-              </form>
+              <Box sx={{ width: '100%' }}>
+                <form onSubmit={submit} style={{ width: '100%' }}>
+                  <Stack spacing={2}>
+                    <TextField label="帳號" value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" fullWidth required />
+                    <PasswordField label="密碼" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" fullWidth required />
+                    <Button type="submit" variant="contained" size="large" disabled={loading} fullWidth>
+                      {loading ? '登入中…' : '登入'}
+                    </Button>
+                  </Stack>
+                </form>
+              </Box>
             )}
             <Button size="small" color="inherit" onClick={() => navigate('/admin/login')}>
               返回桌面版

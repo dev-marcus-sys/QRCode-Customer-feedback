@@ -430,3 +430,5 @@ CREATE TABLE IF NOT EXISTS kb_chunk (
 );
 CREATE INDEX IF NOT EXISTS ix_kb_chunk_doc ON kb_chunk(doc_id);
 CREATE INDEX IF NOT EXISTS ix_kb_chunk_model ON kb_chunk(embedding_model);
+
+

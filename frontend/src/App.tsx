@@ -1,6 +1,6 @@
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import type { ReactNode } from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { AuthGuard } from './components/AuthGuard';
 import { EnvFooter } from './components/EnvFooter';
 import { FormPage } from './pages/public/FormPage';
@@ -58,6 +58,14 @@ function PermGuard({ perm, children }: { perm: string; children: ReactNode }) {
   return <>{children}</>;
 }
 
+/** 登入入口：依視窗寬度自動分流——手機（<600px，對應 xs 斷點）跳手機版登入，桌面顯示桌面板登入。 */
+function LoginRoute() {
+  const theme = useTheme();
+  const isMobileView = useMediaQuery(theme.breakpoints.down('sm'));
+  if (isMobileView) return <Navigate to="/m/login" replace />;
+  return <LoginPage />;
+}
+
 export default function App() {
   const location = useLocation();
   const isMobile = location.pathname.startsWith('/m');
@@ -69,7 +77,7 @@ export default function App() {
           <Route path="/" element={<FormPage />} />
       <Route path="/success" element={<SuccessPage />} />
       <Route path="/survey/:token" element={<SurveyPage />} />
-      <Route path="/admin/login" element={<LoginPage />} />
+      <Route path="/admin/login" element={<LoginRoute />} />
       <Route
         path="/admin/cases"
         element={
@@ -209,11 +217,11 @@ export default function App() {
         <Route path="surveys" element={<MobileSurveyPage />} />
         <Route path="qr" element={<MobileQrPage />} />
         {/* 管理功能：經「更多」溢出選單進入，權限與桌面一致 */}
-        <Route path="config" element={<PermGuard perm="config:view"><ConfigPage /></PermGuard>} />
-        <Route path="users" element={<PermGuard perm="user:list"><UsersPage /></PermGuard>} />
-        <Route path="roles" element={<PermGuard perm="role:list"><RolesPage /></PermGuard>} />
-        <Route path="audit" element={<PermGuard perm="audit:view"><AuditPage /></PermGuard>} />
-        <Route path="estates" element={<PermGuard perm="estate:list"><EstatesPage /></PermGuard>} />
+        <Route path="config" element={<PermGuard perm="config:view"><ConfigPage hideToolbar /></PermGuard>} />
+        <Route path="users" element={<PermGuard perm="user:list"><UsersPage hideToolbar /></PermGuard>} />
+        <Route path="roles" element={<PermGuard perm="role:list"><RolesPage hideToolbar /></PermGuard>} />
+        <Route path="audit" element={<PermGuard perm="audit:view"><AuditPage hideToolbar /></PermGuard>} />
+        <Route path="estates" element={<PermGuard perm="estate:list"><EstatesPage hideToolbar /></PermGuard>} />
         <Route path="database" element={<PermGuard perm="db:query"><DatabasePage /></PermGuard>} />
       </Route>
         </Routes>

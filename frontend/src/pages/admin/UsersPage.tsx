@@ -22,7 +22,7 @@ import { PasswordField } from '../../components/PasswordField';
 import AdminNav from '../../admin/AdminNav';
 import { useEstates } from '../../admin/useEstates';
 
-export function UsersPage() {
+export function UsersPage({ hideToolbar = false }: { hideToolbar?: boolean }) {
   const navigate = useNavigate();
   const user = authStore.getUser();
   const token = authStore.getToken() || '';
@@ -184,7 +184,7 @@ export function UsersPage() {
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#f4f6fa', pb: 4 }}>
-      <AdminPageToolbar title="用戶管理" />
+      {!hideToolbar && <AdminPageToolbar title="用戶管理" />}
 
       <Box sx={{ p: { xs: 1.5, md: 3 } }} maxWidth="xl" mx="auto">
         <AdminNav current="users" />
@@ -203,7 +203,7 @@ export function UsersPage() {
           </TextField>
           <Box sx={{ flex: 1 }} />
           {canCreate && (
-            <Button size="small" variant="contained" startIcon={<PersonAddIcon />} onClick={openCreate}>新增用戶</Button>
+            <Button size="small" variant="contained" startIcon={<PersonAddIcon />} onClick={openCreate} sx={{ width: { xs: '100%', sm: 'auto' } }}>新增用戶</Button>
           )}
         </Stack>
 
@@ -212,50 +212,102 @@ export function UsersPage() {
         {loading ? (
           <Box sx={{ display: 'grid', placeItems: 'center', py: 8 }}><CircularProgress /></Box>
         ) : (
-          <TableContainer sx={{ bgcolor: '#fff', borderRadius: 2, border: '1px solid #e5eaf2' }}>
-            <Table size="small">
-              <TableHead>
-                <TableRow sx={{ bgcolor: '#f7f9fc' }}>
-                  <TableCell sx={{ fontWeight: 600 }}>帳號</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>姓名</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>屋苑</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>角色</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>狀態</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>最後登入</TableCell>
-                  <TableCell sx={{ fontWeight: 600, width: 60 }} />
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {rows.map((u) => (
-                  <TableRow key={u.userId} hover>
-                    <TableCell sx={{ fontWeight: 600 }}>{u.username}</TableCell>
-                    <TableCell>{u.fullName}</TableCell>
-                    <TableCell>
-                      {(u.estateCodes && u.estateCodes.length ? u.estateCodes : ['ALL']).map((code) => (
-                        <Chip key={code} size="small" variant="outlined" sx={{ mr: 0.5, mb: 0.5 }}
-                          label={code === 'ALL' ? '全屋苑' : `${estates.nameOf(code)}（${code}）`} />
-                      ))}
-                    </TableCell>
-                    <TableCell>{u.roles.map((r) => <Chip key={r.code} size="small" label={r.name} sx={{ mr: 0.5 }} />)}</TableCell>
-                    <TableCell>
-                      {u.isActive ? <Chip size="small" color="success" label="啟用" /> : <Chip size="small" label="停用" />}
-                      {u.mustChangePwd ? <Chip size="small" color="warning" label="需改密" sx={{ ml: 0.5 }} /> : null}
-                      {u.lockedUntil ? <Chip size="small" color="error" label="鎖定" sx={{ ml: 0.5 }} /> : null}
-                    </TableCell>
-                    <TableCell><Typography variant="caption">{u.lastLoginAt || '—'}</Typography></TableCell>
-                    <TableCell>
-                      <IconButton size="small" onClick={(e) => setMenuFor({ user: u, anchor: e.currentTarget })}>
-                        <MoreVertIcon fontSize="small" />
-                      </IconButton>
-                    </TableCell>
+          <>
+            {/* 寬屏：表格（窄屏隱藏） */}
+            <TableContainer sx={{ display: { xs: 'none', md: 'block' }, bgcolor: '#fff', borderRadius: 2, border: '1px solid #e5eaf2', overflowX: 'auto' }}>
+              <Table size="small">
+                <TableHead>
+                  <TableRow sx={{ bgcolor: '#f7f9fc' }}>
+                    <TableCell sx={{ fontWeight: 600 }}>帳號</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>姓名</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>屋苑</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>角色</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>狀態</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>最後登入</TableCell>
+                    <TableCell sx={{ fontWeight: 600, width: 60 }} />
                   </TableRow>
-                ))}
-                {!rows.length && (
-                  <TableRow><TableCell colSpan={7} sx={{ textAlign: 'center', color: '#999', py: 3 }}>暫無用戶</TableCell></TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                </TableHead>
+                <TableBody>
+                  {rows.map((u) => (
+                    <TableRow key={u.userId} hover>
+                      <TableCell sx={{ fontWeight: 600 }}>{u.username}</TableCell>
+                      <TableCell>{u.fullName}</TableCell>
+                      <TableCell>
+                        {(u.estateCodes && u.estateCodes.length ? u.estateCodes : ['ALL']).map((code) => (
+                          <Chip key={code} size="small" variant="outlined" sx={{ mr: 0.5, mb: 0.5 }}
+                            label={code === 'ALL' ? '全屋苑' : `${estates.nameOf(code)}（${code}）`} />
+                        ))}
+                      </TableCell>
+                      <TableCell>{u.roles.map((r) => <Chip key={r.code} size="small" label={r.name} sx={{ mr: 0.5 }} />)}</TableCell>
+                      <TableCell>
+                        {u.isActive ? <Chip size="small" color="success" label="啟用" /> : <Chip size="small" label="停用" />}
+                        {u.mustChangePwd ? <Chip size="small" color="warning" label="需改密" sx={{ ml: 0.5 }} /> : null}
+                        {u.lockedUntil ? <Chip size="small" color="error" label="鎖定" sx={{ ml: 0.5 }} /> : null}
+                      </TableCell>
+                      <TableCell><Typography variant="caption">{u.lastLoginAt || '—'}</Typography></TableCell>
+                      <TableCell>
+                        <IconButton size="small" onClick={(e) => setMenuFor({ user: u, anchor: e.currentTarget })}>
+                          <MoreVertIcon fontSize="small" />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {!rows.length && (
+                    <TableRow><TableCell colSpan={7} sx={{ textAlign: 'center', color: '#999', py: 3 }}>暫無用戶</TableCell></TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+
+            {/* 窄屏：卡片堆疊（寬屏隱藏） */}
+            <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', gap: 2 }}>
+              {rows.map((u) => (
+                <Box key={u.userId} sx={{ bgcolor: '#fff', borderRadius: 2, border: '1px solid #e5eaf2', p: 2 }}>
+                  <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 1.5 }}>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">帳號</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>{u.username}</Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">姓名</Typography>
+                      <Typography variant="body2">{u.fullName}</Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">屋苑</Typography>
+                      <Box sx={{ mt: 0.5, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                        {(u.estateCodes && u.estateCodes.length ? u.estateCodes : ['ALL']).map((code) => (
+                          <Chip key={code} size="small" variant="outlined" label={code === 'ALL' ? '全屋苑' : `${estates.nameOf(code)}（${code}）`} />
+                        ))}
+                      </Box>
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">角色</Typography>
+                      <Box sx={{ mt: 0.5, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                        {u.roles.map((r) => <Chip key={r.code} size="small" label={r.name} />)}
+                      </Box>
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">狀態（更新資訊）</Typography>
+                      <Box sx={{ mt: 0.5, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                        {u.isActive ? <Chip size="small" color="success" label="啟用" /> : <Chip size="small" label="停用" />}
+                        {u.mustChangePwd ? <Chip size="small" color="warning" label="需改密" /> : null}
+                        {u.lockedUntil ? <Chip size="small" color="error" label="鎖定" /> : null}
+                      </Box>
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">最後登入</Typography>
+                      <Typography variant="body2">{u.lastLoginAt || '—'}</Typography>
+                    </Box>
+                  </Box>
+                  <Button size="small" variant="outlined" fullWidth sx={{ mt: 2 }}
+                    onClick={(e) => setMenuFor({ user: u, anchor: e.currentTarget })}>操作</Button>
+                </Box>
+              ))}
+              {!rows.length && (
+                <Typography sx={{ textAlign: 'center', color: '#999', py: 3 }}>暫無用戶</Typography>
+              )}
+            </Box>
+          </>
         )}
         <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
           共 {total} 筆
